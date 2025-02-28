@@ -18,7 +18,7 @@ const LoginContent = () => {
 	}, [user, router]);
 
 	return (
-		<div className="flex flex-col md:flex-row min-h-screen w-full">
+		<div className="flex flex-col md:flex-row h-screen w-full">
 			{/* Section de gauche : Informations sur l'application */}
 			<div className="w-full md:w-1/2 bg-gradient-to-br from-blue-600 to-purple-600 p-8 text-white flex flex-col justify-center items-center">
 				<Image
