@@ -8,7 +8,7 @@ const inter = Inter({ subsets: ["latin"] });
 export default function LoginLayout({ children }) {
 	return (
 		<html lang="fr">
-			<body className={`${inter.className} overflow-hidden`}>
+			<body className={inter.className}>
 				{/* Conteneur principal sans limitations ni décorations */}
 				<main className="h-screen w-screen overflow-hidden">
 					{children}
