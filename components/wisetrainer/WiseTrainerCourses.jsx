@@ -1,3 +1,4 @@
+//components/wisetrainer/WiseTrainerCourses.jsx
 "use client";
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -79,13 +80,31 @@ export default function WiseTrainerCourses() {
 						userBuildsResponse.data.blobs || []
 					);
 
-					// Enrichir les formations utilisateur avec des métadonnées de progression
-					// Pour l'instant, simulation d'une progression aléatoire
-					const userCourses = userBuilds.map((build) => ({
-						...build,
-						progress: 0, // Commencer à 0% de progression pour un nouveau cours
-						lastAccessed: new Date().toISOString(),
-					}));
+					// Récupérer la progression de l'utilisateur depuis la base de données
+					const userProgressResponse = await axios.get(
+						`${WISETRAINER_CONFIG.API_ROUTES.USER_TRAININGS}/${containerName}`
+					);
+
+					// Enrichir les formations utilisateur avec les métadonnées de progression
+					const userCourses = userBuilds.map((build) => {
+						const progressData =
+							userProgressResponse.data.trainings?.find(
+								(t) => t.id === build.id
+							);
+
+						return {
+							...build,
+							progress: progressData?.progress || 0,
+							lastAccessed:
+								progressData?.lastAccessed ||
+								new Date().toISOString(),
+							completedModules:
+								progressData?.modules?.filter(
+									(m) => m.completed
+								).length || 0,
+							totalModules: progressData?.modules?.length || 0,
+						};
+					});
 
 					setPersonalCourses(userCourses);
 				} catch (error) {
@@ -122,17 +141,43 @@ export default function WiseTrainerCourses() {
 		});
 
 		// Créer des objets cours à partir des noms
-		return Array.from(buildNames).map((name) => ({
-			id: name,
-			name: formatCourseName(name),
-			description: `Formation interactive sur ${formatCourseName(
-				name
-			).toLowerCase()}`,
-			imageUrl: WISETRAINER_CONFIG.DEFAULT_IMAGE, // Utiliser l'image placeholder par défaut
-			difficulty: "Intermédiaire",
-			duration: "30 min",
-			category: "Sécurité industrielle",
-		}));
+		return Array.from(buildNames).map((name) => {
+			try {
+				// Essayer de charger les détails du cours depuis les fichiers de configuration
+				let courseDetails;
+				try {
+					courseDetails = require(`@/lib/config/wisetrainer/courses/${name}.json`);
+				} catch (e) {
+					// Si le fichier de configuration n'existe pas, utiliser des valeurs par défaut
+					courseDetails = {
+						id: name,
+						name: formatCourseName(name),
+						description: `Formation interactive sur ${formatCourseName(
+							name
+						).toLowerCase()}`,
+						imageUrl: WISETRAINER_CONFIG.DEFAULT_IMAGE,
+						difficulty: "Intermédiaire",
+						duration: "30 min",
+						category: "Sécurité industrielle",
+					};
+				}
+
+				return courseDetails;
+			} catch (error) {
+				// En cas d'erreur, retourner un objet avec des valeurs par défaut
+				return {
+					id: name,
+					name: formatCourseName(name),
+					description: `Formation interactive sur ${formatCourseName(
+						name
+					).toLowerCase()}`,
+					imageUrl: WISETRAINER_CONFIG.DEFAULT_IMAGE,
+					difficulty: "Intermédiaire",
+					duration: "30 min",
+					category: "Sécurité industrielle",
+				};
+			}
+		});
 	};
 
 	// Helper pour formater le nom du cours à partir de son ID
@@ -154,13 +199,7 @@ export default function WiseTrainerCourses() {
 		try {
 			// Importer le cours depuis le container source vers le container de l'utilisateur
 			await axios.post(
-				`${WISETRAINER_CONFIG.API_ROUTES.IMPORT_BUILD}/${containerName}/${course.id}`,
-				{
-					sourceContainer: WISETRAINER_CONFIG.CONTAINER_NAMES.SOURCE,
-					destContainer: containerName,
-					buildName: course.id,
-					destPrefix: WISETRAINER_CONFIG.BLOB_PREFIXES.WISETRAINER,
-				}
+				`${WISETRAINER_CONFIG.API_ROUTES.IMPORT_BUILD}/${containerName}/${course.id}`
 			);
 
 			// Rafraîchir les données
@@ -326,7 +365,10 @@ export default function WiseTrainerCourses() {
 									>
 										<div className="relative h-48 w-full">
 											<Image
-												src={course.imageUrl}
+												src={
+													course.imageUrl ||
+													WISETRAINER_CONFIG.DEFAULT_IMAGE
+												}
 												alt={course.name}
 												fill
 												className="object-cover rounded-t-lg"
@@ -373,6 +415,18 @@ export default function WiseTrainerCourses() {
 													value={course.progress}
 													className="h-2"
 												/>
+												{course.completedModules >
+													0 && (
+													<div className="text-sm text-gray-500 mt-2">
+														{
+															course.completedModules
+														}
+														/
+														{course.totalModules ||
+															"?"}{" "}
+														modules complétés
+													</div>
+												)}
 											</div>
 										</CardContent>
 										<CardFooter className="flex gap-2">
@@ -449,7 +503,10 @@ export default function WiseTrainerCourses() {
 									<Card className="h-full hover:shadow-lg transition-shadow duration-300">
 										<div className="relative h-48 w-full">
 											<Image
-												src={course.imageUrl}
+												src={
+													course.imageUrl ||
+													WISETRAINER_CONFIG.DEFAULT_IMAGE
+												}
 												alt={course.name}
 												fill
 												className="object-cover rounded-t-lg"
@@ -487,24 +544,37 @@ export default function WiseTrainerCourses() {
 														Ce que vous apprendrez:
 													</h4>
 													<ul className="text-sm text-gray-600 dark:text-gray-300 list-disc pl-5 space-y-1">
-														<li>
-															Protocoles de
-															sécurité et bonnes
-															pratiques
-														</li>
-														<li>
-															Évaluation des
-															risques
-														</li>
-														<li>
-															Procédures
-															d'intervention
-															d'urgence
-														</li>
-														<li>
-															Conformité aux
-															normes industrielles
-														</li>
+														{course.modules
+															?.slice(0, 3)
+															.map((module) => (
+																<li
+																	key={
+																		module.id
+																	}
+																>
+																	{
+																		module.title
+																	}
+																</li>
+															)) || (
+															<>
+																<li>
+																	Protocoles
+																	de sécurité
+																	et bonnes
+																	pratiques
+																</li>
+																<li>
+																	Évaluation
+																	des risques
+																</li>
+																<li>
+																	Procédures
+																	d'intervention
+																	d'urgence
+																</li>
+															</>
+														)}
 													</ul>
 												</div>
 											)}

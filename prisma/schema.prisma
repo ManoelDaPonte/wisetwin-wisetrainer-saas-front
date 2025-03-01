@@ -11,14 +11,15 @@ generator client {
 
 // Modèle utilisateur
 model User {
-    id             String       @id @default(uuid())
-    auth0Id        String       @unique // Identifiant Auth0 de l'utilisateur
-    email          String       @unique
+    id             String         @id @default(uuid())
+    auth0Id        String         @unique // Identifiant Auth0 de l'utilisateur
+    email          String         @unique
     name           String?
     azureContainer String? // Nom du container Azure de l'utilisateur
-    createdAt      DateTime     @default(now())
-    updatedAt      DateTime     @updatedAt
+    createdAt      DateTime       @default(now())
+    updatedAt      DateTime       @updatedAt
     userCourses    UserCourse[] // Relation avec les cours suivis
+    userResponses  UserResponse[] // Réponses aux questionnaires
 }
 
 // Modèle de cours de formation
@@ -48,33 +49,56 @@ model Module {
     order       Int // Ordre d'affichage dans le cours
     createdAt   DateTime     @default(now())
     updatedAt   DateTime     @updatedAt
-    questions   Question[] // Questions du module
+    scenarios   Scenario[] // Scénarios du module
     userModules UserModule[] // Progression des utilisateurs dans ce module
 
     @@unique([courseId, moduleId]) // Un moduleId doit être unique dans un cours
 }
 
+// Modèle de scénario (peut contenir plusieurs questions)
+model Scenario {
+    id            String         @id @default(uuid())
+    scenarioId    String // Identifiant externe du scénario
+    moduleId      String // Référence au module parent
+    module        Module         @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+    title         String // Titre du scénario
+    description   String // Description du scénario
+    questions     Question[] // Questions du scénario
+    createdAt     DateTime       @default(now())
+    updatedAt     DateTime       @updatedAt
+    userResponses UserResponse[] // Réponses des utilisateurs
+
+    @@unique([moduleId, scenarioId])
+}
+
 // Modèle de question
 model Question {
-    id        String   @id @default(uuid())
-    moduleId  String // Référence au module parent
-    module    Module   @relation(fields: [moduleId], references: [id], onDelete: Cascade)
-    text      String // Texte de la question
-    type      String   @default("SINGLE") // Type de question: SINGLE ou MULTIPLE
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
-    options   Option[] // Options de réponse
+    id          String   @id @default(uuid())
+    questionId  String // Identifiant externe de la question
+    scenarioId  String // Référence au scénario parent
+    scenario    Scenario @relation(fields: [scenarioId], references: [id], onDelete: Cascade)
+    text        String // Texte de la question
+    type        String   @default("SINGLE") // Type de question: SINGLE ou MULTIPLE
+    explanation String? // Explication de la réponse correcte
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
+    options     Option[] // Options de réponse
+
+    @@unique([scenarioId, questionId])
 }
 
 // Modèle d'option de réponse
 model Option {
     id         String   @id @default(uuid())
+    optionId   String // Identifiant externe de l'option
     questionId String // Référence à la question parent
     question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
     text       String // Texte de l'option
     isCorrect  Boolean  @default(false) // Indique si l'option est correcte
     createdAt  DateTime @default(now())
     updatedAt  DateTime @updatedAt
+
+    @@unique([questionId, optionId])
 }
 
 // Modèle de progression d'un utilisateur dans un cours
@@ -111,12 +135,16 @@ model UserModule {
 }
 
 // Modèle pour stocker les réponses des utilisateurs aux questionnaires
-model UserAnswer {
-    id           String   @id @default(uuid())
-    userCourseId String // Référence à la progression du cours
-    questionId   String // ID de la question
-    optionIds    String[] // IDs des options sélectionnées
-    isCorrect    Boolean // Indique si la réponse est correcte
-    createdAt    DateTime @default(now())
-    updatedAt    DateTime @updatedAt
+model UserResponse {
+    id              String   @id @default(uuid())
+    userId          String // Référence à l'utilisateur
+    user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+    scenarioId      String // Référence au scénario
+    scenario        Scenario @relation(fields: [scenarioId], references: [id], onDelete: Cascade)
+    questionId      String // ID de la question
+    selectedAnswers String[] // IDs des options sélectionnées
+    isCorrect       Boolean // Indique si la réponse est correcte
+    score           Int // Score obtenu pour cette réponse
+    createdAt       DateTime @default(now())
+    updatedAt       DateTime @updatedAt
 }

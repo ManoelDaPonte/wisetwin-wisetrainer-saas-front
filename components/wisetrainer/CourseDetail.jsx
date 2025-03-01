@@ -1,3 +1,4 @@
+//components/wisetrainer/CourseDetail.jsx
 "use client";
 import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
@@ -25,6 +26,7 @@ import Image from "next/image";
 import axios from "axios";
 import { useAzureContainer } from "@/lib/hooks/useAzureContainer";
 import UnityBuild from "@/components/wisetrainer/UnityBuild";
+import QuestionnaireDebug from "@/components/wisetrainer/QuestionnaireDebug";
 import WISETRAINER_CONFIG from "@/lib/config/wisetrainer";
 
 export default function CourseDetail({ params }) {
@@ -38,6 +40,7 @@ export default function CourseDetail({ params }) {
 	const [activeTab, setActiveTab] = useState("details");
 	const [showQuestionnaire, setShowQuestionnaire] = useState(false);
 	const [currentScenario, setCurrentScenario] = useState(null);
+	const [selectedModule, setSelectedModule] = useState(null);
 
 	// Extraire courseId des paramètres
 	useEffect(() => {
@@ -48,7 +51,6 @@ export default function CourseDetail({ params }) {
 
 	// Charger les détails du cours quand courseId et containerName sont disponibles
 	useEffect(() => {
-		// Corrigé: Initialement isLoading est true, donc cette condition n'était jamais vérifiée
 		if (courseId && containerName && !containerLoading) {
 			fetchCourseDetails();
 		}
@@ -61,68 +63,119 @@ export default function CourseDetail({ params }) {
 				`Chargement des détails du cours ${courseId} pour le container ${containerName}`
 			);
 
-			// Pour l'instant, nous allons simuler les données du cours et de la progression
-			const courseDetails = {
-				id: courseId,
-				name: formatCourseName(courseId),
-				description: `Formation complète sur ${formatCourseName(
-					courseId
-				).toLowerCase()}. Cette formation vous apprendra les bases essentielles pour maîtriser ${formatCourseName(
-					courseId
-				).toLowerCase()} en environnement industriel.`,
-				difficulty: "Intermédiaire",
-				duration: "45 min",
-				category: "Sécurité industrielle",
-				imageUrl: WISETRAINER_CONFIG.DEFAULT_IMAGE,
-				lastAccessed: new Date().toISOString(),
-				completedDate: null,
-				author: "Équipe WiseTwin",
-				modules: [
-					{
-						id: "module-1",
-						title: "Introduction",
-						description: "Présentation des concepts de base",
-						completed: true,
-						score: 85,
-					},
-					{
-						id: "module-2",
-						title: "Évaluation des risques",
-						description:
-							"Identification et évaluation des dangers potentiels",
-						completed: false,
-						score: 0,
-					},
-					{
-						id: "module-3",
-						title: "Procédures de sécurité",
-						description: "Mise en œuvre des protocoles de sécurité",
-						completed: false,
-						score: 0,
-					},
-					{
-						id: "module-4",
-						title: "Intervention d'urgence",
-						description: "Réponse aux situations critiques",
-						completed: false,
-						score: 0,
-					},
-				],
-			};
+			// Charger les détails du cours depuis le fichier de configuration
+			let courseConfig;
+			try {
+				courseConfig = require(`@/lib/config/wisetrainer/courses/${courseId}.json`);
+			} catch (e) {
+				console.warn(
+					`Fichier de configuration pour ${courseId} non trouvé, utilisation de valeurs par défaut`
+				);
+				courseConfig = {
+					id: courseId,
+					name: formatCourseName(courseId),
+					description: `Formation complète sur ${formatCourseName(
+						courseId
+					).toLowerCase()}. Cette formation vous apprendra les bases essentielles pour maîtriser ${formatCourseName(
+						courseId
+					).toLowerCase()} en environnement industriel.`,
+					difficulty: "Intermédiaire",
+					duration: "45 min",
+					category: "Sécurité industrielle",
+					modules: [],
+				};
+			}
 
-			const userProgressData = {
-				progress: 25, // pourcentage global
-				startDate: new Date(
-					Date.now() - 7 * 24 * 60 * 60 * 1000
-				).toISOString(), // 7 jours avant
-				lastAccessed: new Date().toISOString(),
-				totalScore: 85,
-				completedModules: 1,
-				totalModules: 4,
-			};
+			// Récupérer la progression de l'utilisateur depuis l'API
+			try {
+				const progressResponse = await axios.get(
+					`${WISETRAINER_CONFIG.API_ROUTES.USER_TRAININGS}/${containerName}`
+				);
 
-			setCourse(courseDetails);
-			setUserProgress(userProgressData);
+				const courseProgress = progressResponse.data.trainings?.find(
+					(t) => t.id === courseId
+				);
+
+				if (courseProgress) {
+					setUserProgress({
+						progress: courseProgress.progress,
+						startDate: courseProgress.startedAt,
+						lastAccessed: courseProgress.lastAccessed,
+						completedAt: courseProgress.completedAt,
+						completedModules:
+							courseProgress.modules?.filter((m) => m.completed)
+								.length || 0,
+						totalModules:
+							courseProgress.modules?.length ||
+							courseConfig.modules.length,
+					});
+
+					// Mettre à jour le statut des modules dans courseConfig
+					const updatedModules = courseConfig.modules.map(
+						(module) => {
+							const moduleProgress = courseProgress.modules?.find(
+								(m) => m.id === module.id
+							);
+
+							return {
+								...module,
+								completed: moduleProgress?.completed || false,
+								score: moduleProgress?.score || 0,
+							};
+						}
+					);
+
+					setCourse({
+						...courseConfig,
+						modules: updatedModules,
+					});
+				} else {
+					const totalModulesCount = courseConfig.modules.length;
+
+					setUserProgress({
+						progress: courseProgress
+							? Math.min(
+									100,
+									Math.round(
+										((courseProgress.modules?.filter(
+											(m) => m.completed
+										).length || 0) *
+											100) /
+											totalModulesCount
+									)
+							  )
+							: 0,
+						startDate:
+							courseProgress?.startedAt ||
+							new Date().toISOString(),
+						lastAccessed:
+							courseProgress?.lastAccessed ||
+							new Date().toISOString(),
+						completedModules:
+							courseProgress?.modules?.filter((m) => m.completed)
+								.length || 0,
+						totalModules: totalModulesCount, // Utiliser le nombre réel de modules
+					});
+
+					setCourse(courseConfig);
+				}
+			} catch (error) {
+				console.error(
+					"Erreur lors de la récupération de la progression:",
+					error
+				);
+
+				// En cas d'erreur, utiliser les données du fichier de configuration sans progression
+				setUserProgress({
+					progress: 0,
+					startDate: new Date().toISOString(),
+					lastAccessed: new Date().toISOString(),
+					completedModules: 0,
+					totalModules: courseConfig.modules.length,
+				});
+
+				setCourse(courseConfig);
+			}
 		} catch (error) {
 			console.error(
 				"Erreur lors de la récupération des détails du cours:",
@@ -152,9 +205,11 @@ export default function CourseDetail({ params }) {
 		router.push("/wisetrainer");
 	};
 
-	const handleScenarioComplete = (scenarioId, success, score) => {
+	const handleScenarioComplete = async (scenarioId, success, score) => {
+		const updatedCompletedModules = userProgress.completedModules + 1;
+		const totalModules = course.modules.length;
+
 		// Cette fonction sera appelée lorsqu'un questionnaire est complété
-		// On pourrait mettre à jour la progression de l'utilisateur ici
 		console.log(
 			`Scénario ${scenarioId} complété avec ${
 				success ? "succès" : "échec"
@@ -169,27 +224,61 @@ export default function CourseDetail({ params }) {
 			unityBuildRef.current.completeQuestionnaire(scenarioId, success);
 		}
 
-		// Mettre à jour la progression (à remplacer par un appel API)
-		if (success && course) {
-			const updatedModules = course.modules.map((module, index) => {
-				if (index === 1 && !module.completed) {
-					// Simuler la complétion du deuxième module
-					return { ...module, completed: true, score };
-				}
-				return module;
-			});
+		// Mettre à jour la progression en base de données
+		try {
+			// Trouver le module correspondant au scénario
+			const completedModule = course.modules.find(
+				(m) => m.id === scenarioId
+			);
 
-			setCourse({
-				...course,
-				modules: updatedModules,
-			});
+			if (completedModule) {
+				// Appeler l'API pour mettre à jour la progression
+				await axios.post(
+					WISETRAINER_CONFIG.API_ROUTES.UPDATE_PROGRESS,
+					{
+						userId: containerName,
+						trainingId: courseId,
+						progress: Math.round(
+							((userProgress.completedModules + 1) /
+								userProgress.totalModules) *
+								100
+						),
+						completedModule: scenarioId,
+						moduleScore: score,
+					}
+				);
 
-			setUserProgress((prev) => ({
-				...prev,
-				progress: Math.min(50, prev.progress + 25),
-				completedModules: 2,
-				totalScore: prev.totalScore + score,
-			}));
+				// Mettre à jour l'état local
+				const updatedModules = course.modules.map((module) => {
+					if (module.id === scenarioId) {
+						return { ...module, completed: true, score };
+					}
+					return module;
+				});
+
+				setCourse({
+					...course,
+					modules: updatedModules,
+				});
+				setUserProgress({
+					...userProgress,
+					progress: Math.min(
+						100,
+						Math.round(
+							(updatedCompletedModules * 100) / totalModules
+						)
+					),
+					completedModules: updatedCompletedModules,
+				});
+
+				// Rafraîchir les données du cours
+				await fetchCourseDetails();
+			}
+		} catch (error) {
+			console.error(
+				"Erreur lors de la mise à jour de la progression:",
+				error
+			);
 		}
 	};
 
@@ -197,6 +286,21 @@ export default function CourseDetail({ params }) {
 		// Cette fonction sera appelée lorsque le build Unity demande un questionnaire
 		setCurrentScenario(scenario);
 		setShowQuestionnaire(true);
+	};
+
+	const handleModuleSelect = async (moduleId) => {
+		setSelectedModule(moduleId);
+		setActiveTab("questionnaire");
+
+		try {
+			// Récupérer les détails du scénario/module
+			const response = await axios.get(
+				`${WISETRAINER_CONFIG.API_ROUTES.FETCH_SCENARIO}/${moduleId}`
+			);
+			setCurrentScenario(response.data);
+		} catch (error) {
+			console.error("Erreur lors de la récupération du scénario:", error);
+		}
 	};
 
 	// Afficher un loader pendant le chargement initial
@@ -307,6 +411,9 @@ export default function CourseDetail({ params }) {
 					<TabsTrigger value="training" className="px-6">
 						Formation en 3D
 					</TabsTrigger>
+					<TabsTrigger value="questionnaire" className="px-6">
+						Questionnaire (Debug)
+					</TabsTrigger>
 				</TabsList>
 
 				<TabsContent value="details">
@@ -344,9 +451,18 @@ export default function CourseDetail({ params }) {
 															</span>
 														)}
 													</div>
-													<div className="flex-1">
+													<div className="flex-1 group">
 														<h3 className="text-lg font-medium mb-1 flex items-center">
-															{module.title}
+															<span
+																className="cursor-pointer hover:text-wisetwin-blue dark:hover:text-wisetwin-blue-light"
+																onClick={() =>
+																	handleModuleSelect(
+																		module.id
+																	)
+																}
+															>
+																{module.title}
+															</span>
 															{module.completed && (
 																<span className="ml-2 text-sm bg-green-100 text-green-800 px-2 py-0.5 rounded-full dark:bg-green-900 dark:text-green-200">
 																	{
@@ -359,6 +475,19 @@ export default function CourseDetail({ params }) {
 														<p className="text-gray-600 dark:text-gray-400 text-sm">
 															{module.description}
 														</p>
+														<Button
+															variant="outline"
+															size="sm"
+															className="mt-2 opacity-0 group-hover:opacity-100 transition-opacity"
+															onClick={() =>
+																handleModuleSelect(
+																	module.id
+																)
+															}
+														>
+															Tester le
+															questionnaire
+														</Button>
 													</div>
 												</div>
 												{index <
@@ -384,8 +513,7 @@ export default function CourseDetail({ params }) {
 												Auteur
 											</dt>
 											<dd className="font-medium">
-												{course?.author ||
-													"Non spécifié"}
+												{course?.author || "WiseTwin"}
 											</dd>
 										</div>
 										{userProgress?.startDate && (
@@ -412,14 +540,14 @@ export default function CourseDetail({ params }) {
 												</dd>
 											</div>
 										)}
-										{course?.completedDate && (
+										{userProgress?.completedAt && (
 											<div>
 												<dt className="text-sm text-gray-500 dark:text-gray-400">
 													Complété le
 												</dt>
 												<dd className="font-medium">
 													{formatDate(
-														course.completedDate
+														userProgress.completedAt
 													)}
 												</dd>
 											</div>
@@ -437,12 +565,22 @@ export default function CourseDetail({ params }) {
 										<div className="text-center">
 											<div className="inline-flex items-center justify-center h-24 w-24 rounded-full bg-blue-100 dark:bg-blue-900 mb-4">
 												<span className="text-2xl font-bold text-blue-600 dark:text-blue-300">
-													{userProgress?.totalScore ||
-														0}
+													{course?.modules?.reduce(
+														(total, module) =>
+															total +
+															(module.completed
+																? module.score
+																: 0),
+														0
+													) /
+														(course?.modules?.filter(
+															(m) => m.completed
+														).length || 1)}
+													%
 												</span>
 											</div>
 											<h3 className="text-lg font-medium">
-												Score total
+												Score moyen
 											</h3>
 										</div>
 
@@ -592,6 +730,30 @@ export default function CourseDetail({ params }) {
 									</Button>
 								</div>
 							</div>
+						</div>
+					)}
+				</TabsContent>
+
+				<TabsContent value="questionnaire">
+					{currentScenario ? (
+						<QuestionnaireDebug
+							scenario={currentScenario}
+							userId={containerName}
+							courseId={courseId}
+							onComplete={handleScenarioComplete}
+						/>
+					) : (
+						<div className="text-center py-12">
+							<p className="text-lg mb-4">
+								Aucun questionnaire sélectionné
+							</p>
+							<p className="text-gray-500 mb-6">
+								Veuillez sélectionner un module depuis l'onglet
+								"Détails du cours"
+							</p>
+							<Button onClick={() => setActiveTab("details")}>
+								Voir les modules
+							</Button>
 						</div>
 					)}
 				</TabsContent>

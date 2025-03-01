@@ -1,0 +1,182 @@
+{
+    "id": "wisetrainer-template-v2",
+    "name": "Techniques avancées de prévention des risques",
+    "description": "Maîtrisez les techniques avancées de prévention des risques en environnement industriel complexe",
+    "imageUrl": "/images/png/placeholder.png",
+    "category": "Sécurité",
+    "difficulty": "Avancé",
+    "duration": "45 min",
+    "modules": [
+      {
+        "id": "equipment-safety",
+        "order": 1,
+        "title": "Sécurité des équipements lourds",
+        "description": "Apprenez à garantir la sécurité lors de l'utilisation d'équipements industriels lourds",
+        "questions": [
+          {
+            "id": "equipment-safety-q1",
+            "text": "Quelle est la vérification prioritaire avant d'utiliser un équipement lourd?",
+            "type": "SINGLE",
+            "options": [
+              {
+                "id": "es-q1-o1",
+                "text": "La date de fabrication de l'équipement",
+                "isCorrect": false
+              },
+              {
+                "id": "es-q1-o2",
+                "text": "L'état des systèmes de sécurité et d'arrêt d'urgence",
+                "isCorrect": true
+              },
+              {
+                "id": "es-q1-o3",
+                "text": "La marque de l'équipement",
+                "isCorrect": false
+              }
+            ]
+          },
+          {
+            "id": "equipment-safety-q2",
+            "text": "Quelles sont les précautions à prendre lors du travail à proximité d'équipements lourds en mouvement?",
+            "type": "MULTIPLE",
+            "options": [
+              {
+                "id": "es-q2-o1",
+                "text": "Porter des EPI haute visibilité",
+                "isCorrect": true
+              },
+              {
+                "id": "es-q2-o2",
+                "text": "Maintenir une distance de sécurité avec les zones de mouvement",
+                "isCorrect": true
+              },
+              {
+                "id": "es-q2-o3",
+                "text": "Utiliser des écouteurs pour se concentrer sur son travail",
+                "isCorrect": false
+              },
+              {
+                "id": "es-q2-o4",
+                "text": "Établir un contact visuel avec l'opérateur avant d'approcher",
+                "isCorrect": true
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "confined-spaces",
+        "order": 2,
+        "title": "Intervention en espaces confinés",
+        "description": "Maîtrisez les protocoles de sécurité pour les interventions en espaces confinés",
+        "questions": [
+          {
+            "id": "confined-spaces-q1",
+            "text": "Quelle est la première mesure à prendre avant d'entrer dans un espace confiné?",
+            "type": "SINGLE",
+            "options": [
+              {
+                "id": "cs-q1-o1",
+                "text": "Vérifier la présence d'un collègue à proximité",
+                "isCorrect": false
+              },
+              {
+                "id": "cs-q1-o2",
+                "text": "Mesurer la concentration en oxygène et en gaz dangereux",
+                "isCorrect": true
+              },
+              {
+                "id": "cs-q1-o3",
+                "text": "S'assurer d'avoir une lampe torche",
+                "isCorrect": false
+              }
+            ]
+          },
+          {
+            "id": "confined-spaces-q2",
+            "text": "Quels éléments sont indispensables pour une intervention sécurisée en espace confiné?",
+            "type": "MULTIPLE",
+            "options": [
+              {
+                "id": "cs-q2-o1",
+                "text": "Un système de ventilation adéquat",
+                "isCorrect": true
+              },
+              {
+                "id": "cs-q2-o2",
+                "text": "Un surveillant extérieur en communication constante",
+                "isCorrect": true
+              },
+              {
+                "id": "cs-q2-o3",
+                "text": "Une autorisation d'intervention en espace confiné",
+                "isCorrect": true
+              },
+              {
+                "id": "cs-q2-o4",
+                "text": "Réaliser l'intervention seul pour plus d'efficacité",
+                "isCorrect": false
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "electrical-safety",
+        "order": 3,
+        "title": "Sécurité électrique",
+        "description": "Apprenez à identifier et prévenir les risques électriques en milieu industriel",
+        "questions": [
+          {
+            "id": "electrical-safety-q1",
+            "text": "Quelle est la première action à réaliser avant d'intervenir sur une installation électrique?",
+            "type": "SINGLE",
+            "options": [
+              {
+                "id": "el-q1-o1",
+                "text": "Porter des gants isolants",
+                "isCorrect": false
+              },
+              {
+                "id": "el-q1-o2",
+                "text": "Consigner l'installation et vérifier l'absence de tension",
+                "isCorrect": true
+              },
+              {
+                "id": "el-q1-o3",
+                "text": "Informer ses collègues de l'intervention",
+                "isCorrect": false
+              }
+            ]
+          },
+          {
+            "id": "electrical-safety-q2",
+            "text": "Quels équipements de protection sont nécessaires pour une intervention sur une installation basse tension?",
+            "type": "MULTIPLE",
+            "options": [
+              {
+                "id": "el-q2-o1",
+                "text": "Gants isolants adaptés à la tension",
+                "isCorrect": true
+              },
+              {
+                "id": "el-q2-o2",
+                "text": "Écran facial ou lunettes de protection",
+                "isCorrect": true
+              },
+              {
+                "id": "el-q2-o3",
+                "text": "Vêtements conducteurs pour évacuer la charge",
+                "isCorrect": false
+              },
+              {
+                "id": "el-q2-o4",
+                "text": "Tapis isolant ou tabouret isolant",
+                "isCorrect": true
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }

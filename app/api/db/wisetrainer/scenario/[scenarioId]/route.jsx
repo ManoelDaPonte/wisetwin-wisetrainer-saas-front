@@ -1,61 +1,55 @@
-// app/api/db/wisetrainer/scenario/[scenarioId]/route.js
-import { PrismaClient } from "@prisma/client";
+//app/api/db/wisetrainer/save-questionnaire/route.jsx
 import { NextResponse } from "next/server";
-
-const prisma = new PrismaClient();
+import wisetrainerTemplate from "@/lib/config/wisetrainer/courses/wisetrainer-template.json";
 
 export async function GET(request, { params }) {
 	try {
-		const { scenarioId } = params;
+		const { scenarioId } = await params;
 
-		// Récupérer le scénario avec ses questions et options
-		const scenario = await prisma.scenario.findUnique({
-			where: {
-				id: scenarioId,
-			},
-			include: {
-				questions: {
-					include: {
-						options: true,
-					},
-				},
-			},
-		});
-
-		if (!scenario) {
+		if (!scenarioId) {
 			return NextResponse.json(
-				{ error: "Scenario not found" },
+				{ error: "L'identifiant du scénario est requis" },
+				{ status: 400 }
+			);
+		}
+
+		// Trouver le module correspondant dans la configuration
+		const module = wisetrainerTemplate.modules.find(
+			(m) => m.id === scenarioId
+		);
+
+		if (!module) {
+			return NextResponse.json(
+				{ error: "Scénario non trouvé" },
 				{ status: 404 }
 			);
 		}
 
-		// Formater les données pour le client
-		const formattedQuestions = scenario.questions.map((q) => ({
+		// Formatter les données pour le client
+		// Important: ne pas inclure l'information sur les réponses correctes
+		const formattedQuestions = module.questions.map((q) => ({
 			id: q.id,
 			text: q.text,
-			correctAnswerId: q.correctAnswerId,
-			correctAnswerIds: q.correctAnswerIds,
 			type: q.type,
-			explanation: q.explanation,
 			options: q.options.map((o) => ({
 				id: o.id,
 				text: o.text,
-				isCorrect: o.isCorrect,
+				// isCorrect n'est pas inclus pour ne pas donner la réponse
 			})),
 		}));
 
 		const formattedScenario = {
-			id: scenario.id,
-			title: scenario.title,
-			description: scenario.description,
+			id: module.id,
+			title: module.title,
+			description: module.description,
 			questions: formattedQuestions,
 		};
 
 		return NextResponse.json(formattedScenario);
 	} catch (error) {
-		console.error("Error fetching scenario:", error);
+		console.error("Erreur lors de la récupération du scénario:", error);
 		return NextResponse.json(
-			{ error: "Failed to fetch scenario" },
+			{ error: "Échec de la récupération du scénario" },
 			{ status: 500 }
 		);
 	}

@@ -104,7 +104,7 @@ export default function LeftNavBar() {
 			<div className="py-6 flex justify-center items-center">
 				<div className="px-4 flex items-center">
 					<Image
-						src="logos/logo_parrot_dark.svg"
+						src="/logos/logo_parrot_dark.svg"
 						alt="Wise Twin Logo"
 						width={15}
 						height={15}
