@@ -28,6 +28,10 @@ export default function WiseTrainerCourses() {
 	const [flippedCardId, setFlippedCardId] = useState(null);
 	const [isImporting, setIsImporting] = useState(false);
 
+	useEffect(() => {
+		fetchData();
+	}, [metadata]);
+
 	const fetchData = async () => {
 		setIsLoading(true);
 
