@@ -1,9 +1,9 @@
 // app/layout.jsx
 import { Inter } from "next/font/google";
 import Image from "next/image";
-import TopNavBar from "@/components/TopNavBar";
-import LeftNavBar from "@/components/LeftNavBar";
-import TermsAcceptanceModal from "@/components/TermsAcceptanceModal";
+import TopNavBar from "@/components/layout/TopNavBar";
+import LeftNavBar from "@/components/layout/LeftNavBar";
+import TermsAcceptanceModal from "@/components/cookies/TermsAcceptanceModal";
 import { UserProvider } from "@auth0/nextjs-auth0/client";
 import "@/app/globals.css";
 

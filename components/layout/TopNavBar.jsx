@@ -1,6 +1,6 @@
 "use client";
 import { usePathname } from "next/navigation";
-import UserIconNav from "@/components/UserIconNav";
+import UserIconNav from "@/components/layout/UserIconNav";
 
 const TopNavBar = () => {
 	const pathname = usePathname();
