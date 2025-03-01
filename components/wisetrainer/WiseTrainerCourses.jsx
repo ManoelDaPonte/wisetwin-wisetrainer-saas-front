@@ -1,4 +1,3 @@
-// components/wisetrainer/WiseTrainerCourses.jsx
 "use client";
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -16,9 +15,10 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { Info, Clock, BookOpen } from "lucide-react";
+import { Clock } from "lucide-react";
 import axios from "axios";
 import { useAzureContainer } from "@/lib/hooks/useAzureContainer";
+import WISETRAINER_CONFIG from "@/lib/config/wisetrainer";
 
 export default function WiseTrainerCourses() {
 	const router = useRouter();
@@ -40,90 +40,138 @@ export default function WiseTrainerCourses() {
 		setIsLoading(true);
 
 		try {
-			// Récupérer les formations disponibles
-			const buildsResponse = await axios.get(
-				"/api/azure/wisetrainer/builds"
+			console.log(
+				"Récupération des formations avec containerName:",
+				containerName
 			);
-			setAvailableCourses(buildsResponse.data.builds || []);
 
-			// Récupérer les formations inscrites par l'utilisateur
-			if (containerName) {
-				const userTrainingsResponse = await axios.get(
-					`/api/db/wisetrainer/user-trainings/${containerName}`
-				);
-
-				// Vérifier si les formations existent toujours dans Azure
-				const userTrainings =
-					userTrainingsResponse.data.trainings || [];
-				const validTrainings = [];
-
-				for (const training of userTrainings) {
-					// Vérifier si le fichier existe toujours dans Azure
-					try {
-						const blobExists = await axios.get(
-							"/api/azure/check-blob-exists",
-							{
-								params: {
-									container: containerName,
-									blob: `wisetrainer/${training.id}.data.gz`,
-								},
-							}
-						);
-
-						if (blobExists.data.exists) {
-							validTrainings.push(training);
-						} else {
-							console.log(
-								`Formation ${training.id} supprimée d'Azure, nettoyage en cours...`
-							);
-							// Supprimer de la BD
-							await axios.delete(
-								`/api/db/wisetrainer/unenroll/${containerName}/${training.id}`
-							);
-						}
-					} catch (error) {
-						console.error(
-							`Erreur lors de la vérification de ${training.id}:`,
-							error
-						);
-						// En cas d'erreur, on conserve quand même la formation
-						validTrainings.push(training);
-					}
+			// Récupérer les formations disponibles dans le container source
+			const buildsResponse = await axios.get(
+				WISETRAINER_CONFIG.API_ROUTES.LIST_BUILDS,
+				{
+					params: {
+						container: WISETRAINER_CONFIG.CONTAINER_NAMES.SOURCE,
+					},
 				}
+			);
 
-				// Enrichir les données avec les informations des formations disponibles
-				const enrichedTrainings = validTrainings.map((training) => {
-					// Recherche plus stricte pour éviter les doublons
-					const availableCourse = buildsResponse.data.builds.find(
-						(build) => build.id === training.id
+			// Transformation des noms de fichiers en objets de formation
+			const builds = processBuildNames(buildsResponse.data.blobs || []);
+			setAvailableCourses(builds);
+
+			// Récupérer les formations de l'utilisateur
+			if (containerName) {
+				try {
+					// Vérifier les fichiers dans le container de l'utilisateur
+					const userBuildsResponse = await axios.get(
+						WISETRAINER_CONFIG.API_ROUTES.LIST_BUILDS,
+						{
+							params: {
+								container: containerName,
+								prefix: WISETRAINER_CONFIG.BLOB_PREFIXES
+									.WISETRAINER,
+							},
+						}
 					);
 
-					// Si aucune correspondance exacte, utiliser une correspondance par nom
-					const matchedCourse =
-						availableCourse ||
-						buildsResponse.data.builds.find(
-							(build) => build.name === training.name
-						);
+					// Trouver les cours que l'utilisateur a déjà dans son container
+					const userBuilds = processBuildNames(
+						userBuildsResponse.data.blobs || []
+					);
 
-					return {
-						...training,
-						name: matchedCourse?.name || training.name,
-						description:
-							matchedCourse?.description ||
-							"No description available",
-						difficulty: matchedCourse?.difficulty || "Intermediate",
-						duration: matchedCourse?.duration || "30m",
-						category: matchedCourse?.category || "Safety",
-						imageUrl: matchedCourse?.imageUrl || training.imageUrl,
-					};
-				});
+					// Enrichir les formations utilisateur avec des métadonnées de progression
+					// Pour l'instant, simulation d'une progression aléatoire
+					const userCourses = userBuilds.map((build) => ({
+						...build,
+						progress: 0, // Commencer à 0% de progression pour un nouveau cours
+						lastAccessed: new Date().toISOString(),
+					}));
 
-				setPersonalCourses(enrichedTrainings);
+					setPersonalCourses(userCourses);
+				} catch (error) {
+					console.error(
+						"Erreur lors de la récupération des formations utilisateur:",
+						error
+					);
+					// Si le container n'existe pas encore ou autre erreur, initialiser avec un tableau vide
+					setPersonalCourses([]);
+				}
 			}
 		} catch (error) {
-			console.error("Error fetching training data:", error);
+			console.error(
+				"Erreur lors de la récupération des données de formation:",
+				error
+			);
 		} finally {
 			setIsLoading(false);
+		}
+	};
+
+	// Helper pour transformer les noms de fichiers en objets cours
+	const processBuildNames = (blobs) => {
+		// Extraire les noms uniques des builds (sans extension)
+		const buildNames = new Set();
+		blobs.forEach((blob) => {
+			// Par exemple: wisetrainer/safety-101.data.gz -> safety-101
+			const match = blob.match(
+				/(?:wisetrainer\/)?([^\/]+?)(?:\.data\.gz|\.framework\.js\.gz|\.loader\.js|\.wasm\.gz)$/
+			);
+			if (match && match[1]) {
+				buildNames.add(match[1]);
+			}
+		});
+
+		// Créer des objets cours à partir des noms
+		return Array.from(buildNames).map((name) => ({
+			id: name,
+			name: formatCourseName(name),
+			description: `Formation interactive sur ${formatCourseName(
+				name
+			).toLowerCase()}`,
+			imageUrl: WISETRAINER_CONFIG.DEFAULT_IMAGE, // Utiliser l'image placeholder par défaut
+			difficulty: "Intermédiaire",
+			duration: "30 min",
+			category: "Sécurité industrielle",
+		}));
+	};
+
+	// Helper pour formater le nom du cours à partir de son ID
+	const formatCourseName = (id) => {
+		return id
+			.split("-")
+			.map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+			.join(" ");
+	};
+
+	const handleEnrollCourse = async (course) => {
+		if (!containerName) {
+			alert("Container non disponible. Veuillez vous reconnecter.");
+			return;
+		}
+
+		setIsImporting(course.id);
+
+		try {
+			// Importer le cours depuis le container source vers le container de l'utilisateur
+			await axios.post(
+				`${WISETRAINER_CONFIG.API_ROUTES.IMPORT_BUILD}/${containerName}/${course.id}`,
+				{
+					sourceContainer: WISETRAINER_CONFIG.CONTAINER_NAMES.SOURCE,
+					destContainer: containerName,
+					buildName: course.id,
+					destPrefix: WISETRAINER_CONFIG.BLOB_PREFIXES.WISETRAINER,
+				}
+			);
+
+			// Rafraîchir les données
+			await fetchData();
+			setActiveTab("personal");
+			alert(`Inscription réussie à la formation "${course.name}"!`);
+		} catch (error) {
+			console.error("Erreur lors de l'inscription au cours:", error);
+			alert("Échec de l'inscription au cours. Veuillez réessayer.");
+		} finally {
+			setIsImporting(null);
 		}
 	};
 
@@ -137,62 +185,36 @@ export default function WiseTrainerCourses() {
 		}
 
 		try {
-			await axios.delete(
-				`/api/db/wisetrainer/unenroll/${containerName}/${course.id}`
+			// Appeler l'API pour supprimer les fichiers du container
+			const response = await axios.delete(
+				`${WISETRAINER_CONFIG.API_ROUTES.UNENROLL}/${containerName}/${course.id}`
 			);
 
-			// Mettre à jour la liste des formations
-			setPersonalCourses(
-				personalCourses.filter((c) => c.id !== course.id)
-			);
-			alert("Vous avez été désabonné avec succès.");
+			if (response.data.success) {
+				// Mettre à jour la liste locale
+				setPersonalCourses(
+					personalCourses.filter((c) => c.id !== course.id)
+				);
+				alert("Désabonnement réussi.");
+			} else {
+				throw new Error(
+					response.data.error || "Échec du désabonnement"
+				);
+			}
 		} catch (error) {
 			console.error("Erreur lors du désabonnement:", error);
-			alert("Une erreur est survenue lors du désabonnement.");
+			alert(
+				"Une erreur est survenue lors du désabonnement. Veuillez réessayer."
+			);
 		}
 	};
 
 	const handleCourseSelect = (course) => {
-		// Naviguer vers la page de cours spécifique
 		router.push(`/wisetrainer/${course.id}`);
 	};
 
-	const handleEnrollCourse = async (course) => {
-		if (!containerName) {
-			alert("Container name not available. Please try again later.");
-			return;
-		}
-
-		setIsImporting(course.id);
-
-		try {
-			// Importer le cours dans le container de l'utilisateur
-			await axios.post(
-				`/api/azure/wisetrainer/import/${containerName}/${course.name}`
-			);
-
-			// Rafraîchir les données après l'import
-			await fetchData();
-
-			// Changer d'onglet pour montrer les cours inscrits
-			setActiveTab("personal");
-
-			// Notification de succès
-			alert(`Successfully enrolled in ${course.name} training!`);
-		} catch (error) {
-			console.error("Error enrolling in course:", error);
-			alert("Failed to enroll in course. Please try again.");
-		} finally {
-			setIsImporting(null);
-		}
-	};
-
 	const toggleCardFlip = (courseId) => {
-		if (flippedCardId === courseId) {
-			setFlippedCardId(null);
-		} else {
-			setFlippedCardId(courseId);
-		}
+		setFlippedCardId(flippedCardId === courseId ? null : courseId);
 	};
 
 	// Animation variants
@@ -200,9 +222,7 @@ export default function WiseTrainerCourses() {
 		hidden: { opacity: 0 },
 		visible: {
 			opacity: 1,
-			transition: {
-				staggerChildren: 0.1,
-			},
+			transition: { staggerChildren: 0.1 },
 		},
 	};
 
@@ -211,36 +231,24 @@ export default function WiseTrainerCourses() {
 		visible: {
 			y: 0,
 			opacity: 1,
-			transition: {
-				duration: 0.5,
-			},
+			transition: { duration: 0.5 },
 		},
 	};
 
-	// Animation pour le flip de la carte
-	const cardVariants = {
-		front: {
-			rotateY: 0,
-			transition: { duration: 0.5 },
-		},
-		back: {
-			rotateY: 180,
-			transition: { duration: 0.5 },
-		},
-	};
+	// Afficher un message de chargement si le containerName n'est pas encore disponible
+	if (containerLoading) {
+		return (
+			<div className="flex items-center justify-center h-64">
+				<div className="text-center">
+					<div className="animate-spin h-10 w-10 border-4 border-wisetwin-blue border-t-transparent rounded-full mb-4 mx-auto"></div>
+					<p>Chargement de vos informations...</p>
+				</div>
+			</div>
+		);
+	}
 
 	return (
-		<div className="container mx-auto p-6">
-			<div className="mb-8">
-				<h1 className="text-3xl font-bold text-wisetwin-darkblue dark:text-white mb-2">
-					WiseTrainer™ Programs
-				</h1>
-				<p className="text-gray-600 dark:text-gray-300">
-					Interactive industrial safety and operational training
-					courses
-				</p>
-			</div>
-
+		<div className="container mx-auto">
 			<Tabs
 				defaultValue="personal"
 				className="w-full"
@@ -249,17 +257,17 @@ export default function WiseTrainerCourses() {
 			>
 				<TabsList className="mb-8">
 					<TabsTrigger value="personal" className="px-6">
-						My Training
+						Mes Formations
 					</TabsTrigger>
 					<TabsTrigger value="catalog" className="px-6">
-						Course Catalog
+						Catalogue
 					</TabsTrigger>
 				</TabsList>
 
 				<TabsContent value="personal">
 					<div className="flex justify-between items-center mb-6">
 						<h2 className="text-xl font-semibold text-wisetwin-darkblue dark:text-white">
-							Your Training Programs
+							Vos programmes de formation
 						</h2>
 					</div>
 
@@ -285,17 +293,17 @@ export default function WiseTrainerCourses() {
 						<div className="text-center py-16">
 							<div className="text-4xl mb-4">🎓</div>
 							<h3 className="text-lg font-medium mb-2">
-								No courses yet
+								Aucune formation
 							</h3>
 							<p className="text-gray-500 dark:text-gray-400 mb-6">
-								Enroll in a course from our catalog to get
-								started
+								Inscrivez-vous à une formation depuis notre
+								catalogue
 							</p>
 							<Button
 								className="bg-wisetwin-blue hover:bg-wisetwin-blue-light"
 								onClick={() => setActiveTab("catalog")}
 							>
-								Browse Courses
+								Parcourir le catalogue
 							</Button>
 						</div>
 					) : (
@@ -317,21 +325,16 @@ export default function WiseTrainerCourses() {
 										}
 									>
 										<div className="relative h-48 w-full">
-											<div className="absolute inset-0 bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
-												<Image
-													src={
-														course.imageUrl ||
-														"/images/wisetrainer/training-default.jpg"
-													}
-													alt={course.name}
-													fill
-													className="object-cover"
-													onError={(e) => {
-														e.target.src =
-															"/images/wisetrainer/training-default.jpg";
-													}}
-												/>
-											</div>
+											<Image
+												src={course.imageUrl}
+												alt={course.name}
+												fill
+												className="object-cover rounded-t-lg"
+												onError={(e) => {
+													e.target.src =
+														WISETRAINER_CONFIG.DEFAULT_IMAGE;
+												}}
+											/>
 										</div>
 										<CardHeader>
 											<div className="flex justify-between items-start">
@@ -343,11 +346,11 @@ export default function WiseTrainerCourses() {
 													className="bg-blue-50 text-blue-700 dark:bg-blue-900 dark:text-blue-200"
 												>
 													{course.difficulty ||
-														"Intermediate"}
+														"Intermédiaire"}
 												</Badge>
 											</div>
 											<CardDescription>
-												Last accessed:{" "}
+												Dernier accès:{" "}
 												{new Date(
 													course.lastAccessed
 												).toLocaleDateString()}
@@ -360,7 +363,7 @@ export default function WiseTrainerCourses() {
 											<div className="space-y-2">
 												<div className="flex justify-between">
 													<span className="text-sm text-muted-foreground">
-														Progress
+														Progression
 													</span>
 													<span className="text-sm font-medium">
 														{course.progress}%
@@ -372,21 +375,21 @@ export default function WiseTrainerCourses() {
 												/>
 											</div>
 										</CardContent>
-										<CardFooter>
+										<CardFooter className="flex gap-2">
 											<Button
-												className="w-full"
+												className="flex-1"
 												onClick={(e) => {
 													e.stopPropagation();
 													handleCourseSelect(course);
 												}}
 											>
 												{course.progress > 0
-													? "Continue Training"
-													: "Start Training"}
+													? "Continuer"
+													: "Commencer"}
 											</Button>
 											<Button
 												variant="outline"
-												className="flex-1"
+												className="flex-shrink-0"
 												onClick={(e) => {
 													e.stopPropagation();
 													handleUnenroll(course);
@@ -405,11 +408,11 @@ export default function WiseTrainerCourses() {
 				<TabsContent value="catalog">
 					<div className="mb-6">
 						<h2 className="text-xl font-semibold text-wisetwin-darkblue dark:text-white">
-							Available Training Programs
+							Formations disponibles
 						</h2>
 						<p className="text-gray-600 dark:text-gray-300">
-							Discover and enroll in professional training
-							programs for your industry
+							Découvrez et inscrivez-vous à nos formations
+							professionnelles en réalité virtuelle
 						</p>
 					</div>
 
@@ -450,6 +453,10 @@ export default function WiseTrainerCourses() {
 												alt={course.name}
 												fill
 												className="object-cover rounded-t-lg"
+												onError={(e) => {
+													e.target.src =
+														WISETRAINER_CONFIG.DEFAULT_IMAGE;
+												}}
 											/>
 										</div>
 										<CardHeader>
@@ -466,7 +473,7 @@ export default function WiseTrainerCourses() {
 											</div>
 											<CardDescription className="flex items-center">
 												<Clock className="h-4 w-4 mr-1" />
-												Duration: {course.duration}
+												Durée: {course.duration}
 											</CardDescription>
 										</CardHeader>
 										<CardContent>
@@ -477,25 +484,26 @@ export default function WiseTrainerCourses() {
 											{flippedCardId === course.id && (
 												<div className="mt-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-md">
 													<h4 className="font-semibold mb-2">
-														What you'll learn:
+														Ce que vous apprendrez:
 													</h4>
 													<ul className="text-sm text-gray-600 dark:text-gray-300 list-disc pl-5 space-y-1">
 														<li>
-															Safety protocols and
-															best practices
+															Protocoles de
+															sécurité et bonnes
+															pratiques
 														</li>
 														<li>
-															Risk assessment and
-															hazard
-															identification
+															Évaluation des
+															risques
 														</li>
 														<li>
-															Emergency response
-															procedures
+															Procédures
+															d'intervention
+															d'urgence
 														</li>
 														<li>
-															Compliance with
-															industry standards
+															Conformité aux
+															normes industrielles
 														</li>
 													</ul>
 												</div>
@@ -508,12 +516,22 @@ export default function WiseTrainerCourses() {
 													handleEnrollCourse(course)
 												}
 												disabled={
-													isImporting === course.id
+													isImporting === course.id ||
+													personalCourses.some(
+														(c) =>
+															c.id === course.id
+													)
 												}
 											>
 												{isImporting === course.id
-													? "Enrolling..."
-													: "Enroll"}
+													? "Inscription..."
+													: personalCourses.some(
+															(c) =>
+																c.id ===
+																course.id
+													  )
+													? "Déjà inscrit"
+													: "S'inscrire"}
 											</Button>
 											<Button
 												className="flex-1"
@@ -524,8 +542,8 @@ export default function WiseTrainerCourses() {
 												}}
 											>
 												{flippedCardId === course.id
-													? "Less Info"
-													: "More Info"}
+													? "Moins d'infos"
+													: "Plus d'infos"}
 											</Button>
 										</CardFooter>
 									</Card>
@@ -535,6 +553,11 @@ export default function WiseTrainerCourses() {
 					)}
 				</TabsContent>
 			</Tabs>
+
+			{/* Debugging - peut être supprimé en production */}
+			<div className="mt-8 p-4 bg-gray-100 dark:bg-gray-800 rounded-lg text-sm">
+				<p>Container utilisateur: {containerName || "Non défini"}</p>
+			</div>
 		</div>
 	);
 }

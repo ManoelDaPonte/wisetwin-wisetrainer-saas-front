@@ -1,4 +1,3 @@
-// components/wisetrainer/UnityBuild.jsx
 "use client";
 
 import React, {
@@ -11,147 +10,184 @@ import React, {
 import { Unity, useUnityContext } from "react-unity-webgl";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import axios from "axios";
-import { useAzureContainer } from "@/lib/hooks/useAzureContainer";
+import WISETRAINER_CONFIG from "@/lib/config/wisetrainer";
 
-const UnityBuild = forwardRef(({ courseId, onQuestionnaireRequest }, ref) => {
-	const { containerName } = useAzureContainer();
-	const [loadingTimeout, setLoadingTimeout] = useState(false);
+const UnityBuild = forwardRef(
+	({ courseId, containerName, onQuestionnaireRequest }, ref) => {
+		const [loadingTimeout, setLoadingTimeout] = useState(false);
 
-	// Debug logs pour voir les valeurs
-	console.log("Building UnityBuild for courseId:", courseId);
-	console.log("containerName:", containerName);
+		// Définir les URLs pour les fichiers Unity
+		const loaderUrl = `/api/azure/fetch-blob-data/${containerName}/${WISETRAINER_CONFIG.BLOB_PREFIXES.WISETRAINER}${courseId}.loader.js`;
+		const dataUrl = `/api/azure/fetch-blob-data/${containerName}/${WISETRAINER_CONFIG.BLOB_PREFIXES.WISETRAINER}${courseId}.data.gz`;
+		const frameworkUrl = `/api/azure/fetch-blob-data/${containerName}/${WISETRAINER_CONFIG.BLOB_PREFIXES.WISETRAINER}${courseId}.framework.js.gz`;
+		const codeUrl = `/api/azure/fetch-blob-data/${containerName}/${WISETRAINER_CONFIG.BLOB_PREFIXES.WISETRAINER}${courseId}.wasm.gz`;
 
-	const {
-		unityProvider,
-		loadingProgression,
-		isLoaded,
-		requestFullscreen,
-		takeScreenshot,
-		unload,
-		addEventListener,
-		removeEventListener,
-		sendMessage,
-	} = useUnityContext({
-		loaderUrl: `/api/azure/fetch-blob-data/${containerName}/${courseId}.loader.js?subfolder=wisetrainer`,
-		dataUrl: `/api/azure/fetch-blob-data/${containerName}/${courseId}.data.gz?subfolder=wisetrainer`,
-		frameworkUrl: `/api/azure/fetch-blob-data/${containerName}/${courseId}.framework.js.gz?subfolder=wisetrainer`,
-		codeUrl: `/api/azure/fetch-blob-data/${containerName}/${courseId}.wasm.gz?subfolder=wisetrainer`,
-	});
+		const {
+			unityProvider,
+			loadingProgression,
+			isLoaded,
+			requestFullscreen,
+			takeScreenshot,
+			addEventListener,
+			removeEventListener,
+			sendMessage,
+		} = useUnityContext({
+			loaderUrl,
+			dataUrl,
+			frameworkUrl,
+			codeUrl,
+		});
 
-	// Expose methods to parent component through ref
-	useImperativeHandle(ref, () => ({
-		completeQuestionnaire: (scenarioId, success) => {
-			if (isLoaded) {
-				sendMessage(
-					"GameManager",
-					"OnQuestionnaireCompleted",
-					JSON.stringify({ scenarioId, success })
-				);
-			}
-		},
-		isReady: isLoaded,
-	}));
+		// Exposer des méthodes au composant parent via ref
+		useImperativeHandle(ref, () => ({
+			completeQuestionnaire: (scenarioId, success) => {
+				if (isLoaded) {
+					console.log(
+						`Notifying Unity that questionnaire ${scenarioId} was completed with ${
+							success ? "success" : "failure"
+						}`
+					);
+					sendMessage(
+						"GameManager",
+						"OnQuestionnaireCompleted",
+						JSON.stringify({ scenarioId, success })
+					);
+				}
+			},
+			isReady: isLoaded,
+		}));
 
-	// Handle Unity event for questionnaire requests
-	const handleQuestionnaireRequest = useCallback(
-		(event) => {
-			const scenarioId = event.detail;
-			console.log("Questionnaire requested for scenario:", scenarioId);
+		// Gestionnaire pour les événements Unity
+		const handleGameObjectSelected = useCallback(
+			(event) => {
+				console.log("GameObject sélectionné:", event.detail);
+				// Traiter l'interaction avec les objets du jeu
 
-			// Fetch the scenario data from the API
-			axios
-				.get(`/api/db/wisetrainer/scenario/${scenarioId}`)
-				.then((response) => {
-					if (onQuestionnaireRequest) {
-						onQuestionnaireRequest(response.data);
+				try {
+					// Analyser les données si nécessaire
+					const data =
+						typeof event.detail === "string"
+							? JSON.parse(event.detail)
+							: event.detail;
+
+					// Vérifier si on a un scenarioId
+					if (data.scenarioId) {
+						console.log(`Scénario sélectionné: ${data.scenarioId}`);
+
+						// Ici, on devrait normalement récupérer les données du scénario depuis l'API
+						// Pour l'instant, on va simuler un scénario
+						const mockScenario = {
+							id: data.scenarioId,
+							title: "Scénario de test",
+							description: "Description du scénario de test",
+						};
+
+						if (onQuestionnaireRequest) {
+							onQuestionnaireRequest(mockScenario);
+						}
 					}
-				})
-				.catch((error) => {
-					console.error("Error fetching scenario:", error);
-				});
-		},
-		[onQuestionnaireRequest]
-	);
+				} catch (error) {
+					console.error(
+						"Erreur lors du traitement de l'événement:",
+						error
+					);
+				}
+			},
+			[onQuestionnaireRequest]
+		);
 
-	// Add event listeners when Unity is loaded
-	useEffect(() => {
-		if (isLoaded) {
-			addEventListener(
-				"QuestionnaireRequest",
-				handleQuestionnaireRequest
-			);
-			addEventListener("GameObjectSelected", handleGameObjectSelected);
-		}
+		// Gestionnaire pour les demandes explicites de questionnaire
+		const handleQuestionnaireRequest = useCallback(
+			(event) => {
+				console.log("Questionnaire demandé:", event.detail);
 
-		return () => {
+				// Ici, on devrait normalement récupérer les données du scénario depuis l'API
+				// Pour l'instant, on va simuler un scénario
+				const mockScenario = {
+					id: event.detail,
+					title: "Scénario de test",
+					description: "Description du scénario de test",
+				};
+
+				if (onQuestionnaireRequest) {
+					onQuestionnaireRequest(mockScenario);
+				}
+			},
+			[onQuestionnaireRequest]
+		);
+
+		// Ajouter les écouteurs d'événements lorsque Unity est chargé
+		useEffect(() => {
 			if (isLoaded) {
-				removeEventListener(
-					"QuestionnaireRequest",
-					handleQuestionnaireRequest
-				);
-				removeEventListener(
+				addEventListener(
 					"GameObjectSelected",
 					handleGameObjectSelected
 				);
+				addEventListener(
+					"QuestionnaireRequest",
+					handleQuestionnaireRequest
+				);
 			}
-		};
-	}, [
-		isLoaded,
-		addEventListener,
-		removeEventListener,
-		handleQuestionnaireRequest,
-		handleGameObjectSelected,
-	]);
 
-	// Loading timeout detection
-	useEffect(() => {
-		if (!isLoaded && !loadingTimeout) {
-			const timer = setTimeout(() => {
-				setLoadingTimeout(true);
-			}, 60000); // 60 seconds timeout
+			return () => {
+				if (isLoaded) {
+					removeEventListener(
+						"GameObjectSelected",
+						handleGameObjectSelected
+					);
+					removeEventListener(
+						"QuestionnaireRequest",
+						handleQuestionnaireRequest
+					);
+				}
+			};
+		}, [
+			isLoaded,
+			addEventListener,
+			removeEventListener,
+			handleGameObjectSelected,
+			handleQuestionnaireRequest,
+		]);
 
-			return () => clearTimeout(timer);
-		}
-	}, [isLoaded, loadingTimeout]);
+		// Détection de timeout de chargement
+		useEffect(() => {
+			if (!isLoaded && !loadingTimeout) {
+				const timer = setTimeout(() => {
+					setLoadingTimeout(true);
+				}, 60000); // 60 secondes timeout
 
-	// Cleanup Unity on unmount
-	useEffect(() => {
-		return () => {
-			if (isLoaded && unload) {
-				unload();
+				return () => clearTimeout(timer);
 			}
-		};
-	}, [isLoaded, unload]);
+		}, [isLoaded, loadingTimeout]);
 
-	return (
-		<Card className="overflow-hidden">
-			<CardContent className="p-0">
-				<div className="aspect-video w-full relative">
-					{/* Loading state */}
+		return (
+			<div className="overflow-hidden">
+				<div className="aspect-video w-full relative bg-gray-900 rounded-lg">
+					{/* État de chargement */}
 					{!isLoaded && (
-						<div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-100 dark:bg-gray-800">
+						<div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-100 dark:bg-gray-800 rounded-lg">
 							{loadingTimeout ? (
 								<div className="text-center p-4">
 									<p className="text-red-500 mb-4">
-										The training module is taking too long
-										to load.
+										Le module de formation prend trop de
+										temps à charger.
 									</p>
 									<Button
 										onClick={() => window.location.reload()}
 									>
-										Try Again
+										Réessayer
 									</Button>
 									<p className="mt-4 text-sm text-gray-500">
-										You can also try going back to the
-										course list and selecting this course
-										again.
+										Vous pouvez également retourner à la
+										liste des cours et sélectionner ce cours
+										à nouveau.
 									</p>
 								</div>
 							) : (
 								<>
 									<div className="mb-4">
-										Loading training environment...
+										Chargement de l'environnement de
+										formation...
 									</div>
 									<div className="w-64 bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
 										<div
@@ -171,45 +207,66 @@ const UnityBuild = forwardRef(({ courseId, onQuestionnaireRequest }, ref) => {
 						</div>
 					)}
 
-					{/* Unity container */}
+					{/* Conteneur Unity */}
 					<Unity
 						unityProvider={unityProvider}
 						style={{ width: "100%", height: "100%" }}
 						className={isLoaded ? "block" : "hidden"}
 					/>
 				</div>
-			</CardContent>
-			<CardFooter className="bg-gray-50 dark:bg-gray-900 p-4">
-				<div className="flex flex-wrap gap-2 w-full justify-center">
-					<Button
-						variant="outline"
-						size="sm"
-						onClick={() => requestFullscreen(true)}
-						disabled={!isLoaded}
-					>
-						Fullscreen
-					</Button>
-					<Button
-						variant="outline"
-						size="sm"
-						onClick={() => {
-							if (isLoaded) {
-								const screenshot = takeScreenshot("image/png");
-								if (screenshot) {
-									const url = URL.createObjectURL(screenshot);
-									window.open(url, "_blank");
+
+				<div className="bg-gray-50 dark:bg-gray-900 p-4 rounded-b-lg border-t border-gray-200 dark:border-gray-700">
+					<div className="flex flex-wrap gap-2 w-full justify-center">
+						<Button
+							variant="outline"
+							size="sm"
+							onClick={() => requestFullscreen(true)}
+							disabled={!isLoaded}
+						>
+							Plein écran
+						</Button>
+						<Button
+							variant="outline"
+							size="sm"
+							onClick={() => {
+								if (isLoaded) {
+									const screenshot =
+										takeScreenshot("image/png");
+									if (screenshot) {
+										const url =
+											URL.createObjectURL(screenshot);
+										window.open(url, "_blank");
+									}
 								}
-							}
-						}}
-						disabled={!isLoaded}
-					>
-						Take Screenshot
-					</Button>
+							}}
+							disabled={!isLoaded}
+						>
+							Capture d'écran
+						</Button>
+						{/* Bouton de test pour simuler une demande de questionnaire */}
+						<Button
+							variant="outline"
+							size="sm"
+							onClick={() => {
+								if (onQuestionnaireRequest) {
+									onQuestionnaireRequest({
+										id: "scenario-test",
+										title: "Scénario de test",
+										description:
+											"Description du scénario de test",
+									});
+								}
+							}}
+							disabled={!isLoaded}
+						>
+							Test Questionnaire
+						</Button>
+					</div>
 				</div>
-			</CardFooter>
-		</Card>
-	);
-});
+			</div>
+		);
+	}
+);
 
 UnityBuild.displayName = "UnityBuild";
 

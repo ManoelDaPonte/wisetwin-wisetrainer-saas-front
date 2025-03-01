@@ -6,11 +6,10 @@ export async function GET(request) {
 		// Extraire les paramètres de la requête
 		const { searchParams } = new URL(request.url);
 		const container = searchParams.get("container");
-		const blob = searchParams.get("blob");
 
-		if (!container || !blob) {
+		if (!container) {
 			return NextResponse.json(
-				{ error: "Les paramètres 'container' et 'blob' sont requis" },
+				{ error: "Le paramètre 'container' est requis" },
 				{ status: 400 }
 			);
 		}
@@ -23,21 +22,18 @@ export async function GET(request) {
 		// Récupération du client du container
 		const containerClient = blobServiceClient.getContainerClient(container);
 
-		// Récupération du client du blob
-		const blobClient = containerClient.getBlobClient(blob);
-
-		// Vérification de l'existence du blob
-		const exists = await blobClient.exists();
+		// Vérifier si le container existe
+		const exists = await containerClient.exists();
 
 		return NextResponse.json({ exists });
 	} catch (error) {
 		console.error(
-			"Erreur lors de la vérification de l'existence du blob:",
+			"Erreur lors de la vérification de l'existence du container:",
 			error
 		);
 		return NextResponse.json(
 			{
-				error: "Échec de la vérification de l'existence du blob",
+				error: "Échec de la vérification du container",
 				details: error.message,
 			},
 			{ status: 500 }
