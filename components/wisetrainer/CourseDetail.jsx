@@ -1,3 +1,4 @@
+// components/wisetrainer/CourseDetail.jsx
 "use client";
 import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
@@ -20,11 +21,12 @@ import {
 	ChevronLeft,
 	CheckCircle2,
 } from "lucide-react";
-import QuestionnaireModal from "@/components/wisetrainer/QuestionnaireModal";
+import QuestionnaireModal from "./QuestionnaireModal";
 import UnityBuild from "./UnityBuild";
-import { useUnityEvents } from "@/hooks/wisetrainer/useUnityEvents";
+import { useUnityEvents } from "@/lib/hooks/wisetrainer/useUnityEvents";
+import { useAzureContainer } from "@/lib/hooks/useAzureContainer";
 
-export default function CourseDetailPage({ params }) {
+export default function CourseDetail({ params }) {
 	const {
 		currentScenario,
 		showQuestionnaire,
@@ -32,8 +34,8 @@ export default function CourseDetailPage({ params }) {
 		setCurrentScenario,
 	} = useUnityEvents();
 
+	const { containerName } = useAzureContainer();
 	const router = useRouter();
-	const userId = metadata?.azure_container_name;
 	const [courseId, setCourseId] = useState(null);
 	const unityRef = useRef(null);
 
@@ -41,7 +43,6 @@ export default function CourseDetailPage({ params }) {
 	const [progress, setProgress] = useState(0);
 	const [isLoading, setIsLoading] = useState(true);
 	const [activeTab, setActiveTab] = useState("overview");
-	const [showQuestionnaireModal, setShowQuestionnaireModal] = useState(false);
 	const [completedScenarios, setCompletedScenarios] = useState([]);
 	const [totalScore, setTotalScore] = useState(0);
 
@@ -83,7 +84,7 @@ export default function CourseDetailPage({ params }) {
 	// Fetch course data and progress
 	useEffect(() => {
 		const fetchCourseData = async () => {
-			if (!courseId || !userId) return;
+			if (!courseId || !containerName) return;
 
 			setIsLoading(true);
 
@@ -102,7 +103,7 @@ export default function CourseDetailPage({ params }) {
 
 				// Get user's progress
 				const progressResponse = await axios.get(
-					`/api/db/wisetrainer/user-trainings/${userId}`
+					`/api/db/wisetrainer/user-trainings/${containerName}`
 				);
 
 				const userCourse = progressResponse.data.trainings.find(
@@ -123,13 +124,13 @@ export default function CourseDetailPage({ params }) {
 		};
 
 		fetchCourseData();
-	}, [courseId, userId]);
+	}, [courseId, containerName]);
 
 	// Handle questionnaire completion
 	const handleQuestionnaireComplete = async (results) => {
 		setShowQuestionnaire(false);
 
-		if (!currentScenario) return;
+		if (!currentScenario || !containerName) return;
 
 		try {
 			// Calculate score
@@ -141,7 +142,7 @@ export default function CourseDetailPage({ params }) {
 
 			// Save responses
 			await axios.post("/api/db/wisetrainer/save-questionnaire", {
-				userId,
+				userId: containerName,
 				trainingId: courseId,
 				questionnaireId: currentScenario.id,
 				responses: results,
@@ -169,7 +170,7 @@ export default function CourseDetailPage({ params }) {
 
 				// Update progress in the database
 				await axios.post("/api/db/wisetrainer/update-progress", {
-					userId,
+					userId: containerName,
 					trainingId: courseId,
 					progress: newProgress,
 					completedModule: currentScenario.id,
@@ -188,7 +189,6 @@ export default function CourseDetailPage({ params }) {
 			console.error("Error saving questionnaire results:", error);
 		}
 	};
-
 	if (isLoading) {
 		return (
 			<div className="container mx-auto p-6">

@@ -5,8 +5,9 @@ import { NextResponse } from "next/server";
 const prisma = new PrismaClient();
 
 export async function GET(request, { params }) {
+	const resolvedParams = await params;
 	try {
-		const { userId } = params;
+		const { userId } = resolvedParams;
 
 		// Obtenir tous les entrainements de l'utilisateur
 		const userTrainings = await prisma.userTraining.findMany({

@@ -1,3 +1,4 @@
+// components/wisetrainer/UnityBuild.jsx
 "use client";
 
 import React, {
@@ -10,15 +11,16 @@ import React, {
 import { Unity, useUnityContext } from "react-unity-webgl";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import axios from "axios"; // Make sure axios is imported
+import axios from "axios";
+import { useAzureContainer } from "@/lib/hooks/useAzureContainer";
 
 const UnityBuild = forwardRef(({ courseId, onQuestionnaireRequest }, ref) => {
-	const userId = metadata?.azure_container_name;
+	const { containerName } = useAzureContainer();
 	const [loadingTimeout, setLoadingTimeout] = useState(false);
 
 	// Debug logs pour voir les valeurs
 	console.log("Building UnityBuild for courseId:", courseId);
-	console.log("userId:", userId);
+	console.log("containerName:", containerName);
 
 	const {
 		unityProvider,
@@ -31,10 +33,10 @@ const UnityBuild = forwardRef(({ courseId, onQuestionnaireRequest }, ref) => {
 		removeEventListener,
 		sendMessage,
 	} = useUnityContext({
-		loaderUrl: `/api/azure/fetch-blob-data/${userId}/${courseId}.loader.js?subfolder=wisetrainer`,
-		dataUrl: `/api/azure/fetch-blob-data/${userId}/${courseId}.data.gz?subfolder=wisetrainer`,
-		frameworkUrl: `/api/azure/fetch-blob-data/${userId}/${courseId}.framework.js.gz?subfolder=wisetrainer`,
-		codeUrl: `/api/azure/fetch-blob-data/${userId}/${courseId}.wasm.gz?subfolder=wisetrainer`,
+		loaderUrl: `/api/azure/fetch-blob-data/${containerName}/${courseId}.loader.js?subfolder=wisetrainer`,
+		dataUrl: `/api/azure/fetch-blob-data/${containerName}/${courseId}.data.gz?subfolder=wisetrainer`,
+		frameworkUrl: `/api/azure/fetch-blob-data/${containerName}/${courseId}.framework.js.gz?subfolder=wisetrainer`,
+		codeUrl: `/api/azure/fetch-blob-data/${containerName}/${courseId}.wasm.gz?subfolder=wisetrainer`,
 	});
 
 	// Expose methods to parent component through ref
@@ -68,80 +70,6 @@ const UnityBuild = forwardRef(({ courseId, onQuestionnaireRequest }, ref) => {
 				.catch((error) => {
 					console.error("Error fetching scenario:", error);
 				});
-		},
-		[onQuestionnaireRequest]
-	);
-
-	// Handle Unity GameObject selection event
-	const handleGameObjectSelected = useCallback(
-		(event) => {
-			console.log("🔍 GameObjectSelected event received:", event.detail);
-
-			try {
-				const gameObjectData =
-					typeof event.detail === "string"
-						? JSON.parse(event.detail)
-						: event.detail;
-
-				console.log("🎮 GameObject selected:", gameObjectData);
-
-				// Check if this is a risk object that should trigger a questionnaire
-				if (
-					gameObjectData.name &&
-					gameObjectData.name.includes("Risque")
-				) {
-					console.log(
-						"🚨 Risk object detected, preparing questionnaire"
-					);
-
-					// Map the Unity object to a scenario ID based on context clues
-					// You might want to create a more robust mapping in a production app
-					let scenarioId;
-
-					if (
-						gameObjectData.guid ===
-						"15e838d6-dfe1-4be5-ba3b-74d358205081"
-					) {
-						scenarioId = "pressure-risk"; // First pin risk area
-					} else {
-						// Default to a scenario if specific mapping isn't found
-						scenarioId = "pressure-risk";
-					}
-
-					console.log(
-						"📋 Triggering questionnaire for scenario:",
-						scenarioId
-					);
-
-					// Fetch the scenario data from the API
-					axios
-						.get(`/api/db/wisetrainer/scenario/${scenarioId}`)
-						.then((response) => {
-							console.log(
-								"📥 Scenario data received:",
-								response.data
-							);
-							if (onQuestionnaireRequest) {
-								console.log(
-									"🔔 Calling onQuestionnaireRequest callback"
-								);
-								onQuestionnaireRequest(response.data);
-							} else {
-								console.error(
-									"❌ onQuestionnaireRequest callback is not defined"
-								);
-							}
-						})
-						.catch((error) => {
-							console.error("❌ Error fetching scenario:", error);
-						});
-				}
-			} catch (error) {
-				console.error(
-					"❌ Error processing GameObject selection:",
-					error
-				);
-			}
 		},
 		[onQuestionnaireRequest]
 	);

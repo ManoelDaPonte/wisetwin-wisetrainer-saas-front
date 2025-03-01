@@ -1,4 +1,4 @@
-// app/wisetrainer/WiseTrainerCourses.jsx
+// components/wisetrainer/WiseTrainerCourses.jsx
 "use client";
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -18,9 +18,11 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Info, Clock, BookOpen } from "lucide-react";
 import axios from "axios";
+import { useAzureContainer } from "@/lib/hooks/useAzureContainer";
 
 export default function WiseTrainerCourses() {
 	const router = useRouter();
+	const { containerName, isLoading: containerLoading } = useAzureContainer();
 	const [activeTab, setActiveTab] = useState("personal");
 	const [personalCourses, setPersonalCourses] = useState([]);
 	const [availableCourses, setAvailableCourses] = useState([]);
@@ -29,8 +31,10 @@ export default function WiseTrainerCourses() {
 	const [isImporting, setIsImporting] = useState(false);
 
 	useEffect(() => {
-		fetchData();
-	}, [metadata]);
+		if (containerName) {
+			fetchData();
+		}
+	}, [containerName]);
 
 	const fetchData = async () => {
 		setIsLoading(true);
@@ -43,9 +47,9 @@ export default function WiseTrainerCourses() {
 			setAvailableCourses(buildsResponse.data.builds || []);
 
 			// Récupérer les formations inscrites par l'utilisateur
-			if (metadata?.azure_container_name) {
+			if (containerName) {
 				const userTrainingsResponse = await axios.get(
-					`/api/db/wisetrainer/user-trainings/${metadata.azure_container_name}`
+					`/api/db/wisetrainer/user-trainings/${containerName}`
 				);
 
 				// Vérifier si les formations existent toujours dans Azure
@@ -60,7 +64,7 @@ export default function WiseTrainerCourses() {
 							"/api/azure/check-blob-exists",
 							{
 								params: {
-									container: metadata.azure_container_name,
+									container: containerName,
 									blob: `wisetrainer/${training.id}.data.gz`,
 								},
 							}
@@ -74,7 +78,7 @@ export default function WiseTrainerCourses() {
 							);
 							// Supprimer de la BD
 							await axios.delete(
-								`/api/db/wisetrainer/unenroll/${metadata.azure_container_name}/${training.id}`
+								`/api/db/wisetrainer/unenroll/${containerName}/${training.id}`
 							);
 						}
 					} catch (error) {
@@ -134,7 +138,7 @@ export default function WiseTrainerCourses() {
 
 		try {
 			await axios.delete(
-				`/api/db/wisetrainer/unenroll/${metadata.azure_container_name}/${course.id}`
+				`/api/db/wisetrainer/unenroll/${containerName}/${course.id}`
 			);
 
 			// Mettre à jour la liste des formations
@@ -154,8 +158,8 @@ export default function WiseTrainerCourses() {
 	};
 
 	const handleEnrollCourse = async (course) => {
-		if (!metadata?.azure_container_name) {
-			alert("User metadata not available. Please try again later.");
+		if (!containerName) {
+			alert("Container name not available. Please try again later.");
 			return;
 		}
 
@@ -164,7 +168,7 @@ export default function WiseTrainerCourses() {
 		try {
 			// Importer le cours dans le container de l'utilisateur
 			await axios.post(
-				`/api/azure/wisetrainer/import/${metadata.azure_container_name}/${course.name}`
+				`/api/azure/wisetrainer/import/${containerName}/${course.name}`
 			);
 
 			// Rafraîchir les données après l'import

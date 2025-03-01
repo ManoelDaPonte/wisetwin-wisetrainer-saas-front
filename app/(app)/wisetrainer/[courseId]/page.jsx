@@ -8,9 +8,5 @@ import { UserMetadataProvider } from "@/context/UserMetadataContext";
 export default function CourseDetailPage() {
 	const params = useParams();
 
-	return (
-		<UserMetadataProvider>
-			<CourseDetail params={params} />
-		</UserMetadataProvider>
-	);
+	return <CourseDetail params={params} />;
 }
