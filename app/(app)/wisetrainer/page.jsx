@@ -5,10 +5,8 @@ import WiseTrainerCourses from "@/components/wisetrainer/WiseTrainerCourses";
 
 export default function WiseTrainerPage() {
 	return (
-		<UserMetadataProvider>
-			<div className="container mx-auto py-8">
-				<WiseTrainerCourses />
-			</div>
-		</UserMetadataProvider>
+		<div className="container mx-auto py-8">
+			<WiseTrainerCourses />
+		</div>
 	);
 }
