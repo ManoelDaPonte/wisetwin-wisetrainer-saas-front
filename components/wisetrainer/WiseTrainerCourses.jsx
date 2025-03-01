@@ -16,13 +16,11 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { useUserMetadata } from "@/context/UserMetadataContext";
 import { Info, Clock, BookOpen } from "lucide-react";
 import axios from "axios";
 
 export default function WiseTrainerCourses() {
 	const router = useRouter();
-	const { metadata } = useUserMetadata();
 	const [activeTab, setActiveTab] = useState("personal");
 	const [personalCourses, setPersonalCourses] = useState([]);
 	const [availableCourses, setAvailableCourses] = useState([]);

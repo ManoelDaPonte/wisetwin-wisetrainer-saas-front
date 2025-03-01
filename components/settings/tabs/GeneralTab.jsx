@@ -3,13 +3,11 @@
 import React from "react";
 import { useState } from "react";
 import axios from "axios";
-import { useUserMetadata } from "@/context/UserMetadataContext";
 import { Button } from "@/components/ui/button";
 import { Trash, RefreshCw } from "lucide-react";
 
 // Modifier le composant
 const GeneralTab = () => {
-	const { metadata } = useUserMetadata();
 	const [isCleaning, setIsCleaning] = useState(false);
 	const [cleanupResult, setCleanupResult] = useState(null);
 

@@ -1,6 +1,7 @@
-//hooks/wisetrainer/useUnityEvents.jsx
+// hooks/wisetrainer/useUnityEvents.js
 import { useState, useEffect, useCallback } from "react";
 import axios from "axios";
+import WISETRAINER_CONFIG from "@/lib/config/wisetrainer";
 
 export function useUnityEvents() {
 	const [currentScenario, setCurrentScenario] = useState(null);
@@ -8,7 +9,7 @@ export function useUnityEvents() {
 
 	// Gestionnaire pour les événements GameObject sélectionnés
 	const handleGameObjectSelected = useCallback(async (event) => {
-		console.log("🎮 GameObject selected:", event.detail);
+		console.log("GameObject selected:", event.detail);
 
 		try {
 			// Analyser les données si nécessaire
@@ -19,49 +20,43 @@ export function useUnityEvents() {
 
 			// Vérifier si on a un scenarioId
 			if (data.scenarioId) {
-				console.log(`🔍 Récupération du scénario: ${data.scenarioId}`);
+				console.log(`Récupération du scénario: ${data.scenarioId}`);
 
 				const response = await axios.get(
-					`/api/db/wisetrainer/scenario/${data.scenarioId}`
+					`${WISETRAINER_CONFIG.API_ROUTES.FETCH_SCENARIO}/${data.scenarioId}`
 				);
 
 				if (response.data) {
-					console.log("📋 Scénario récupéré:", response.data.title);
+					console.log("Scénario récupéré:", response.data.title);
 					setCurrentScenario(response.data);
 					setShowQuestionnaire(true);
 				}
 			}
 		} catch (error) {
-			console.error(
-				"❌ Erreur lors du traitement de l'événement:",
-				error
-			);
+			console.error("Erreur lors du traitement de l'événement:", error);
 		}
 	}, []);
 
 	// Gestionnaire pour les demandes explicites de questionnaire
 	const handleQuestionnaireRequest = useCallback(async (event) => {
 		const scenarioId = event.detail;
-		console.log("🔍 Questionnaire demandé pour le scénario:", scenarioId);
+		console.log("Questionnaire demandé pour le scénario:", scenarioId);
 
 		try {
 			const response = await axios.get(
-				`/api/db/wisetrainer/scenario/${scenarioId}`
+				`${WISETRAINER_CONFIG.API_ROUTES.FETCH_SCENARIO}/${scenarioId}`
 			);
 
 			if (response.data) {
 				console.log(
-					"📋 Scénario récupéré pour questionnaire:",
+					"Scénario récupéré pour questionnaire:",
 					response.data.title
 				);
 				setCurrentScenario(response.data);
 				setShowQuestionnaire(true);
 			}
 		} catch (error) {
-			console.error(
-				"❌ Erreur lors de la récupération du scénario:",
-				error
-			);
+			console.error("Erreur lors de la récupération du scénario:", error);
 		}
 	}, []);
 

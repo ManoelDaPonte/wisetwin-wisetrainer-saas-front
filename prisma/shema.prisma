@@ -1,0 +1,101 @@
+// prisma/schema.prisma
+generator client {
+    provider = "prisma-client-js"
+}
+
+datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
+}
+
+model User {
+    id             String         @id @default(uuid())
+    auth0Id        String         @unique
+    email          String         @unique
+    name           String?
+    azureContainer String?
+    createdAt      DateTime       @default(now())
+    updatedAt      DateTime       @updatedAt
+    trainings      UserTraining[]
+    responses      UserResponse[]
+}
+
+model Training {
+    id            String         @id @default(uuid())
+    name          String
+    description   String?
+    difficulty    String?
+    duration      String?
+    category      String?
+    imageUrl      String?
+    scenarios     Scenario[]
+    userTrainings UserTraining[]
+    createdAt     DateTime       @default(now())
+    updatedAt     DateTime       @updatedAt
+}
+
+model Scenario {
+    id          String         @id @default(uuid())
+    trainingId  String
+    training    Training       @relation(fields: [trainingId], references: [id])
+    title       String
+    description String?
+    questions   Question[]
+    responses   UserResponse[]
+    createdAt   DateTime       @default(now())
+    updatedAt   DateTime       @updatedAt
+}
+
+model Question {
+    id               String           @id @default(uuid())
+    scenarioId       String
+    scenario         Scenario         @relation(fields: [scenarioId], references: [id])
+    text             String
+    options          QuestionOption[]
+    type             String           @default("SINGLE") // SINGLE ou MULTIPLE
+    correctAnswerId  String? // Pour questions à choix unique
+    correctAnswerIds String[]         @default([]) // Pour questions à choix multiple
+    explanation      String?
+    responses        UserResponse[]
+    createdAt        DateTime         @default(now())
+    updatedAt        DateTime         @updatedAt
+}
+
+model QuestionOption {
+    id         String   @id @default(uuid())
+    questionId String
+    question   Question @relation(fields: [questionId], references: [id])
+    text       String
+    isCorrect  Boolean  @default(false)
+    createdAt  DateTime @default(now())
+    updatedAt  DateTime @updatedAt
+}
+
+model UserTraining {
+    id               String   @id @default(uuid())
+    userId           String
+    user             User     @relation(fields: [userId], references: [id])
+    trainingId       String
+    training         Training @relation(fields: [trainingId], references: [id])
+    progress         Int      @default(0)
+    completedModules String[] @default([])
+    totalScore       Int      @default(0)
+    lastAccessed     DateTime @default(now())
+    createdAt        DateTime @default(now())
+    updatedAt        DateTime @updatedAt
+}
+
+model UserResponse {
+    id              String   @id @default(uuid())
+    userId          String
+    user            User     @relation(fields: [userId], references: [id])
+    questionId      String
+    question        Question @relation(fields: [questionId], references: [id])
+    scenarioId      String
+    scenario        Scenario @relation(fields: [scenarioId], references: [id])
+    selectedAnswers String[] @default([])
+    isCorrect       Boolean
+    score           Int      @default(0)
+    createdAt       DateTime @default(now())
+    updatedAt       DateTime @updatedAt
+}

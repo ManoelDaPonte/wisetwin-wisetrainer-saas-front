@@ -2,7 +2,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
-import { useUserMetadata } from "@/context/UserMetadataContext";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -34,7 +33,6 @@ export default function CourseDetailPage({ params }) {
 	} = useUnityEvents();
 
 	const router = useRouter();
-	const { metadata } = useUserMetadata();
 	const userId = metadata?.azure_container_name;
 	const [courseId, setCourseId] = useState(null);
 	const unityRef = useRef(null);

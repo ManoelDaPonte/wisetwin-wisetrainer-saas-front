@@ -1,12 +1,10 @@
 import React, { useState } from "react";
 import { useUser } from "@auth0/nextjs-auth0/client"; // Utiliser le hook d'auth0 pour obtenir les informations de l'utilisateur
-import { useUserMetadata } from "@/context/UserMetadataContext"; // Assurez-vous que ce hook est bien défini pour récupérer les metadata
 import axios from "axios"; // Importer axios pour effectuer les requêtes HTTP
 import ConfirmationModal from "@/components/common/ConfirmationModal"; // Importer le composant de confirmation
 
 const AccountTab = () => {
 	const { user } = useUser(); // Récupérer l'utilisateur depuis Auth0
-	const { metadata, isInitialized } = useUserMetadata(); // Récupérer les metadata utilisateur
 
 	// Récupérer userId et containerName
 	const userId = user?.sub; // Utilisateur ID de Auth0

@@ -8,13 +8,11 @@ import React, {
 	useImperativeHandle,
 } from "react";
 import { Unity, useUnityContext } from "react-unity-webgl";
-import { useUserMetadata } from "@/context/UserMetadataContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import axios from "axios"; // Make sure axios is imported
 
 const UnityBuild = forwardRef(({ courseId, onQuestionnaireRequest }, ref) => {
-	const { metadata } = useUserMetadata();
 	const userId = metadata?.azure_container_name;
 	const [loadingTimeout, setLoadingTimeout] = useState(false);
 
