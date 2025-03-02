@@ -52,21 +52,20 @@ export function DashboardProvider({ children }) {
 			// Charger les formations
 			await loadTrainings();
 
-			// Charger les statistiques
-			await loadStats();
+			// Chargement des données pour Overview
+			// Pour l'instant, on utilise un jeu de données de démonstration en attendant
+			// que toutes les API soient complètement fonctionnelles
+			setDemoData();
 
-			// Charger les accomplissements
-			await loadAchievements();
-
-			// Vérifier les nouveaux accomplissements
-			await checkNewAchievements();
-
+			// Mettre à jour la date de dernière actualisation
 			setLastRefresh(new Date());
 		} catch (error) {
 			console.error(
 				"Erreur lors du chargement des données utilisateur:",
 				error
 			);
+			// En cas d'erreur, utiliser quand même les données de démo
+			setDemoData();
 		} finally {
 			setIsLoading(false);
 		}
@@ -115,88 +114,58 @@ export function DashboardProvider({ children }) {
 		}
 	};
 
-	// Charger les statistiques de l'utilisateur
-	const loadStats = async () => {
-		try {
-			const response = await axios.get(
-				`/api/db/stats/user/${containerName}`
-			);
-			const userStats = response.data;
+	// Définir des données de démo pour les tests
+	const setDemoData = () => {
+		// Définir des statistiques par défaut
+		setStats({
+			digitalTwin: 0,
+			wiseTrainer: trainings.length || 2,
+			totalTime: 3,
+			completionRate: calculateCompletionRate(trainings) || 65,
+			questionsAnswered: 24,
+			correctAnswers: 18,
+			successRate: 75,
+		});
 
-			setStats((prevStats) => ({
-				...prevStats,
-				totalTime: userStats.totalTimeInHours || 0,
-				questionsAnswered: userStats.questionsAnswered || 0,
-				correctAnswers: userStats.correctAnswers || 0,
-				successRate: userStats.successRate || 0,
-				sessionsCompleted: userStats.sessionsCompleted || 0,
-			}));
+		// Définir des accomplissements par défaut
+		const demoAchievements = [
+			{
+				id: "first-training",
+				title: "Première formation",
+				description: "Vous avez commencé votre parcours de formation",
+				iconName: "GraduationCap",
+				unlocked: trainings.length > 0,
+				unlockedAt:
+					trainings.length > 0
+						? new Date(
+								Date.now() - 7 * 24 * 60 * 60 * 1000
+						  ).toISOString()
+						: null,
+			},
+			{
+				id: "complete-training",
+				title: "Formation complétée",
+				description:
+					"Vous avez terminé votre première formation avec succès",
+				iconName: "Award",
+				unlocked: trainings.some((t) => t.progress === 100),
+				unlockedAt: trainings.some((t) => t.progress === 100)
+					? new Date().toISOString()
+					: null,
+			},
+			{
+				id: "explorer",
+				title: "Explorateur",
+				description:
+					"Vous avez découvert au moins 3 formations différentes",
+				iconName: "Layers",
+				unlocked: trainings.length >= 3,
+				unlockedAt:
+					trainings.length >= 3 ? new Date().toISOString() : null,
+			},
+		];
 
-			return userStats;
-		} catch (error) {
-			console.error("Erreur lors du chargement des statistiques:", error);
-			return null;
-		}
-	};
-
-	// Charger les accomplissements de l'utilisateur
-	const loadAchievements = async () => {
-		try {
-			const response = await axios.get(
-				`/api/db/achievements/user/${containerName}`
-			);
-			const userAchievements = response.data.achievements || [];
-			setAchievements(userAchievements);
-			return userAchievements;
-		} catch (error) {
-			console.error(
-				"Erreur lors du chargement des accomplissements:",
-				error
-			);
-
-			// En cas d'erreur, utiliser des données par défaut basées sur le service d'accomplissements
-			const defaultAchievements = achievementService.achievements.map(
-				(a) => ({
-					id: a.id,
-					title: a.title,
-					description: a.description,
-					iconName: a.icon,
-					unlocked: false,
-				})
-			);
-
-			setAchievements(defaultAchievements);
-			return defaultAchievements;
-		}
-	};
-
-	// Vérifier si de nouveaux accomplissements peuvent être débloqués
-	const checkNewAchievements = async () => {
-		try {
-			// Créer un objet avec toutes les données utilisateur pour la vérification
-			const userData = {
-				courses: trainings,
-				stats: stats,
-			};
-
-			const unlocked = await achievementService.checkAchievements(
-				containerName,
-				userData
-			);
-			if (unlocked.length > 0) {
-				setNewAchievements(unlocked);
-				// Recharger les accomplissements pour avoir la liste à jour
-				await loadAchievements();
-			}
-
-			return unlocked;
-		} catch (error) {
-			console.error(
-				"Erreur lors de la vérification des nouveaux accomplissements:",
-				error
-			);
-			return [];
-		}
+		setAchievements(demoAchievements);
 	};
 
 	// Utilité pour calculer le taux de complétion moyen
