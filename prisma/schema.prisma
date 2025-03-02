@@ -11,31 +11,35 @@ generator client {
 
 // Modèle utilisateur
 model User {
-    id             String         @id @default(uuid())
-    auth0Id        String         @unique // Identifiant Auth0 de l'utilisateur
-    email          String         @unique
-    name           String?
-    azureContainer String? // Nom du container Azure de l'utilisateur
-    createdAt      DateTime       @default(now())
-    updatedAt      DateTime       @updatedAt
-    userCourses    UserCourse[] // Relation avec les cours suivis
-    userResponses  UserResponse[] // Réponses aux questionnaires
+    id               String            @id @default(uuid())
+    auth0Id          String            @unique // Identifiant Auth0 de l'utilisateur
+    email            String            @unique
+    name             String?
+    azureContainer   String? // Nom du container Azure de l'utilisateur
+    createdAt        DateTime          @default(now())
+    updatedAt        DateTime          @updatedAt
+    userCourses      UserCourse[] // Relation avec les cours suivis
+    userResponses    UserResponse[] // Réponses aux questionnaires
+    userAchievements UserAchievement[] // Accomplissements débloqués
+    userStats        UserStats? // Statistiques de l'utilisateur
+    UserSession      UserSession[]
 }
 
 // Modèle de cours de formation
 model Course {
-    id          String       @id @default(uuid())
-    courseId    String       @unique // Identifiant externe (ex: "wisetrainer-template")
-    name        String // Nom du cours
-    description String // Description du cours
-    imageUrl    String? // URL de l'image du cours
-    category    String // Catégorie (ex: "Sécurité")
-    difficulty  String // Niveau de difficulté (ex: "Intermédiaire")
-    duration    String // Durée estimée (ex: "30 min")
-    createdAt   DateTime     @default(now())
-    updatedAt   DateTime     @updatedAt
-    modules     Module[] // Modules du cours
-    userCourses UserCourse[] // Utilisateurs inscrits à ce cours
+    id           String        @id @default(uuid())
+    courseId     String        @unique // Identifiant externe (ex: "wisetrainer-template")
+    name         String // Nom du cours
+    description  String // Description du cours
+    imageUrl     String? // URL de l'image du cours
+    category     String // Catégorie (ex: "Sécurité")
+    difficulty   String // Niveau de difficulté (ex: "Intermédiaire")
+    duration     String // Durée estimée (ex: "30 min")
+    createdAt    DateTime      @default(now())
+    updatedAt    DateTime      @updatedAt
+    modules      Module[] // Modules du cours
+    userCourses  UserCourse[] // Utilisateurs inscrits à ce cours
+    userSessions UserSession[] // Sessions des utilisateurs liées à ce cours
 }
 
 // Modèle de module (partie d'un cours)
@@ -147,4 +151,60 @@ model UserResponse {
     score           Int // Score obtenu pour cette réponse
     createdAt       DateTime @default(now())
     updatedAt       DateTime @updatedAt
+}
+
+// Modèle d'accomplissement/réalisation
+model Achievement {
+    id               String            @id @default(uuid())
+    achievementId    String            @unique // Identifiant externe de l'accomplissement
+    title            String // Titre de l'accomplissement
+    description      String // Description de l'accomplissement
+    iconName         String // Nom de l'icône à utiliser
+    criteria         String // Critères pour débloquer (JSON)
+    createdAt        DateTime          @default(now())
+    updatedAt        DateTime          @updatedAt
+    userAchievements UserAchievement[] // Relation avec les utilisateurs qui ont débloqué cet accomplissement
+}
+
+// Modèle de relation entre utilisateur et accomplissement
+model UserAchievement {
+    id            String      @id @default(uuid())
+    userId        String // Référence à l'utilisateur
+    user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+    achievementId String // Référence à l'accomplissement
+    achievement   Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+    unlockedAt    DateTime    @default(now()) // Date à laquelle l'accomplissement a été débloqué
+    data          String? // Données supplémentaires au format JSON (ex: score, contexte)
+    createdAt     DateTime    @default(now())
+    updatedAt     DateTime    @updatedAt
+
+    @@unique([userId, achievementId]) // Un utilisateur ne peut débloquer un accomplissement qu'une fois
+}
+
+// Modèle de statistiques utilisateur
+model UserStats {
+    id                String   @id @default(uuid())
+    userId            String   @unique // Référence à l'utilisateur
+    user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+    totalTimeSpent    Int      @default(0) // Temps total passé en minutes
+    sessionsCompleted Int      @default(0) // Nombre de sessions complétées
+    questionsAnswered Int      @default(0) // Nombre total de questions répondues
+    correctAnswers    Int      @default(0) // Nombre de réponses correctes
+    lastActivity      DateTime @default(now()) // Dernière activité
+    createdAt         DateTime @default(now())
+    updatedAt         DateTime @updatedAt
+}
+
+model UserSession {
+    id            String    @id @default(uuid())
+    userId        String // Référence à l'utilisateur
+    user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+    startTime     DateTime  @default(now()) // Début de la session
+    endTime       DateTime? // Fin de la session (null si encore active)
+    duration      Int? // Durée en minutes (calculée à la fin de la session)
+    courseId      String? // ID du cours si la session concerne un cours spécifique
+    course        Course?   @relation(fields: [courseId], references: [id])
+    modulesViewed String? // Liste des modules vus durant la session (JSON)
+    createdAt     DateTime  @default(now())
+    updatedAt     DateTime  @updatedAt
 }

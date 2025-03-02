@@ -1,9 +1,8 @@
 //components/wisetrainer/QuestionnaireDebug.jsx
-"use client";
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CheckCircle2, XCircle } from "lucide-react";
+import { CheckCircle2, XCircle, RefreshCw } from "lucide-react";
 import axios from "axios";
 import WISETRAINER_CONFIG from "@/lib/config/wisetrainer";
 
@@ -18,14 +17,20 @@ export default function QuestionnaireDebug({
 	const [showResults, setShowResults] = useState(false);
 	const [results, setResults] = useState(null);
 	const [isSubmitting, setIsSubmitting] = useState(false);
+	const [error, setError] = useState(null);
 
 	useEffect(() => {
 		// Réinitialiser l'état à chaque changement de scénario
+		resetQuestionnaire();
+	}, [scenario]);
+
+	const resetQuestionnaire = () => {
 		setCurrentQuestionIndex(0);
 		setSelectedAnswers({});
 		setShowResults(false);
 		setResults(null);
-	}, [scenario]);
+		setError(null);
+	};
 
 	const handleAnswerSelect = (questionId, answerId) => {
 		if (isSingleChoiceQuestion(scenario.questions[currentQuestionIndex])) {
@@ -61,8 +66,16 @@ export default function QuestionnaireDebug({
 		}
 	};
 
+	const handlePrevious = () => {
+		if (currentQuestionIndex > 0) {
+			setCurrentQuestionIndex(currentQuestionIndex - 1);
+		}
+	};
+
 	const submitQuestionnaire = async () => {
 		setIsSubmitting(true);
+		setError(null);
+
 		try {
 			// Préparer les réponses pour l'API
 			const responses = scenario.questions.map((question) => ({
@@ -96,15 +109,20 @@ export default function QuestionnaireDebug({
 					}
 				);
 			} else {
-				throw new Error("Échec de l'enregistrement des réponses");
+				throw new Error(
+					response.data.error ||
+						"Échec de l'enregistrement des réponses"
+				);
 			}
 		} catch (error) {
 			console.error(
 				"Erreur lors de la soumission du questionnaire:",
 				error
 			);
-			alert(
-				"Une erreur est survenue lors de l'enregistrement des réponses. Veuillez réessayer."
+			setError(
+				error.response?.data?.error ||
+					error.message ||
+					"Une erreur est survenue lors de l'enregistrement des réponses."
 			);
 		} finally {
 			setIsSubmitting(false);
@@ -118,6 +136,10 @@ export default function QuestionnaireDebug({
 				onComplete(scenario.id, score >= 70, score);
 			}
 		}
+	};
+
+	const handleRetryQuestionnaire = () => {
+		resetQuestionnaire();
 	};
 
 	const getScore = () => {
@@ -140,6 +162,20 @@ export default function QuestionnaireDebug({
 				<p className="text-gray-500">{scenario.description}</p>
 			</CardHeader>
 			<CardContent className="space-y-4">
+				{error && (
+					<div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md mb-4">
+						<p className="font-medium">Erreur:</p>
+						<p>{error}</p>
+						<Button
+							onClick={handleRetryQuestionnaire}
+							variant="outline"
+							className="mt-2"
+						>
+							Réessayer
+						</Button>
+					</div>
+				)}
+
 				{!showResults ? (
 					<>
 						<div className="mb-4 flex justify-between items-center">
@@ -206,15 +242,13 @@ export default function QuestionnaireDebug({
 							</div>
 						</div>
 
-						<div className="flex justify-end space-x-3">
+						<div className="flex justify-between space-x-3">
 							<Button
 								variant="outline"
-								onClick={() =>
-									setCurrentQuestionIndex(
-										Math.max(0, currentQuestionIndex - 1)
-									)
+								onClick={handlePrevious}
+								disabled={
+									currentQuestionIndex === 0 || isSubmitting
 								}
-								disabled={currentQuestionIndex === 0}
 							>
 								Précédent
 							</Button>
@@ -227,10 +261,17 @@ export default function QuestionnaireDebug({
 									isSubmitting
 								}
 							>
-								{currentQuestionIndex <
-								scenario.questions.length - 1
-									? "Suivant"
-									: "Terminer"}
+								{isSubmitting ? (
+									<>
+										<RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+										Chargement...
+									</>
+								) : currentQuestionIndex <
+								  scenario.questions.length - 1 ? (
+									"Suivant"
+								) : (
+									"Terminer"
+								)}
 							</Button>
 						</div>
 					</>
@@ -352,7 +393,13 @@ export default function QuestionnaireDebug({
 							})}
 						</div>
 
-						<div className="mt-6 flex justify-end">
+						<div className="mt-6 flex justify-between">
+							<Button
+								variant="outline"
+								onClick={handleRetryQuestionnaire}
+							>
+								Recommencer
+							</Button>
 							<Button onClick={handleComplete}>
 								Terminer le questionnaire
 							</Button>

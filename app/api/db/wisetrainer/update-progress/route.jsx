@@ -81,6 +81,9 @@ export async function POST(request) {
 				userId: user.id,
 				courseId: course.id,
 			},
+			include: {
+				userModules: true,
+			},
 		});
 
 		if (!userTraining) {
@@ -101,6 +104,12 @@ export async function POST(request) {
 				},
 			});
 			const totalModules = courseModules.length;
+
+			// CORRECTION : Calculer le nombre de modules complétés
+			const completedModuleCount =
+				userTraining.userModules.filter((module) => module.completed)
+					.length + (completedModule ? 1 : 0); // +1 si un nouveau module vient d'être complété
+
 			const updatedProgress = Math.min(
 				100,
 				Math.round((completedModuleCount / totalModules) * 100)
@@ -114,6 +123,11 @@ export async function POST(request) {
 				data: {
 					progress: updatedProgress,
 					lastAccessed: new Date(),
+					// Si tous les modules sont complétés, marquer le cours comme terminé
+					completedAt:
+						completedModuleCount >= totalModules
+							? new Date()
+							: userTraining.completedAt,
 				},
 			});
 		}

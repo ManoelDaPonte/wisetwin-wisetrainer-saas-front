@@ -206,34 +206,38 @@ export default function CourseDetail({ params }) {
 	};
 
 	const handleScenarioComplete = async (scenarioId, success, score) => {
-		const updatedCompletedModules = userProgress.completedModules + 1;
-		const totalModules = course.modules.length;
-
-		// Cette fonction sera appelée lorsqu'un questionnaire est complété
-		console.log(
-			`Scénario ${scenarioId} complété avec ${
-				success ? "succès" : "échec"
-			}, score: ${score}`
-		);
-
-		// Fermer le questionnaire
-		setShowQuestionnaire(false);
-
-		// Notifier le build Unity que le questionnaire est complété
-		if (unityBuildRef.current && unityBuildRef.current.isReady) {
-			unityBuildRef.current.completeQuestionnaire(scenarioId, success);
-		}
-
-		// Mettre à jour la progression en base de données
 		try {
+			console.log(
+				`Scénario ${scenarioId} complété avec ${
+					success ? "succès" : "échec"
+				}, score: ${score}`
+			);
+
+			// Fermer le questionnaire
+			setShowQuestionnaire(false);
+
+			// Notifier le build Unity que le questionnaire est complété
+			if (unityBuildRef.current && unityBuildRef.current.isReady) {
+				unityBuildRef.current.completeQuestionnaire(
+					scenarioId,
+					success
+				);
+			}
+
 			// Trouver le module correspondant au scénario
 			const completedModule = course.modules.find(
 				(m) => m.id === scenarioId
 			);
 
-			if (completedModule) {
+			if (!completedModule) {
+				console.warn(`Module ${scenarioId} non trouvé dans le cours`);
+				return;
+			}
+
+			// Mettre à jour la progression en base de données
+			try {
 				// Appeler l'API pour mettre à jour la progression
-				await axios.post(
+				const response = await axios.post(
 					WISETRAINER_CONFIG.API_ROUTES.UPDATE_PROGRESS,
 					{
 						userId: containerName,
@@ -248,40 +252,30 @@ export default function CourseDetail({ params }) {
 					}
 				);
 
-				// Mettre à jour l'état local
-				const updatedModules = course.modules.map((module) => {
-					if (module.id === scenarioId) {
-						return { ...module, completed: true, score };
-					}
-					return module;
-				});
-
-				setCourse({
-					...course,
-					modules: updatedModules,
-				});
-				setUserProgress({
-					...userProgress,
-					progress: Math.min(
-						100,
-						Math.round(
-							(updatedCompletedModules * 100) / totalModules
-						)
-					),
-					completedModules: updatedCompletedModules,
-				});
-
-				// Rafraîchir les données du cours
-				await fetchCourseDetails();
+				if (response.data.success) {
+					// Ne mettre à jour l'état local qu'après confirmation du serveur
+					await fetchCourseDetails(); // Rafraîchir les données du cours
+				} else {
+					throw new Error(
+						response.data.error ||
+							"Échec de la mise à jour de la progression"
+					);
+				}
+			} catch (error) {
+				console.error(
+					"Erreur lors de la mise à jour de la progression:",
+					error
+				);
+				// Afficher un message d'erreur à l'utilisateur
+				alert(
+					"Erreur lors de la mise à jour de la progression. Veuillez réessayer."
+				);
 			}
 		} catch (error) {
-			console.error(
-				"Erreur lors de la mise à jour de la progression:",
-				error
-			);
+			console.error("Erreur lors du traitement du questionnaire:", error);
+			alert("Une erreur est survenue. Veuillez réessayer.");
 		}
 	};
-
 	const handleQuestionnaireRequest = (scenario) => {
 		// Cette fonction sera appelée lorsque le build Unity demande un questionnaire
 		setCurrentScenario(scenario);

@@ -5,6 +5,7 @@ import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { ArrowRight } from "lucide-react";
 import {
 	Card,
 	CardContent,
@@ -44,12 +45,32 @@ export default function RecentProjectsSection({ projects, isLoading }) {
 		}
 	};
 
+	const formatDate = (dateString) => {
+		try {
+			return new Date(dateString).toLocaleDateString("fr-FR", {
+				day: "numeric",
+				month: "short",
+				year: "numeric",
+			});
+		} catch (e) {
+			return "Date inconnue";
+		}
+	};
+
 	return (
 		<div className="mb-10">
-			<div className="flex justify-between items-center mb-4">
-				<h2 className="text-xl font-semibold text-wisetwin-darkblue dark:text-white">
-					Recent Projects
+			<div className="flex justify-between items-baseline mb-4">
+				<h2 className="text-xl font-bold text-wisetwin-darkblue dark:text-white">
+					Dernières activités
 				</h2>
+				<Button
+					variant="link"
+					className="text-wisetwin-blue"
+					onClick={() => (window.location.href = "/wisetrainer")}
+				>
+					Voir tout
+					<ArrowRight className="w-4 h-4 ml-1" />
+				</Button>
 			</div>
 
 			{isLoading ? (
@@ -57,15 +78,38 @@ export default function RecentProjectsSection({ projects, isLoading }) {
 					{[1, 2, 3].map((i) => (
 						<Card key={i} className="overflow-hidden">
 							<div className="animate-pulse">
-								<div className="h-40 bg-gray-200 dark:bg-gray-700 rounded-t-lg"></div>
+								<div className="h-40 bg-gray-200 dark:bg-gray-700"></div>
 								<div className="p-4">
 									<div className="h-5 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-2"></div>
-									<div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
+									<div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2 mb-4"></div>
+									<div className="h-2 bg-gray-200 dark:bg-gray-700 rounded w-full"></div>
 								</div>
 							</div>
 						</Card>
 					))}
 				</div>
+			) : projects.length === 0 ? (
+				<Card className="p-8 text-center">
+					<div className="mb-4 text-gray-400 dark:text-gray-500">
+						<div className="inline-flex items-center justify-center h-12 w-12 rounded-full bg-gray-100 dark:bg-gray-800 mb-4">
+							<ArrowRight className="w-6 h-6" />
+						</div>
+						<h3 className="text-lg font-medium mb-2">
+							Aucune activité récente
+						</h3>
+						<p className="text-gray-500 dark:text-gray-400 mb-4 max-w-md mx-auto">
+							Commencez une formation pour voir votre activité
+							apparaître ici.
+						</p>
+						<Button
+							onClick={() =>
+								(window.location.href = "/wisetrainer")
+							}
+						>
+							Explorer les formations
+						</Button>
+					</div>
+				</Card>
 			) : (
 				<motion.div
 					variants={containerVariants}
@@ -80,66 +124,75 @@ export default function RecentProjectsSection({ projects, isLoading }) {
 							className="h-full"
 						>
 							<Card
-								className="flex flex-col h-full overflow-hidden hover:shadow-lg transition-shadow duration-300 cursor-pointer border-2 hover:border-wisetwin-blue dark:hover:border-wisetwin-blue-light"
+								className="flex flex-col h-full overflow-hidden hover:shadow-lg transition-shadow duration-300 cursor-pointer border hover:border-wisetwin-blue dark:hover:border-wisetwin-blue-light"
 								onClick={() => handleProjectClick(project)}
 							>
-								<div className="relative h-40">
-									<Image
-										src={
-											project.imageUrl ||
-											"/images/placeholder.jpg"
-										}
-										alt={project.name}
-										fill
-										className="object-cover"
-									/>
+								<div className="relative h-40 w-full">
+									{project.imageUrl && (
+										<Image
+											src={project.imageUrl}
+											alt={project.name}
+											fill
+											className="object-cover"
+											onError={(e) => {
+												e.target.src =
+													"/images/png/placeholder.png";
+											}}
+										/>
+									)}
 									<div className="absolute top-2 right-2">
 										<Badge
 											className={
 												project.type === "digitalTwin"
-													? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100"
+													? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-100"
 													: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100"
 											}
 										>
 											{project.type === "digitalTwin"
 												? "Digital Twin"
-												: "Training"}
+												: "Formation"}
 										</Badge>
 									</div>
 								</div>
 								<CardHeader className="pb-2">
-									<CardTitle className="text-lg">
+									<CardTitle className="text-lg line-clamp-1">
 										{project.name}
 									</CardTitle>
 									<CardDescription>
-										{project.lastModified
-											? `Modified: ${new Date(
-													project.lastModified
-											  ).toLocaleDateString()}`
-											: `Accessed: ${new Date(
-													project.lastAccessed
-											  ).toLocaleDateString()}`}
+										Modifié:{" "}
+										{formatDate(project.lastModified)}
 									</CardDescription>
 								</CardHeader>
 								<CardContent className="flex-grow">
-									{project.progress < 100 &&
-										project.type === "wiseTrainer" && (
-											<div className="space-y-2">
-												<div className="flex justify-between">
-													<span className="text-sm text-muted-foreground">
-														Progress
-													</span>
-													<span className="text-sm font-medium">
-														{project.progress}%
-													</span>
-												</div>
-												<Progress
-													value={project.progress}
-													className="h-2"
-												/>
+									{project.progress !== undefined && (
+										<div className="space-y-2">
+											<div className="flex justify-between">
+												<span className="text-sm text-muted-foreground">
+													Progression
+												</span>
+												<span className="text-sm font-medium">
+													{project.progress}%
+												</span>
 											</div>
-										)}
+											<Progress
+												value={project.progress}
+												className="h-2"
+											/>
+										</div>
+									)}
 								</CardContent>
+								<div className="px-6 pb-4">
+									<Button
+										className="w-full"
+										variant="outline"
+									>
+										{project.progress === 0
+											? "Commencer"
+											: project.progress === 100
+											? "Revoir"
+											: "Continuer"}
+									</Button>
+								</div>
 							</Card>
 						</motion.div>
 					))}

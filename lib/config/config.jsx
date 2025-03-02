@@ -14,25 +14,32 @@ import {
 
 export const HomePageCards = [
 	{
-		title: "Choose a Demo",
+		title: "Formation en Réalité Virtuelle",
 		description:
-			"Select a demo from our curated collection and experience the exceptional capabilities of our platform. Perfect for first-time users or those looking to explore new features.",
-		icon: LayoutDashboard,
-		route: "/overview?showDemo=true",
+			"Accédez à nos modules de formation interactifs pour maîtriser les procédures de sécurité essentielles. Pratiquez dans un environnement virtuel avant d'appliquer vos compétences sur le terrain.",
+		icon: GraduationCap,
+		route: "/wisetrainer",
+		primaryAction: "Commencer la formation",
+		secondaryInfo: "Plusieurs scénarios disponibles",
 	},
 	{
-		title: "Explore 3D",
+		title: "Tableau de Bord",
 		description:
-			"Learn to navigate through immersive 3D environments. Connect your devices and alerts for seamless interaction and discover a new dimension of management and visualization.",
+			"Visualisez vos statistiques et suivez votre progression sur l'ensemble des modules de formation. Consultez vos résultats récents et reprenez facilement vos sessions de formation.",
+		icon: LayoutDashboard,
+		route: "/overview",
+		primaryAction: "Voir mes statistiques",
+		secondaryInfo: "Suivi de progression en temps réel",
+	},
+	{
+		title: "Jumeau Numérique",
+		description:
+			"Explorez des environnements 3D interactifs représentant fidèlement vos installations et équipements. Cette fonctionnalité sera bientôt disponible pour enrichir votre expérience de formation.",
 		icon: Box,
 		route: "/digital-twin",
-	},
-	{
-		title: "Device and Alert",
-		description:
-			"Create and configure your own devices and alerts. Send your data via HTTP and watch them come to life in the 3D environment. Customize your experience and expand your dashboard's capabilities.",
-		icon: ServerCog,
-		route: "/iot-dashboard",
+		disabled: true,
+		primaryAction: "Explorer",
+		secondaryInfo: "Bientôt disponible",
 	},
 ];
 
@@ -50,6 +57,7 @@ export const navigationItems = {
 			id: "digital-twin",
 			label: "Digital Twin",
 			icon: Box,
+			disabled: true,
 		},
 		{
 			id: "wisetrainer",

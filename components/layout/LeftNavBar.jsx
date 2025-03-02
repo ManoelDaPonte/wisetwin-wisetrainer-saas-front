@@ -125,7 +125,7 @@ export default function LeftNavBar() {
 			<div className="flex-1 overflow-y-auto py-4 px-3">
 				<NavSection items={topItems} />
 				<NavSection items={coreItems} withDivider={true} />
-				<NavSection items={settingsItems} withDivider={true} />
+				{/* <NavSection items={settingsItems} withDivider={true} /> */}
 				<NavSection items={otherItems} withDivider={true} />
 			</div>
 		</aside>
