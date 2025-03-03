@@ -74,16 +74,6 @@ export default function CourseDetailsTab({
 											<p className="text-gray-600 dark:text-gray-400 text-sm">
 												{module.description}
 											</p>
-											<Button
-												variant="outline"
-												size="sm"
-												className="mt-2 opacity-0 group-hover:opacity-100 transition-opacity"
-												onClick={() =>
-													onModuleSelect(module.id)
-												}
-											>
-												Tester le questionnaire
-											</Button>
 										</div>
 									</div>
 									{index < course.modules.length - 1 && (

@@ -10,13 +10,14 @@ export const processBuildNames = (blobs, WISETRAINER_CONFIG) => {
 	const buildNames = new Set();
 	blobs.forEach((blob) => {
 		// Par exemple: wisetrainer/safety-101.data.gz -> safety-101
-		const match = blob.match(`
-    /(?:wisetrainer/)?([^/]+?)(?:.data.gz|.framework.js.gz|.loader.js|.wasm.gz)$/
-    `);
+		const match = blob.match(
+			/(?:wisetrainer\/)?([^\/]+?)(?:\.data\.gz|\.framework\.js\.gz|\.loader\.js|\.wasm\.gz)$/
+		);
 		if (match && match[1]) {
 			buildNames.add(match[1]);
 		}
 	});
+
 	// Créer des objets cours à partir des noms
 	return Array.from(buildNames).map((name) => {
 		try {

@@ -11,7 +11,6 @@ import UnityBuild from "@/components/wisetrainer/UnityBuild";
 import CourseDetailHeader from "@/components/wisetrainer/course/CourseDetailHeader";
 import CourseDetailsTab from "@/components/wisetrainer/course/CourseDetailsTab";
 import CourseTrainingTab from "@/components/wisetrainer/course/CourseTrainingTab";
-import QuestionnaireTab from "@/components/wisetrainer/course/QuestionnaireTab";
 import QuestionnaireModal from "@/components/wisetrainer/QuestionnaireModal";
 import { useUnityEvents } from "@/lib/hooks/useUnityEvents";
 import WISETRAINER_CONFIG from "@/lib/config/wisetrainer";
@@ -341,9 +340,6 @@ export default function CourseDetail({ params }) {
 					<TabsTrigger value="training" className="px-6">
 						Formation en 3D
 					</TabsTrigger>
-					<TabsTrigger value="questionnaire" className="px-6">
-						Questionnaire
-					</TabsTrigger>
 				</TabsList>
 
 				<TabsContent value="details">
@@ -360,16 +356,6 @@ export default function CourseDetail({ params }) {
 						courseId={courseId}
 						containerName={containerName}
 						onQuestionnaireRequest={handleQuestionnaireRequest}
-					/>
-				</TabsContent>
-
-				<TabsContent value="questionnaire">
-					<QuestionnaireTab
-						currentScenario={currentScenario}
-						containerName={containerName}
-						courseId={courseId}
-						onComplete={handleScenarioComplete}
-						setActiveTab={setActiveTab}
 					/>
 				</TabsContent>
 			</Tabs>
