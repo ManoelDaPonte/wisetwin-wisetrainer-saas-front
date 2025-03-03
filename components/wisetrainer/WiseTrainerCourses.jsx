@@ -1,26 +1,13 @@
 //components/wisetrainer/WiseTrainerCourses.jsx
-"use client";
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
-import { motion } from "framer-motion";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardFooter,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
-import { Clock } from "lucide-react";
 import axios from "axios";
 import { useAzureContainer } from "@/lib/hooks/useAzureContainer";
 import WISETRAINER_CONFIG from "@/lib/config/wisetrainer";
-
+import PersonalCoursesTab from "@/components/wisetrainer/courses/PersonalCoursesTab";
+import CatalogCoursesTab from "@/components/wisetrainer/courses/CatalogCoursesTab";
+import { processBuildNames } from "@/components/wisetrainer/courses/helper";
 export default function WiseTrainerCourses() {
 	const router = useRouter();
 	const { containerName, isLoading: containerLoading } = useAzureContainer();
@@ -30,6 +17,23 @@ export default function WiseTrainerCourses() {
 	const [isLoading, setIsLoading] = useState(true);
 	const [flippedCardId, setFlippedCardId] = useState(null);
 	const [isImporting, setIsImporting] = useState(false);
+
+	const containerVariants = {
+		hidden: { opacity: 0 },
+		visible: {
+			opacity: 1,
+			transition: { staggerChildren: 0.1 },
+		},
+	};
+
+	const itemVariants = {
+		hidden: { y: 20, opacity: 0 },
+		visible: {
+			y: 0,
+			opacity: 1,
+			transition: { duration: 0.5 },
+		},
+	};
 
 	useEffect(() => {
 		if (containerName) {
@@ -57,7 +61,10 @@ export default function WiseTrainerCourses() {
 			);
 
 			// Transformation des noms de fichiers en objets de formation
-			const builds = processBuildNames(buildsResponse.data.blobs || []);
+			const builds = processBuildNames(
+				buildsResponse.data.blobs || [],
+				WISETRAINER_CONFIG
+			);
 			setAvailableCourses(builds);
 
 			// Récupérer les formations de l'utilisateur
@@ -77,7 +84,8 @@ export default function WiseTrainerCourses() {
 
 					// Trouver les cours que l'utilisateur a déjà dans son container
 					const userBuilds = processBuildNames(
-						userBuildsResponse.data.blobs || []
+						userBuildsResponse.data.blobs || [],
+						WISETRAINER_CONFIG
 					);
 
 					// Récupérer la progression de l'utilisateur depuis la base de données
@@ -92,6 +100,15 @@ export default function WiseTrainerCourses() {
 								(t) => t.id === build.id
 							);
 
+						// Récupérer les infos du cours depuis les cours disponibles
+						const courseInfo =
+							builds.find((c) => c.id === build.id) || build;
+
+						// S'assurer que le nombre total de modules est correct
+						const totalModules = courseInfo.modules
+							? courseInfo.modules.length
+							: 3; // Valeur par défaut: 3 modules si non spécifié
+
 						return {
 							...build,
 							progress: progressData?.progress || 0,
@@ -102,7 +119,7 @@ export default function WiseTrainerCourses() {
 								progressData?.modules?.filter(
 									(m) => m.completed
 								).length || 0,
-							totalModules: progressData?.modules?.length || 0,
+							totalModules: totalModules,
 						};
 					});
 
@@ -124,68 +141,6 @@ export default function WiseTrainerCourses() {
 		} finally {
 			setIsLoading(false);
 		}
-	};
-
-	// Helper pour transformer les noms de fichiers en objets cours
-	const processBuildNames = (blobs) => {
-		// Extraire les noms uniques des builds (sans extension)
-		const buildNames = new Set();
-		blobs.forEach((blob) => {
-			// Par exemple: wisetrainer/safety-101.data.gz -> safety-101
-			const match = blob.match(
-				/(?:wisetrainer\/)?([^\/]+?)(?:\.data\.gz|\.framework\.js\.gz|\.loader\.js|\.wasm\.gz)$/
-			);
-			if (match && match[1]) {
-				buildNames.add(match[1]);
-			}
-		});
-
-		// Créer des objets cours à partir des noms
-		return Array.from(buildNames).map((name) => {
-			try {
-				// Essayer de charger les détails du cours depuis les fichiers de configuration
-				let courseDetails;
-				try {
-					courseDetails = require(`@/lib/config/wisetrainer/courses/${name}.json`);
-				} catch (e) {
-					// Si le fichier de configuration n'existe pas, utiliser des valeurs par défaut
-					courseDetails = {
-						id: name,
-						name: formatCourseName(name),
-						description: `Formation interactive sur ${formatCourseName(
-							name
-						).toLowerCase()}`,
-						imageUrl: WISETRAINER_CONFIG.DEFAULT_IMAGE,
-						difficulty: "Intermédiaire",
-						duration: "30 min",
-						category: "Sécurité industrielle",
-					};
-				}
-
-				return courseDetails;
-			} catch (error) {
-				// En cas d'erreur, retourner un objet avec des valeurs par défaut
-				return {
-					id: name,
-					name: formatCourseName(name),
-					description: `Formation interactive sur ${formatCourseName(
-						name
-					).toLowerCase()}`,
-					imageUrl: WISETRAINER_CONFIG.DEFAULT_IMAGE,
-					difficulty: "Intermédiaire",
-					duration: "30 min",
-					category: "Sécurité industrielle",
-				};
-			}
-		});
-	};
-
-	// Helper pour formater le nom du cours à partir de son ID
-	const formatCourseName = (id) => {
-		return id
-			.split("-")
-			.map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-			.join(" ");
 	};
 
 	const handleEnrollCourse = async (course) => {
@@ -256,24 +211,6 @@ export default function WiseTrainerCourses() {
 		setFlippedCardId(flippedCardId === courseId ? null : courseId);
 	};
 
-	// Animation variants
-	const containerVariants = {
-		hidden: { opacity: 0 },
-		visible: {
-			opacity: 1,
-			transition: { staggerChildren: 0.1 },
-		},
-	};
-
-	const itemVariants = {
-		hidden: { y: 20, opacity: 0 },
-		visible: {
-			y: 0,
-			opacity: 1,
-			transition: { duration: 0.5 },
-		},
-	};
-
 	// Afficher un message de chargement si le containerName n'est pas encore disponible
 	if (containerLoading) {
 		return (
@@ -304,323 +241,29 @@ export default function WiseTrainerCourses() {
 				</TabsList>
 
 				<TabsContent value="personal">
-					<div className="flex justify-between items-center mb-6">
-						<h2 className="text-xl font-semibold text-wisetwin-darkblue dark:text-white">
-							Vos programmes de formation
-						</h2>
-					</div>
-
-					{isLoading ? (
-						<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-							{[1, 2, 3].map((i) => (
-								<Card key={i} className="h-full">
-									<div className="animate-pulse">
-										<div className="h-48 bg-gray-200 dark:bg-gray-700 rounded-t-lg"></div>
-										<CardHeader>
-											<div className="h-5 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-2"></div>
-											<div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
-										</CardHeader>
-										<CardContent>
-											<div className="h-4 bg-gray-200 dark:bg-gray-700 rounded mb-2"></div>
-											<div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-5/6"></div>
-										</CardContent>
-									</div>
-								</Card>
-							))}
-						</div>
-					) : personalCourses.length === 0 ? (
-						<div className="text-center py-16">
-							<div className="text-4xl mb-4">🎓</div>
-							<h3 className="text-lg font-medium mb-2">
-								Aucune formation
-							</h3>
-							<p className="text-gray-500 dark:text-gray-400 mb-6">
-								Inscrivez-vous à une formation depuis notre
-								catalogue
-							</p>
-							<Button
-								className="bg-wisetwin-blue hover:bg-wisetwin-blue-light"
-								onClick={() => setActiveTab("catalog")}
-							>
-								Parcourir le catalogue
-							</Button>
-						</div>
-					) : (
-						<motion.div
-							variants={containerVariants}
-							initial="hidden"
-							animate="visible"
-							className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-						>
-							{personalCourses.map((course) => (
-								<motion.div
-									key={course.id}
-									variants={itemVariants}
-								>
-									<Card
-										className="h-full hover:shadow-lg transition-shadow duration-300 cursor-pointer border-2 hover:border-wisetwin-blue dark:hover:border-wisetwin-blue-light"
-										onClick={() =>
-											handleCourseSelect(course)
-										}
-									>
-										<div className="relative h-48 w-full">
-											<Image
-												src={
-													course.imageUrl ||
-													WISETRAINER_CONFIG.DEFAULT_IMAGE
-												}
-												alt={course.name}
-												fill
-												className="object-cover rounded-t-lg"
-												onError={(e) => {
-													e.target.src =
-														WISETRAINER_CONFIG.DEFAULT_IMAGE;
-												}}
-											/>
-										</div>
-										<CardHeader>
-											<div className="flex justify-between items-start">
-												<CardTitle>
-													{course.name}
-												</CardTitle>
-												<Badge
-													variant="outline"
-													className="bg-blue-50 text-blue-700 dark:bg-blue-900 dark:text-blue-200"
-												>
-													{course.difficulty ||
-														"Intermédiaire"}
-												</Badge>
-											</div>
-											<CardDescription>
-												Dernier accès:{" "}
-												{new Date(
-													course.lastAccessed
-												).toLocaleDateString()}
-											</CardDescription>
-										</CardHeader>
-										<CardContent>
-											<p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
-												{course.description}
-											</p>
-											<div className="space-y-2">
-												<div className="flex justify-between">
-													<span className="text-sm text-muted-foreground">
-														Progression
-													</span>
-													<span className="text-sm font-medium">
-														{course.progress}%
-													</span>
-												</div>
-												<Progress
-													value={course.progress}
-													className="h-2"
-												/>
-												{course.completedModules >
-													0 && (
-													<div className="text-sm text-gray-500 mt-2">
-														{
-															course.completedModules
-														}
-														/
-														{course.totalModules ||
-															"?"}{" "}
-														modules complétés
-													</div>
-												)}
-											</div>
-										</CardContent>
-										<CardFooter className="flex gap-2">
-											<Button
-												className="flex-1"
-												onClick={(e) => {
-													e.stopPropagation();
-													handleCourseSelect(course);
-												}}
-											>
-												{course.progress > 0
-													? "Continuer"
-													: "Commencer"}
-											</Button>
-											<Button
-												variant="outline"
-												className="flex-shrink-0"
-												onClick={(e) => {
-													e.stopPropagation();
-													handleUnenroll(course);
-												}}
-											>
-												Supprimer
-											</Button>
-										</CardFooter>
-									</Card>
-								</motion.div>
-							))}
-						</motion.div>
-					)}
+					<PersonalCoursesTab
+						isLoading={isLoading}
+						courses={personalCourses}
+						onCourseSelect={handleCourseSelect}
+						onUnenroll={handleUnenroll}
+						onBrowseCatalog={() => setActiveTab("catalog")}
+						containerVariants={containerVariants}
+						itemVariants={itemVariants}
+					/>
 				</TabsContent>
 
 				<TabsContent value="catalog">
-					<div className="mb-6">
-						<h2 className="text-xl font-semibold text-wisetwin-darkblue dark:text-white">
-							Formations disponibles
-						</h2>
-						<p className="text-gray-600 dark:text-gray-300">
-							Découvrez et inscrivez-vous à nos formations
-							professionnelles en réalité virtuelle
-						</p>
-					</div>
-
-					{isLoading ? (
-						<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-							{[1, 2, 3].map((i) => (
-								<Card key={i} className="h-full">
-									<div className="animate-pulse">
-										<div className="h-48 bg-gray-200 dark:bg-gray-700 rounded-t-lg"></div>
-										<CardHeader>
-											<div className="h-5 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-2"></div>
-											<div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
-										</CardHeader>
-										<CardContent>
-											<div className="h-4 bg-gray-200 dark:bg-gray-700 rounded mb-2"></div>
-											<div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-5/6"></div>
-										</CardContent>
-									</div>
-								</Card>
-							))}
-						</div>
-					) : (
-						<motion.div
-							variants={containerVariants}
-							initial="hidden"
-							animate="visible"
-							className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-						>
-							{availableCourses.map((course) => (
-								<motion.div
-									key={course.id}
-									variants={itemVariants}
-								>
-									<Card className="h-full hover:shadow-lg transition-shadow duration-300">
-										<div className="relative h-48 w-full">
-											<Image
-												src={
-													course.imageUrl ||
-													WISETRAINER_CONFIG.DEFAULT_IMAGE
-												}
-												alt={course.name}
-												fill
-												className="object-cover rounded-t-lg"
-												onError={(e) => {
-													e.target.src =
-														WISETRAINER_CONFIG.DEFAULT_IMAGE;
-												}}
-											/>
-										</div>
-										<CardHeader>
-											<div className="flex justify-between items-start">
-												<CardTitle>
-													{course.name}
-												</CardTitle>
-												<Badge
-													variant="outline"
-													className="bg-blue-50 text-blue-700 dark:bg-blue-900 dark:text-blue-200"
-												>
-													{course.difficulty}
-												</Badge>
-											</div>
-											<CardDescription className="flex items-center">
-												<Clock className="h-4 w-4 mr-1" />
-												Durée: {course.duration}
-											</CardDescription>
-										</CardHeader>
-										<CardContent>
-											<p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
-												{course.description}
-											</p>
-
-											{flippedCardId === course.id && (
-												<div className="mt-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-md">
-													<h4 className="font-semibold mb-2">
-														Ce que vous apprendrez:
-													</h4>
-													<ul className="text-sm text-gray-600 dark:text-gray-300 list-disc pl-5 space-y-1">
-														{course.modules
-															?.slice(0, 3)
-															.map((module) => (
-																<li
-																	key={
-																		module.id
-																	}
-																>
-																	{
-																		module.title
-																	}
-																</li>
-															)) || (
-															<>
-																<li>
-																	Protocoles
-																	de sécurité
-																	et bonnes
-																	pratiques
-																</li>
-																<li>
-																	Évaluation
-																	des risques
-																</li>
-																<li>
-																	Procédures
-																	d'intervention
-																	d'urgence
-																</li>
-															</>
-														)}
-													</ul>
-												</div>
-											)}
-										</CardContent>
-										<CardFooter className="flex gap-4">
-											<Button
-												className="flex-1 bg-wisetwin-blue hover:bg-wisetwin-blue-light"
-												onClick={() =>
-													handleEnrollCourse(course)
-												}
-												disabled={
-													isImporting === course.id ||
-													personalCourses.some(
-														(c) =>
-															c.id === course.id
-													)
-												}
-											>
-												{isImporting === course.id
-													? "Inscription..."
-													: personalCourses.some(
-															(c) =>
-																c.id ===
-																course.id
-													  )
-													? "Déjà inscrit"
-													: "S'inscrire"}
-											</Button>
-											<Button
-												className="flex-1"
-												variant="outline"
-												onClick={(e) => {
-													e.preventDefault();
-													toggleCardFlip(course.id);
-												}}
-											>
-												{flippedCardId === course.id
-													? "Moins d'infos"
-													: "Plus d'infos"}
-											</Button>
-										</CardFooter>
-									</Card>
-								</motion.div>
-							))}
-						</motion.div>
-					)}
+					<CatalogCoursesTab
+						isLoading={isLoading}
+						courses={availableCourses}
+						personalCourses={personalCourses}
+						onEnroll={handleEnrollCourse}
+						onToggleInfo={toggleCardFlip}
+						flippedCardId={flippedCardId}
+						isImporting={isImporting}
+						containerVariants={containerVariants}
+						itemVariants={itemVariants}
+					/>
 				</TabsContent>
 			</Tabs>
 		</div>

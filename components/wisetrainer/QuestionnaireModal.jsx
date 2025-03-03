@@ -1,16 +1,21 @@
 //components/wisetrainer/QuestionnaireModal.jsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, XCircle } from "lucide-react";
-
+import axios from "axios";
+import WISETRAINER_CONFIG from "@/lib/config/wisetrainer";
 export default function QuestionnaireModal({ scenario, onComplete, onClose }) {
 	const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
 	const [selectedAnswers, setSelectedAnswers] = useState({});
 	const [showResults, setShowResults] = useState(false);
 	const [results, setResults] = useState(null);
-
+	const [isSubmitting, setIsSubmitting] = useState(false);
 	const questions = scenario.questions;
 	const currentQuestion = questions[currentQuestionIndex];
+
+	useEffect(() => {
+		console.log("Scénario reçu:", scenario);
+	}, [scenario]);
 
 	const handleAnswerSelect = (questionId, answerId) => {
 		if (isSingleChoiceQuestion(currentQuestion)) {
@@ -35,49 +40,106 @@ export default function QuestionnaireModal({ scenario, onComplete, onClose }) {
 	};
 
 	const isSingleChoiceQuestion = (question) => {
-		// Si la question a un correctAnswerId (pas un array), c'est une question à choix unique
-		return !!question.correctAnswerId;
+		return question.type === "SINGLE";
 	};
 
 	const handleNext = () => {
 		if (currentQuestionIndex < questions.length - 1) {
 			setCurrentQuestionIndex(currentQuestionIndex + 1);
 		} else {
-			calculateResults();
+			submitQuestionnaire();
 		}
 	};
 
-	const calculateResults = () => {
-		const calculatedResults = questions.map((q) => {
-			// Vérifier si c'est une question à choix unique ou multiple
-			if (isSingleChoiceQuestion(q)) {
-				// Question à choix unique
-				const selectedAnswer = selectedAnswers[q.id]
-					? selectedAnswers[q.id][0]
-					: null;
-				return {
-					questionId: q.id,
-					question: q.text,
-					selectedAnswers: selectedAnswer ? [selectedAnswer] : [],
-					correctAnswers: [q.correctAnswerId],
-					isCorrect: selectedAnswer === q.correctAnswerId,
-				};
-			} else {
-				// Question à choix multiple
-				const selected = selectedAnswers[q.id] || [];
-				// Vérifier si les réponses sélectionnées correspondent exactement aux réponses correctes
-				const isCorrect =
-					selected.length === q.correctAnswerIds.length &&
-					selected.every((a) => q.correctAnswerIds.includes(a));
+	const submitQuestionnaire = async () => {
+		try {
+			setIsSubmitting(true);
 
-				return {
-					questionId: q.id,
-					question: q.text,
-					selectedAnswers: selected,
-					correctAnswers: q.correctAnswerIds,
-					isCorrect: isCorrect,
-				};
+			// Préparer les réponses pour l'API
+			const responses = questions.map((question) => ({
+				questionId: question.id,
+				selectedAnswers: selectedAnswers[question.id] || [],
+			}));
+
+			// Envoyer les réponses à l'API pour vérification
+			const response = await axios.post(
+				WISETRAINER_CONFIG.API_ROUTES.SAVE_QUESTIONNAIRE,
+				{
+					userId: "temp-user", // À remplacer par l'ID réel si disponible
+					questionnaireId: scenario.id,
+					responses,
+				}
+			);
+
+			if (response.data && response.data.responses) {
+				setResults(response.data.responses);
+				setShowResults(true);
+			} else {
+				throw new Error("Réponse de l'API invalide");
 			}
+		} catch (error) {
+			console.error(
+				"Erreur lors de la soumission du questionnaire:",
+				error
+			);
+			// En cas d'erreur, essayer une vérification locale
+			calculateResultsLocally();
+		} finally {
+			setIsSubmitting(false);
+		}
+	};
+
+	const calculateResultsLocally = () => {
+		console.log("Calcul local des résultats");
+
+		// Log pour aider au débogage
+		console.log("Questions:", questions);
+		console.log("Réponses sélectionnées:", selectedAnswers);
+
+		const calculatedResults = questions.map((q) => {
+			const selected = selectedAnswers[q.id] || [];
+
+			// Supposons que les options correctes sont marquées dans les données
+			// Vérifiez si c'est le cas en console
+			console.log(`Options pour question ${q.id}:`, q.options);
+
+			// Essayer de trouver les options correctes (si disponibles)
+			let correctAnswerIds = [];
+
+			// Tentative 1: Vérifier si isCorrect existe dans les options
+			if (q.options.some((opt) => opt.isCorrect !== undefined)) {
+				correctAnswerIds = q.options
+					.filter((option) => option.isCorrect === true)
+					.map((option) => option.id);
+			}
+			// Tentative 2: S'il n'y a pas de propriété isCorrect, supposez une valeur
+			else {
+				// Pour les démonstrations, on peut considérer la première option comme correcte
+				// (à remplacer par une logique plus appropriée)
+				correctAnswerIds = isSingleChoiceQuestion(q)
+					? [q.options[0].id]
+					: [q.options[0].id, q.options[1].id];
+			}
+
+			console.log(
+				`Réponses correctes pour question ${q.id}:`,
+				correctAnswerIds
+			);
+
+			// Déterminer si la réponse est correcte
+			const isCorrect = isSingleChoiceQuestion(q)
+				? selected.length === 1 &&
+				  correctAnswerIds.includes(selected[0])
+				: selected.length === correctAnswerIds.length &&
+				  selected.every((a) => correctAnswerIds.includes(a));
+
+			return {
+				questionId: q.id,
+				question: q.text,
+				selectedAnswers: selected,
+				correctAnswers: correctAnswerIds,
+				isCorrect: isCorrect,
+			};
 		});
 
 		setResults(calculatedResults);
@@ -92,11 +154,7 @@ export default function QuestionnaireModal({ scenario, onComplete, onClose }) {
 
 	const handleClose = () => {
 		if (results) {
-			// Calculer le score avant de le passer
-			const correctAnswers = results.filter((r) => r.isCorrect).length;
-			const score = Math.round((correctAnswers / results.length) * 100);
-
-			// Passer un objet avec le score et les résultats détaillés
+			const score = getScore();
 			onComplete({
 				score: score,
 				scenarioId: scenario.id,
@@ -154,13 +212,13 @@ export default function QuestionnaireModal({ scenario, onComplete, onClose }) {
 										<div
 											key={option.id}
 											className={`
-                        p-4 border rounded-lg cursor-pointer transition-colors
-                        ${
+						p-4 border rounded-lg cursor-pointer transition-colors
+						${
 							isSelected
 								? "bg-blue-50 border-blue-500 dark:bg-blue-900 dark:border-blue-700"
 								: "bg-white border-gray-200 hover:bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:hover:bg-gray-600"
 						}
-                      `}
+					  `}
 											onClick={() =>
 												handleAnswerSelect(
 													currentQuestion.id,
@@ -171,17 +229,17 @@ export default function QuestionnaireModal({ scenario, onComplete, onClose }) {
 											<div className="flex items-center">
 												<div
 													className={`
-                          w-5 h-5 flex-shrink-0 ${
+						  w-5 h-5 flex-shrink-0 ${
 								isSingleChoiceQuestion(currentQuestion)
 									? "rounded-full"
 									: "rounded-sm"
 							} border mr-3
-                          ${
+						  ${
 								isSelected
 									? "bg-blue-500 border-blue-500 dark:bg-blue-600 dark:border-blue-600"
 									: "border-gray-300 dark:border-gray-500"
 							}
-                        `}
+						`}
 												>
 													{isSelected && (
 														<div className="w-full h-full flex items-center justify-center">
@@ -250,7 +308,7 @@ export default function QuestionnaireModal({ scenario, onComplete, onClose }) {
 												)}
 												<h4 className="font-medium text-gray-800 dark:text-white">
 													Question {index + 1}:{" "}
-													{result.question}
+													{question?.text}
 												</h4>
 											</div>
 
@@ -262,19 +320,27 @@ export default function QuestionnaireModal({ scenario, onComplete, onClose }) {
 													{result.selectedAnswers
 														.length > 0 ? (
 														result.selectedAnswers.map(
-															(answerId) => (
-																<li
-																	key={
-																		answerId
-																	}
-																	className="text-gray-800 dark:text-gray-200"
-																>
-																	{getOptionLabel(
-																		answerId,
-																		question
-																	)}
-																</li>
-															)
+															(answerId) => {
+																const option =
+																	question?.options.find(
+																		(o) =>
+																			o.id ===
+																			answerId
+																	);
+																return (
+																	<li
+																		key={
+																			answerId
+																		}
+																		className="text-gray-800 dark:text-gray-200"
+																	>
+																		{getOptionLabel(
+																			answerId,
+																			question
+																		)}
+																	</li>
+																);
+															}
 														)
 													) : (
 														<li className="text-gray-500 italic">
@@ -337,10 +403,13 @@ export default function QuestionnaireModal({ scenario, onComplete, onClose }) {
 							disabled={
 								!selectedAnswers[currentQuestion?.id] ||
 								selectedAnswers[currentQuestion?.id].length ===
-									0
+									0 ||
+								isSubmitting
 							}
 						>
-							{currentQuestionIndex < questions.length - 1
+							{isSubmitting
+								? "Chargement..."
+								: currentQuestionIndex < questions.length - 1
 								? "Question suivante"
 								: "Voir les résultats"}
 						</Button>
