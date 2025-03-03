@@ -1,3 +1,4 @@
+//app/api/azure/wisetrainer/import/[userId]/[trainingId]/route.jsx
 import { NextResponse } from "next/server";
 import { BlobServiceClient } from "@azure/storage-blob";
 import WISETRAINER_CONFIG from "@/lib/config/wisetrainer";
@@ -42,72 +43,120 @@ export async function POST(request, { params }) {
 			console.log(`Container ${destContainer} créé`);
 		}
 
-		// Fichiers à copier basés sur le nom du build
-		const extensions = [
+		// Fichiers à rechercher et copier, en priorité les .br puis les .gz
+		const possibleExtensions = [
+			// D'abord essayer les extensions .br
+			".data.br",
+			".framework.js.br",
+			".wasm.br",
+			".loader.js", // Le loader est généralement non-compressé
+			// Puis les extensions .gz au cas où
 			".data.gz",
 			".framework.js.gz",
-			".loader.js",
 			".wasm.gz",
 		];
 
-		// Copier chaque fichier
+		// Les fichiers nécessaires pour une build Unity WebGL complète
+		const requiredFileTypes = [
+			".data", // Données
+			".framework.js", // Framework
+			".loader.js", // Loader
+			".wasm", // WebAssembly
+		];
+
+		// Suivre les fichiers qui ont été copiés
+		const copiedFileTypes = new Set();
 		const results = [];
-		for (const ext of extensions) {
-			const sourceBlobName = `${trainingId}${ext}`;
-			const destBlobName = `${destPrefix}${trainingId}${ext}`;
 
-			const sourceBlob =
-				sourceContainerClient.getBlockBlobClient(sourceBlobName);
-			const destBlob =
-				destContainerClient.getBlockBlobClient(destBlobName);
+		// Essayer de copier chaque type de fichier en priorité le format .br
+		for (const baseType of requiredFileTypes) {
+			let isCopied = false;
 
-			// Vérifier si le blob source existe
-			const exists = await sourceBlob.exists();
-			if (!exists) {
-				results.push({
-					file: sourceBlobName,
-					status: "error",
-					message: "Blob source introuvable",
-				});
-				console.error(
-					`Blob ${sourceBlobName} introuvable dans ${sourceContainer}`
-				);
-				continue;
+			// Trouver le premier format disponible pour ce type (d'abord .br, puis .gz ou non compressé)
+			for (const ext of possibleExtensions) {
+				// Vérifier si l'extension correspond au type de base
+				if (!ext.includes(baseType)) continue;
+
+				// Si ce type a déjà été copié, passer au suivant
+				if (copiedFileTypes.has(baseType)) break;
+
+				const sourceBlobName = `${trainingId}${ext}`;
+				const destBlobName = `${destPrefix}${trainingId}${ext}`;
+
+				const sourceBlob =
+					sourceContainerClient.getBlockBlobClient(sourceBlobName);
+
+				// Vérifier si le blob source existe
+				const exists = await sourceBlob.exists();
+				if (!exists) {
+					console.log(
+						`Blob ${sourceBlobName} non trouvé, essai du format suivant...`
+					);
+					continue;
+				}
+
+				// Copier le blob
+				try {
+					const destBlob =
+						destContainerClient.getBlockBlobClient(destBlobName);
+					const copyResult = await destBlob.beginCopyFromURL(
+						sourceBlob.url
+					);
+					const copyStatus = await copyResult.pollUntilDone();
+
+					results.push({
+						file: sourceBlobName,
+						status: "success",
+						destination: destBlobName,
+					});
+
+					console.log(
+						`Copie de ${sourceBlobName} vers ${destBlobName} réussie`
+					);
+
+					// Marquer ce type comme copié pour ne pas essayer les autres formats
+					copiedFileTypes.add(baseType);
+					isCopied = true;
+					break;
+				} catch (copyError) {
+					results.push({
+						file: sourceBlobName,
+						status: "error",
+						message: `Erreur de copie: ${copyError.message}`,
+					});
+					console.error(
+						`Erreur lors de la copie de ${sourceBlobName}:`,
+						copyError
+					);
+				}
 			}
 
-			// Copier le blob
-			try {
-				const copyResult = await destBlob.beginCopyFromURL(
-					sourceBlob.url
-				);
-				const copyStatus = await copyResult.pollUntilDone();
-
+			// Si aucun format n'a été trouvé pour ce type de fichier
+			if (!isCopied) {
+				console.warn(`Aucun fichier trouvé pour le type ${baseType}`);
 				results.push({
-					file: sourceBlobName,
-					status: "success",
-					destination: destBlobName,
-				});
-				console.log(
-					`Copie de ${sourceBlobName} vers ${destBlobName} réussie`
-				);
-			} catch (copyError) {
-				results.push({
-					file: sourceBlobName,
+					file: `${trainingId}${baseType}.*`,
 					status: "error",
-					message: `Erreur de copie: ${copyError.message}`,
+					message:
+						"Aucun format compatible trouvé pour ce type de fichier",
 				});
-				console.error(
-					`Erreur lors de la copie de ${sourceBlobName}:`,
-					copyError
-				);
 			}
 		}
 
+		// Vérifier si tous les types de fichiers requis ont été copiés
+		const success = requiredFileTypes.every((type) =>
+			copiedFileTypes.has(type)
+		);
+
 		return NextResponse.json({
-			success: true,
-			message: `${
-				results.filter((r) => r.status === "success").length
-			} fichiers importés pour la formation ${trainingId}`,
+			success,
+			message: success
+				? `Les fichiers nécessaires pour la formation ${trainingId} ont été importés`
+				: `Importation partielle - certains fichiers sont manquants`,
+			completedFiles: Array.from(copiedFileTypes),
+			missingFiles: requiredFileTypes.filter(
+				(type) => !copiedFileTypes.has(type)
+			),
 			results,
 		});
 	} catch (error) {

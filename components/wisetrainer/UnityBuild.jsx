@@ -1,3 +1,4 @@
+//components/wisetrainer/UnityBuild.jsx
 "use client";
 
 import React, {
@@ -9,18 +10,86 @@ import React, {
 } from "react";
 import { Unity, useUnityContext } from "react-unity-webgl";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
 import WISETRAINER_CONFIG from "@/lib/config/wisetrainer";
+import axios from "axios";
 
 const UnityBuild = forwardRef(
 	({ courseId, containerName, onQuestionnaireRequest }, ref) => {
 		const [loadingTimeout, setLoadingTimeout] = useState(false);
+		const [buildError, setBuildError] = useState(null);
+		const [buildStatus, setBuildStatus] = useState("checking");
+		const [manualLoadingProgress, setManualLoadingProgress] = useState(10);
 
-		// Définir les URLs pour les fichiers Unity
-		const loaderUrl = `/api/azure/fetch-blob-data/${containerName}/${WISETRAINER_CONFIG.BLOB_PREFIXES.WISETRAINER}${courseId}.loader.js`;
-		const dataUrl = `/api/azure/fetch-blob-data/${containerName}/${WISETRAINER_CONFIG.BLOB_PREFIXES.WISETRAINER}${courseId}.data.gz`;
-		const frameworkUrl = `/api/azure/fetch-blob-data/${containerName}/${WISETRAINER_CONFIG.BLOB_PREFIXES.WISETRAINER}${courseId}.framework.js.gz`;
-		const codeUrl = `/api/azure/fetch-blob-data/${containerName}/${WISETRAINER_CONFIG.BLOB_PREFIXES.WISETRAINER}${courseId}.wasm.gz`;
+		// Construire les URLs pour les fichiers Unity avec le bon préfixe
+		const blobPrefix = WISETRAINER_CONFIG.BLOB_PREFIXES.WISETRAINER;
+		const loaderUrl = `/api/azure/fetch-blob-data/${containerName}/${blobPrefix}${courseId}.loader.js`;
+		const dataUrl = `/api/azure/fetch-blob-data/${containerName}/${blobPrefix}${courseId}.data.gz`;
+		const frameworkUrl = `/api/azure/fetch-blob-data/${containerName}/${blobPrefix}${courseId}.framework.js.gz`;
+		const codeUrl = `/api/azure/fetch-blob-data/${containerName}/${blobPrefix}${courseId}.wasm.gz`;
+
+		// Vérifier que tous les fichiers de build existent
+		useEffect(() => {
+			const checkBuildFiles = async () => {
+				if (!containerName || !courseId) return;
+
+				try {
+					setBuildStatus("checking");
+					setManualLoadingProgress(10);
+					console.log("Vérification des fichiers de build...");
+
+					// Liste des extensions à vérifier
+					const extensions = [
+						"loader.js",
+						"data.gz",
+						"framework.js.gz",
+						"wasm.gz",
+					];
+
+					// Vérifier chaque fichier
+					for (const ext of extensions) {
+						const blobName = `${blobPrefix}${courseId}.${ext}`;
+						console.log(`Vérification de ${blobName}...`);
+
+						const response = await axios.get(
+							`/api/azure/check-blob-exists`,
+							{
+								params: {
+									container: containerName,
+									blob: blobName,
+								},
+							}
+						);
+
+						if (!response.data.exists) {
+							setBuildError(
+								`Le fichier ${courseId}.${ext} est manquant. Veuillez contacter l'administrateur.`
+							);
+							setBuildStatus("error");
+							return;
+						}
+
+						// Incrémenter la progression
+						setManualLoadingProgress((prev) => prev + 15);
+					}
+
+					console.log("Tous les fichiers de build sont présents.");
+					setBuildStatus("ready");
+					setManualLoadingProgress(70);
+				} catch (error) {
+					console.error(
+						"Erreur lors de la vérification des fichiers de build:",
+						error
+					);
+					setBuildError(
+						"Erreur lors de la vérification des fichiers de build. Veuillez réessayer plus tard."
+					);
+					setBuildStatus("error");
+				}
+			};
+
+			checkBuildFiles();
+		}, [containerName, courseId, blobPrefix]);
 
 		const {
 			unityProvider,
@@ -31,12 +100,36 @@ const UnityBuild = forwardRef(
 			addEventListener,
 			removeEventListener,
 			sendMessage,
+			error: unityError,
 		} = useUnityContext({
 			loaderUrl,
 			dataUrl,
 			frameworkUrl,
 			codeUrl,
+			webGLContextAttributes: {
+				preserveDrawingBuffer: true,
+			},
 		});
+
+		// Mettre à jour la progression du chargement
+		useEffect(() => {
+			if (buildStatus === "ready" && !isLoaded) {
+				setManualLoadingProgress(70 + loadingProgression * 30);
+			}
+		}, [loadingProgression, buildStatus, isLoaded]);
+
+		// Gérer les erreurs Unity
+		useEffect(() => {
+			if (unityError) {
+				console.error("Erreur Unity:", unityError);
+				setBuildError(
+					`Erreur lors du chargement de l'environnement 3D: ${
+						unityError.message || "Erreur inconnue"
+					}`
+				);
+				setBuildStatus("error");
+			}
+		}, [unityError]);
 
 		// Exposer des méthodes au composant parent via ref
 		useImperativeHandle(ref, () => ({
@@ -61,8 +154,6 @@ const UnityBuild = forwardRef(
 		const handleGameObjectSelected = useCallback(
 			(event) => {
 				console.log("GameObject sélectionné:", event.detail);
-				// Traiter l'interaction avec les objets du jeu
-
 				try {
 					// Analyser les données si nécessaire
 					const data =
@@ -74,17 +165,31 @@ const UnityBuild = forwardRef(
 					if (data.scenarioId) {
 						console.log(`Scénario sélectionné: ${data.scenarioId}`);
 
-						// Ici, on devrait normalement récupérer les données du scénario depuis l'API
-						// Pour l'instant, on va simuler un scénario
-						const mockScenario = {
-							id: data.scenarioId,
-							title: "Scénario de test",
-							description: "Description du scénario de test",
-						};
-
-						if (onQuestionnaireRequest) {
-							onQuestionnaireRequest(mockScenario);
-						}
+						// Récupérer le scénario depuis l'API
+						axios
+							.get(
+								`${WISETRAINER_CONFIG.API_ROUTES.FETCH_SCENARIO}/${data.scenarioId}`
+							)
+							.then((response) => {
+								if (onQuestionnaireRequest) {
+									onQuestionnaireRequest(response.data);
+								}
+							})
+							.catch((error) => {
+								console.error(
+									"Erreur lors de la récupération du scénario:",
+									error
+								);
+								// Fallback à un scénario de test
+								if (onQuestionnaireRequest) {
+									onQuestionnaireRequest({
+										id: data.scenarioId,
+										title: "Scénario de test",
+										description:
+											"Description du scénario de test",
+									});
+								}
+							});
 					}
 				} catch (error) {
 					console.error(
@@ -100,18 +205,32 @@ const UnityBuild = forwardRef(
 		const handleQuestionnaireRequest = useCallback(
 			(event) => {
 				console.log("Questionnaire demandé:", event.detail);
+				const scenarioId = event.detail;
 
-				// Ici, on devrait normalement récupérer les données du scénario depuis l'API
-				// Pour l'instant, on va simuler un scénario
-				const mockScenario = {
-					id: event.detail,
-					title: "Scénario de test",
-					description: "Description du scénario de test",
-				};
-
-				if (onQuestionnaireRequest) {
-					onQuestionnaireRequest(mockScenario);
-				}
+				// Récupérer le scénario depuis l'API
+				axios
+					.get(
+						`${WISETRAINER_CONFIG.API_ROUTES.FETCH_SCENARIO}/${scenarioId}`
+					)
+					.then((response) => {
+						if (onQuestionnaireRequest) {
+							onQuestionnaireRequest(response.data);
+						}
+					})
+					.catch((error) => {
+						console.error(
+							"Erreur lors de la récupération du scénario:",
+							error
+						);
+						// Fallback à un scénario de test
+						if (onQuestionnaireRequest) {
+							onQuestionnaireRequest({
+								id: scenarioId,
+								title: "Scénario de test",
+								description: "Description du scénario de test",
+							});
+						}
+					});
 			},
 			[onQuestionnaireRequest]
 		);
@@ -151,14 +270,36 @@ const UnityBuild = forwardRef(
 
 		// Détection de timeout de chargement
 		useEffect(() => {
-			if (!isLoaded && !loadingTimeout) {
+			if (!isLoaded && !loadingTimeout && buildStatus === "ready") {
 				const timer = setTimeout(() => {
 					setLoadingTimeout(true);
 				}, 60000); // 60 secondes timeout
 
 				return () => clearTimeout(timer);
 			}
-		}, [isLoaded, loadingTimeout]);
+		}, [isLoaded, loadingTimeout, buildStatus]);
+
+		// En cas d'erreur, afficher un message d'erreur
+		if (buildStatus === "error" || buildError) {
+			return (
+				<div className="overflow-hidden">
+					<div className="aspect-video w-full relative bg-gray-100 dark:bg-gray-800 rounded-lg flex flex-col items-center justify-center p-6">
+						<div className="text-center">
+							<div className="text-red-500 text-xl mb-4">
+								Erreur de chargement
+							</div>
+							<p className="text-gray-600 dark:text-gray-300 mb-4">
+								{buildError ||
+									"Une erreur s'est produite lors du chargement de l'environnement 3D."}
+							</p>
+							<Button onClick={() => window.location.reload()}>
+								Réessayer
+							</Button>
+						</div>
+					</div>
+				</div>
+			);
+		}
 
 		return (
 			<div className="overflow-hidden">
@@ -186,21 +327,22 @@ const UnityBuild = forwardRef(
 							) : (
 								<>
 									<div className="mb-4">
-										Chargement de l'environnement de
-										formation...
+										{buildStatus === "checking"
+											? "Vérification des fichiers de formation..."
+											: "Chargement de l'environnement de formation..."}
 									</div>
 									<div className="w-64 bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
 										<div
-											className="bg-wisetwin-blue h-2.5 rounded-full"
+											className="bg-wisetwin-blue h-2.5 rounded-full transition-all duration-500"
 											style={{
 												width: `${Math.round(
-													loadingProgression * 100
+													manualLoadingProgress
 												)}%`,
 											}}
 										></div>
 									</div>
 									<div className="mt-2 text-sm text-gray-500">
-										{Math.round(loadingProgression * 100)}%
+										{Math.round(manualLoadingProgress)}%
 									</div>
 								</>
 							)}
@@ -254,6 +396,23 @@ const UnityBuild = forwardRef(
 										title: "Scénario de test",
 										description:
 											"Description du scénario de test",
+										questions: [
+											{
+												id: "q1",
+												text: "Question test",
+												type: "SINGLE",
+												options: [
+													{
+														id: "o1",
+														text: "Option 1",
+													},
+													{
+														id: "o2",
+														text: "Option 2",
+													},
+												],
+											},
+										],
 									});
 								}
 							}}
