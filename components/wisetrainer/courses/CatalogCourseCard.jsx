@@ -13,7 +13,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Clock } from "lucide-react";
-import WISETRAINER_CONFIG from "@/lib/config/wisetrainer";
+import WISETRAINER_CONFIG from "@/lib/config/wisetrainer/wisetrainer";
 const CatalogCourseCard = ({
 	course,
 	onEnroll,

@@ -10,7 +10,7 @@ import React, {
 } from "react";
 import { Unity, useUnityContext } from "react-unity-webgl";
 import { Button } from "@/components/ui/button";
-import WISETRAINER_CONFIG from "@/lib/config/wisetrainer";
+import WISETRAINER_CONFIG from "@/lib/config/wisetrainer/wisetrainer";
 import axios from "axios";
 
 const UnityBuild = forwardRef(

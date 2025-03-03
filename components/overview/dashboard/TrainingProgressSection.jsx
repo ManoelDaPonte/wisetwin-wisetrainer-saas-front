@@ -1,4 +1,3 @@
-//components/overview/dashboard/TrainingProgressSection.jsx
 import React from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -11,7 +10,7 @@ import {
 } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
-import { Activity } from "lucide-react";
+import { Activity, ArrowRight } from "lucide-react";
 
 export default function TrainingProgressSection({
 	trainings,
@@ -22,12 +21,18 @@ export default function TrainingProgressSection({
 
 	// Formatage des dates
 	const formatDate = (dateString) => {
+		if (!dateString) return "Date inconnue";
 		return new Date(dateString).toLocaleDateString("fr-FR", {
 			year: "numeric",
 			month: "long",
 			day: "numeric",
 		});
 	};
+
+	// Trier les formations par dernier accès
+	const sortedTrainings = [...trainings].sort(
+		(a, b) => new Date(b.lastAccessed) - new Date(a.lastAccessed)
+	);
 
 	return (
 		<Card>
@@ -43,9 +48,9 @@ export default function TrainingProgressSection({
 			<CardContent>
 				{isLoading ? (
 					<ProgressSkeletonLoader />
-				) : trainings.length > 0 ? (
+				) : sortedTrainings.length > 0 ? (
 					<TrainingProgressList
-						trainings={trainings}
+						trainings={sortedTrainings}
 						formatDate={formatDate}
 					/>
 				) : (
@@ -66,32 +71,73 @@ export default function TrainingProgressSection({
 		</Card>
 	);
 }
-
 // Composant pour afficher la liste des formations avec leur progression
 function TrainingProgressList({ trainings, formatDate }) {
+	// Fonction pour déterminer le nombre correct de modules
+	const getModuleCount = (training) => {
+		// Si nous avons les données explicites de modules
+		if (training.modules && Array.isArray(training.modules)) {
+			return {
+				total: training.modules.length,
+				completed: training.modules.filter((m) => m.completed).length,
+			};
+		}
+
+		// Si nous avons des données de totalModules explicites
+		if (
+			training.totalModules &&
+			typeof training.totalModules === "number"
+		) {
+			return {
+				total: training.totalModules,
+				completed: training.completedModules || 0,
+			};
+		}
+
+		// Valeur par défaut pour les cours (3 modules est une valeur typique)
+		return {
+			total: 3,
+			completed: 0,
+		};
+	};
 	return (
 		<div className="space-y-6">
-			{trainings.slice(0, 3).map((training) => (
-				<div key={training.id} className="space-y-2">
-					<div className="flex justify-between items-center">
-						<span className="font-medium">{training.name}</span>
-						<span className="text-sm text-gray-500 dark:text-gray-400">
-							{training.progress}%
-						</span>
+			{trainings.slice(0, 3).map((training) => {
+				const moduleCount = getModuleCount(training);
+
+				return (
+					<div key={training.id} className="space-y-2">
+						<div className="flex justify-between items-center">
+							<span className="font-medium">{training.name}</span>
+							<div>
+								<span className="text-sm text-gray-500 dark:text-gray-400 mr-2">
+									{training.progress}%
+								</span>
+								<Button
+									variant="ghost"
+									className="p-0 h-6 w-6 rounded-full hover:bg-wisetwin-blue/10"
+									onClick={() =>
+										(window.location.href = `/wisetrainer/${training.id}`)
+									}
+								>
+									<ArrowRight className="h-4 w-4 text-wisetwin-blue" />
+								</Button>
+							</div>
+						</div>
+						<Progress value={training.progress} className="h-2" />
+						<div className="flex justify-between text-xs text-gray-500 dark:text-gray-400">
+							<span>
+								Dernier accès:{" "}
+								{formatDate(training.lastAccessed)}
+							</span>
+							<span>
+								{moduleCount.completed}/{moduleCount.total}{" "}
+								modules
+							</span>
+						</div>
 					</div>
-					<Progress value={training.progress} className="h-2" />
-					<div className="flex justify-between text-xs text-gray-500 dark:text-gray-400">
-						<span>
-							Dernier accès: {formatDate(training.lastAccessed)}
-						</span>
-						<span>
-							{training.modules?.filter((m) => m.completed)
-								.length || 0}
-							/{training.modules?.length || 0} modules
-						</span>
-					</div>
-				</div>
-			))}
+				);
+			})}
 		</div>
 	);
 }

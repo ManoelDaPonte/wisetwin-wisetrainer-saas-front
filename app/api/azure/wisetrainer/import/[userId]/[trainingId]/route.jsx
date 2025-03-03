@@ -1,7 +1,7 @@
 //app/api/azure/wisetrainer/import/[userId]/[trainingId]/route.jsx
 import { NextResponse } from "next/server";
 import { BlobServiceClient } from "@azure/storage-blob";
-import WISETRAINER_CONFIG from "@/lib/config/wisetrainer";
+import WISETRAINER_CONFIG from "@/lib/config/wisetrainer/wisetrainer";
 
 export async function POST(request, { params }) {
 	try {

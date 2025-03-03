@@ -13,7 +13,7 @@ import CourseDetailsTab from "@/components/wisetrainer/course/CourseDetailsTab";
 import CourseTrainingTab from "@/components/wisetrainer/course/CourseTrainingTab";
 import QuestionnaireModal from "@/components/wisetrainer/QuestionnaireModal";
 import { useUnityEvents } from "@/lib/hooks/useUnityEvents";
-import WISETRAINER_CONFIG from "@/lib/config/wisetrainer";
+import WISETRAINER_CONFIG from "@/lib/config/wisetrainer/wisetrainer";
 
 export default function CourseDetail({ params }) {
 	const router = useRouter();

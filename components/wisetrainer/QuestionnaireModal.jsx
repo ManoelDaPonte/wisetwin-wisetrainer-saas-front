@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, XCircle } from "lucide-react";
 import axios from "axios";
-import WISETRAINER_CONFIG from "@/lib/config/wisetrainer";
+import WISETRAINER_CONFIG from "@/lib/config/wisetrainer/wisetrainer";
 export default function QuestionnaireModal({ scenario, onComplete, onClose }) {
 	const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
 	const [selectedAnswers, setSelectedAnswers] = useState({});

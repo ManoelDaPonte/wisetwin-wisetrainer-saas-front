@@ -1,4 +1,4 @@
-//components/overview/StatisticsSection.jsx
+//components/overview/dashboard/StatisticsSection.jsx
 import React from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -9,7 +9,7 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
-import { Clock, GraduationCap, Box, BarChart3 } from "lucide-react";
+import { Clock, GraduationCap, Award, BarChart3 } from "lucide-react";
 
 export default function StatisticsSection({ stats, isLoading }) {
 	const statCards = [
@@ -27,7 +27,7 @@ export default function StatisticsSection({ stats, isLoading }) {
 			icon: BarChart3,
 			description: "Progression moyenne",
 			action: "Détails",
-			route: null,
+			route: "/overview?tab=trainings",
 		},
 		{
 			title: "Temps total",
@@ -36,6 +36,15 @@ export default function StatisticsSection({ stats, isLoading }) {
 			description: "Temps de formation",
 			action: "Analyser",
 			route: null,
+		},
+		{
+			title: "Taux de réussite",
+			value: `${stats.successRate}%`,
+			icon: Award,
+			description: "Questions répondues",
+			action: "Voir détails",
+			route: null,
+			additionalInfo: `${stats.correctAnswers}/${stats.questionsAnswered} réponses correctes`,
 		},
 	];
 
@@ -60,7 +69,7 @@ export default function StatisticsSection({ stats, isLoading }) {
 				</h2>
 			</div>
 
-			<div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+			<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
 				{statCards.map((stat, index) => (
 					<motion.div
 						key={index}
@@ -71,14 +80,14 @@ export default function StatisticsSection({ stats, isLoading }) {
 					>
 						<Card className="flex flex-col h-full">
 							<CardHeader className="pb-2 flex flex-row items-center justify-between">
-								<CardTitle className="text-lg">
+								<CardTitle className="text-base">
 									{stat.title}
 								</CardTitle>
 								<div className="w-10 h-10 rounded-full bg-wisetwin-blue/10 dark:bg-wisetwin-blue/20 flex items-center justify-center">
 									<stat.icon className="w-5 h-5 text-wisetwin-blue" />
 								</div>
 							</CardHeader>
-							<CardContent className="py-4">
+							<CardContent className="py-2">
 								{isLoading ? (
 									<div className="animate-pulse space-y-2">
 										<div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
@@ -86,12 +95,17 @@ export default function StatisticsSection({ stats, isLoading }) {
 									</div>
 								) : (
 									<>
-										<div className="text-3xl font-bold text-wisetwin-darkblue dark:text-white">
+										<div className="text-2xl font-bold text-wisetwin-darkblue dark:text-white">
 											{stat.value}
 										</div>
 										<p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
 											{stat.description}
 										</p>
+										{stat.additionalInfo && (
+											<p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+												{stat.additionalInfo}
+											</p>
+										)}
 									</>
 								)}
 							</CardContent>
@@ -99,7 +113,7 @@ export default function StatisticsSection({ stats, isLoading }) {
 								{stat.route && (
 									<Button
 										variant="outline"
-										className="w-full"
+										className="w-full text-sm"
 										onClick={() => {
 											window.location.href = stat.route;
 										}}

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import axios from "axios";
-import WISETRAINER_CONFIG from "@/lib/config/wisetrainer";
+import WISETRAINER_CONFIG from "@/lib/config/wisetrainer/wisetrainer";
 
 // Importation statique du mapping
 import wiseTrainer01Config from "@/lib/config/wisetrainer/courses/WiseTrainer_01.json";

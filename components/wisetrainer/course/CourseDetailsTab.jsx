@@ -55,16 +55,7 @@ export default function CourseDetailsTab({
 										</div>
 										<div className="flex-1 group">
 											<h3 className="text-lg font-medium mb-1 flex items-center">
-												<span
-													className="cursor-pointer hover:text-wisetwin-blue dark:hover:text-wisetwin-blue-light"
-													onClick={() =>
-														onModuleSelect(
-															module.id
-														)
-													}
-												>
-													{module.title}
-												</span>
+												<span>{module.title}</span>
 												{module.completed && (
 													<span className="ml-2 text-sm bg-green-100 text-green-800 px-2 py-0.5 rounded-full dark:bg-green-900 dark:text-green-200">
 														{module.score}%

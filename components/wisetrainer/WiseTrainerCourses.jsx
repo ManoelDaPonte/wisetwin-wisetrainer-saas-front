@@ -4,10 +4,11 @@ import { useRouter } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import axios from "axios";
 import { useAzureContainer } from "@/lib/hooks/useAzureContainer";
-import WISETRAINER_CONFIG from "@/lib/config/wisetrainer";
+import WISETRAINER_CONFIG from "@/lib/config/wisetrainer/wisetrainer";
 import PersonalCoursesTab from "@/components/wisetrainer/courses/PersonalCoursesTab";
 import CatalogCoursesTab from "@/components/wisetrainer/courses/CatalogCoursesTab";
 import { processBuildNames } from "@/components/wisetrainer/courses/helper";
+import { useToast } from "@/lib/hooks/useToast";
 export default function WiseTrainerCourses() {
 	const router = useRouter();
 	const { containerName, isLoading: containerLoading } = useAzureContainer();
@@ -17,6 +18,7 @@ export default function WiseTrainerCourses() {
 	const [isLoading, setIsLoading] = useState(true);
 	const [flippedCardId, setFlippedCardId] = useState(null);
 	const [isImporting, setIsImporting] = useState(false);
+	const { toast } = useToast();
 
 	const containerVariants = {
 		hidden: { opacity: 0 },
@@ -145,7 +147,12 @@ export default function WiseTrainerCourses() {
 
 	const handleEnrollCourse = async (course) => {
 		if (!containerName) {
-			alert("Container non disponible. Veuillez vous reconnecter.");
+			toast({
+				title: "Erreur d'inscription",
+				description:
+					"Container non disponible. Veuillez vous reconnecter.",
+				variant: "destructive",
+			});
 			return;
 		}
 
@@ -160,10 +167,19 @@ export default function WiseTrainerCourses() {
 			// Rafraîchir les données
 			await fetchData();
 			setActiveTab("personal");
-			alert(`Inscription réussie à la formation "${course.name}"!`);
+
+			toast({
+				title: "Inscription réussie",
+				description: `Vous êtes maintenant inscrit à la formation "${course.name}"`,
+				variant: "success",
+			});
 		} catch (error) {
 			console.error("Erreur lors de l'inscription au cours:", error);
-			alert("Échec de l'inscription au cours. Veuillez réessayer.");
+			toast({
+				title: "Échec de l'inscription",
+				description: "Une erreur est survenue. Veuillez réessayer.",
+				variant: "destructive",
+			});
 		} finally {
 			setIsImporting(null);
 		}
@@ -189,7 +205,12 @@ export default function WiseTrainerCourses() {
 				setPersonalCourses(
 					personalCourses.filter((c) => c.id !== course.id)
 				);
-				alert("Désabonnement réussi.");
+
+				toast({
+					title: "Désabonnement réussi",
+					description: `Vous n'êtes plus inscrit à la formation "${course.name}"`,
+					variant: "success",
+				});
 			} else {
 				throw new Error(
 					response.data.error || "Échec du désabonnement"
@@ -197,9 +218,11 @@ export default function WiseTrainerCourses() {
 			}
 		} catch (error) {
 			console.error("Erreur lors du désabonnement:", error);
-			alert(
-				"Une erreur est survenue lors du désabonnement. Veuillez réessayer."
-			);
+			toast({
+				title: "Échec du désabonnement",
+				description: "Une erreur est survenue. Veuillez réessayer.",
+				variant: "destructive",
+			});
 		}
 	};
 

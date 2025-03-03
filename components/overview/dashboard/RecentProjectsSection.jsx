@@ -1,11 +1,11 @@
-//components/overview/RecentProjectsSection.jsx
+//components/overview/dashboard/RecentProjectsSection.jsx
 import React from "react";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, BookOpen } from "lucide-react";
 import {
 	Card,
 	CardContent,
@@ -57,6 +57,28 @@ export default function RecentProjectsSection({ projects, isLoading }) {
 		}
 	};
 
+	const getStatusBadge = (progress) => {
+		if (progress === 100) {
+			return (
+				<Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100">
+					Terminé
+				</Badge>
+			);
+		} else if (progress > 0) {
+			return (
+				<Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100">
+					En cours
+				</Badge>
+			);
+		} else {
+			return (
+				<Badge className="bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300">
+					Non commencé
+				</Badge>
+			);
+		}
+	};
+
 	return (
 		<div className="mb-10">
 			<div className="flex justify-between items-baseline mb-4">
@@ -92,7 +114,7 @@ export default function RecentProjectsSection({ projects, isLoading }) {
 				<Card className="p-8 text-center">
 					<div className="mb-4 text-gray-400 dark:text-gray-500">
 						<div className="inline-flex items-center justify-center h-12 w-12 rounded-full bg-gray-100 dark:bg-gray-800 mb-4">
-							<ArrowRight className="w-6 h-6" />
+							<BookOpen className="w-6 h-6" />
 						</div>
 						<h3 className="text-lg font-medium mb-2">
 							Aucune activité récente
@@ -128,30 +150,18 @@ export default function RecentProjectsSection({ projects, isLoading }) {
 								onClick={() => handleProjectClick(project)}
 							>
 								<div className="relative h-40 w-full">
-									{project.imageUrl && (
-										<Image
-											src={project.imageUrl}
-											alt={project.name}
-											fill
-											className="object-cover"
-											onError={(e) => {
-												e.target.src =
-													"/images/png/placeholder.png";
-											}}
-										/>
-									)}
+									<Image
+										src={project.imageUrl}
+										alt={project.name}
+										fill
+										className="object-cover"
+										onError={(e) => {
+											e.target.src =
+												"/images/png/placeholder.png";
+										}}
+									/>
 									<div className="absolute top-2 right-2">
-										<Badge
-											className={
-												project.type === "digitalTwin"
-													? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-100"
-													: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100"
-											}
-										>
-											{project.type === "digitalTwin"
-												? "Digital Twin"
-												: "Formation"}
-										</Badge>
+										{getStatusBadge(project.progress)}
 									</div>
 								</div>
 								<CardHeader className="pb-2">
@@ -184,7 +194,11 @@ export default function RecentProjectsSection({ projects, isLoading }) {
 								<div className="px-6 pb-4">
 									<Button
 										className="w-full"
-										variant="outline"
+										variant={
+											project.progress === 0
+												? "default"
+												: "outline"
+										}
 									>
 										{project.progress === 0
 											? "Commencer"

@@ -59,55 +59,102 @@ function AchievementsList({ achievements }) {
 		});
 	};
 
+	// Grouper les achievements par catégorie
+	const groupedAchievements = {
+		unlocked: achievements.filter((a) => a.unlocked),
+		locked: achievements.filter((a) => !a.unlocked),
+	};
+
 	return (
-		<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-			{achievements.map((achievement) => {
-				const IconComponent = getAchievementIcon(achievement.iconName);
-				return (
-					<motion.div key={achievement.id} variants={itemVariants}>
-						<Card
-							className={achievement.unlocked ? "" : "opacity-60"}
-						>
-							<CardHeader className="flex flex-row items-center gap-4">
-								<div
-									className={`rounded-full p-3 ${
-										achievement.unlocked
-											? "bg-wisetwin-blue/10 dark:bg-wisetwin-blue/20"
-											: "bg-gray-100 dark:bg-gray-800"
-									}`}
+		<div className="space-y-8">
+			{/* Achievements débloqués */}
+			{groupedAchievements.unlocked.length > 0 && (
+				<div>
+					<h3 className="text-lg font-semibold mb-4 text-wisetwin-darkblue dark:text-white">
+						Réalisations débloquées
+					</h3>
+					<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+						{groupedAchievements.unlocked.map((achievement) => {
+							const IconComponent = getAchievementIcon(
+								achievement.iconName
+							);
+							return (
+								<motion.div
+									key={achievement.id}
+									variants={itemVariants}
 								>
-									{achievement.unlocked ? (
-										<IconComponent className="w-6 h-6 text-wisetwin-blue" />
-									) : (
-										<Lock className="w-6 h-6 text-gray-400 dark:text-gray-500" />
-									)}
-								</div>
-								<div>
-									<CardTitle className="text-base">
-										{achievement.title}
-									</CardTitle>
-									<CardDescription>
-										{achievement.unlocked
-											? "Débloqué"
-											: "Verrouillé"}
-									</CardDescription>
-								</div>
-							</CardHeader>
-							<CardContent>
-								<p className="text-sm text-gray-600 dark:text-gray-300">
-									{achievement.description}
-								</p>
-								{achievement.unlockedAt && (
-									<p className="text-xs text-gray-500 mt-2">
-										Obtenu le{" "}
-										{formatDate(achievement.unlockedAt)}
-									</p>
-								)}
-							</CardContent>
-						</Card>
-					</motion.div>
-				);
-			})}
+									<Card className="hover:border-wisetwin-blue dark:hover:border-wisetwin-blue-light transition-colors">
+										<CardHeader className="flex flex-row items-center gap-4">
+											<div className="rounded-full p-3 bg-wisetwin-blue/10 dark:bg-wisetwin-blue/20">
+												<IconComponent className="w-6 h-6 text-wisetwin-blue" />
+											</div>
+											<div>
+												<CardTitle className="text-base">
+													{achievement.title}
+												</CardTitle>
+												<CardDescription>
+													Débloqué le{" "}
+													{formatDate(
+														achievement.unlockedAt
+													)}
+												</CardDescription>
+											</div>
+										</CardHeader>
+										<CardContent>
+											<p className="text-sm text-gray-600 dark:text-gray-300">
+												{achievement.description}
+											</p>
+										</CardContent>
+									</Card>
+								</motion.div>
+							);
+						})}
+					</div>
+				</div>
+			)}
+
+			{/* Achievements verrouillés */}
+			{groupedAchievements.locked.length > 0 && (
+				<div>
+					<h3 className="text-lg font-semibold mb-4 text-wisetwin-darkblue dark:text-white">
+						Réalisations à débloquer
+					</h3>
+					<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+						{groupedAchievements.locked.map((achievement) => {
+							const IconComponent = getAchievementIcon(
+								achievement.iconName
+							);
+							return (
+								<motion.div
+									key={achievement.id}
+									variants={itemVariants}
+								>
+									<Card className="opacity-60">
+										<CardHeader className="flex flex-row items-center gap-4">
+											<div className="rounded-full p-3 bg-gray-100 dark:bg-gray-800">
+												<Lock className="w-6 h-6 text-gray-400 dark:text-gray-500" />
+											</div>
+											<div>
+												<CardTitle className="text-base">
+													{achievement.title}
+												</CardTitle>
+												<CardDescription>
+													Verrouillé
+												</CardDescription>
+											</div>
+										</CardHeader>
+										<CardContent>
+											<p className="text-sm text-gray-600 dark:text-gray-300">
+												{achievement.description}
+											</p>
+										</CardContent>
+									</Card>
+								</motion.div>
+							);
+						})}
+					</div>
+				</div>
+			)}
 		</div>
 	);
 }

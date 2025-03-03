@@ -107,10 +107,10 @@ function RecentAchievementsList({
 				const IconComponent = getAchievementIcon(achievement.iconName);
 				return (
 					<div key={achievement.id} className="flex items-start">
-						<div className="bg-wisetwin-blue/10 dark:bg-wisetwin-blue/20 p-2 rounded-full mr-3">
+						<div className="bg-wisetwin-blue/10 dark:bg-wisetwin-blue/20 p-3 rounded-full mr-3">
 							<IconComponent className="w-5 h-5 text-wisetwin-blue" />
 						</div>
-						<div>
+						<div className="flex-1">
 							<h4 className="font-medium text-sm">
 								{achievement.title}
 							</h4>
