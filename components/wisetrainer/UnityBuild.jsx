@@ -10,7 +10,6 @@ import React, {
 } from "react";
 import { Unity, useUnityContext } from "react-unity-webgl";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
 import WISETRAINER_CONFIG from "@/lib/config/wisetrainer";
 import axios from "axios";
 

@@ -98,21 +98,43 @@ export async function POST(request) {
 				},
 			});
 		} else {
+			// Récupérer tous les modules du cours
 			const courseModules = await prisma.module.findMany({
 				where: {
 					courseId: course.id,
 				},
 			});
-			const totalModules = courseModules.length;
+			const totalModules = courseModules.length || 1; // Éviter division par zéro
 
-			// CORRECTION : Calculer le nombre de modules complétés
+			// Calculer le nombre de modules complétés
 			const completedModuleCount =
 				userTraining.userModules.filter((module) => module.completed)
 					.length + (completedModule ? 1 : 0); // +1 si un nouveau module vient d'être complété
 
+			// S'assurer que nous n'avons pas compté deux fois le même module
+			const uniqueCompletedModules = new Set(
+				userTraining.userModules
+					.filter((m) => m.completed)
+					.map((m) => m.moduleId)
+			);
+
+			if (completedModule) {
+				const moduleEntity = await prisma.module.findFirst({
+					where: {
+						moduleId: completedModule,
+						courseId: course.id,
+					},
+				});
+
+				if (moduleEntity) {
+					uniqueCompletedModules.add(moduleEntity.id);
+				}
+			}
+
+			// Calculer la progression en fonction du nombre total de modules du cours
 			const updatedProgress = Math.min(
 				100,
-				Math.round((completedModuleCount / totalModules) * 100)
+				Math.round((uniqueCompletedModules.size / totalModules) * 100)
 			);
 
 			// Mise à jour de l'entraînement existant
@@ -125,7 +147,7 @@ export async function POST(request) {
 					lastAccessed: new Date(),
 					// Si tous les modules sont complétés, marquer le cours comme terminé
 					completedAt:
-						completedModuleCount >= totalModules
+						uniqueCompletedModules.size >= totalModules
 							? new Date()
 							: userTraining.completedAt,
 				},

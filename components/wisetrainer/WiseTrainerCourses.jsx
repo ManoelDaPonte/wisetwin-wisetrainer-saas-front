@@ -623,11 +623,6 @@ export default function WiseTrainerCourses() {
 					)}
 				</TabsContent>
 			</Tabs>
-
-			{/* Debugging - peut être supprimé en production */}
-			<div className="mt-8 p-4 bg-gray-100 dark:bg-gray-800 rounded-lg text-sm">
-				<p>Container utilisateur: {containerName || "Non défini"}</p>
-			</div>
 		</div>
 	);
 }

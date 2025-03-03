@@ -1,4 +1,4 @@
-// hooks/wisetrainer/useUnityEvents.js
+//lib/hooks/useUnityEvents.jsx
 import { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import WISETRAINER_CONFIG from "@/lib/config/wisetrainer";

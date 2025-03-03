@@ -133,7 +133,11 @@ export default function QuestionnaireDebug({
 		if (results) {
 			const score = getScore();
 			if (onComplete) {
-				onComplete(scenario.id, score >= 70, score);
+				// Passer un objet avec le score au lieu des résultats bruts
+				onComplete({
+					score: score,
+					scenarioId: scenario.id,
+				});
 			}
 		}
 	};

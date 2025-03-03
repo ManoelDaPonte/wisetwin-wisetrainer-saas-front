@@ -1,7 +1,10 @@
 //app/api/azure/wisetrainer/unenroll/[userId]/[trainingId]/route.jsx
 import { NextResponse } from "next/server";
 import { BlobServiceClient } from "@azure/storage-blob";
+import { PrismaClient } from "@prisma/client";
 import WISETRAINER_CONFIG from "@/lib/config/wisetrainer";
+
+const prisma = new PrismaClient();
 
 export async function DELETE(request, { params }) {
 	try {
@@ -19,6 +22,106 @@ export async function DELETE(request, { params }) {
 			`Suppression de la formation ${trainingId} pour l'utilisateur ${userId}`
 		);
 
+		// 1. Supprimer les données de progression de la base de données
+		let dbCleanupResults = {
+			success: false,
+			message: "Base de données non nettoyée",
+		};
+
+		try {
+			// Trouver l'utilisateur par son container Azure
+			const user = await prisma.user.findFirst({
+				where: {
+					azureContainer: userId,
+				},
+			});
+
+			if (user) {
+				// Trouver le cours
+				const course = await prisma.course.findUnique({
+					where: {
+						courseId: trainingId,
+					},
+				});
+
+				if (course) {
+					// Trouver l'entrée UserCourse correspondante
+					const userCourse = await prisma.userCourse.findFirst({
+						where: {
+							userId: user.id,
+							courseId: course.id,
+						},
+						include: {
+							userModules: true,
+						},
+					});
+
+					if (userCourse) {
+						// Supprimer d'abord les modules liés
+						if (userCourse.userModules.length > 0) {
+							await prisma.userModule.deleteMany({
+								where: {
+									userCourseId: userCourse.id,
+								},
+							});
+						}
+
+						// Supprimer les réponses liées à ce cours
+						await prisma.userResponse.deleteMany({
+							where: {
+								userId: user.id,
+								scenario: {
+									module: {
+										courseId: course.id,
+									},
+								},
+							},
+						});
+
+						// Supprimer l'enregistrement du cours de l'utilisateur
+						await prisma.userCourse.delete({
+							where: {
+								id: userCourse.id,
+							},
+						});
+
+						dbCleanupResults = {
+							success: true,
+							message:
+								"Données de progression supprimées avec succès",
+						};
+					} else {
+						dbCleanupResults = {
+							success: true,
+							message:
+								"Aucune donnée de progression trouvée pour ce cours",
+						};
+					}
+				} else {
+					dbCleanupResults = {
+						success: false,
+						message: "Cours non trouvé dans la base de données",
+					};
+				}
+			} else {
+				dbCleanupResults = {
+					success: false,
+					message: "Utilisateur non trouvé dans la base de données",
+				};
+			}
+		} catch (dbError) {
+			console.error(
+				"Erreur lors du nettoyage de la base de données:",
+				dbError
+			);
+			dbCleanupResults = {
+				success: false,
+				message: `Erreur lors du nettoyage de la base de données: ${dbError.message}`,
+				error: dbError,
+			};
+		}
+
+		// 2. Supprimer les fichiers du blob storage comme avant
 		// Connexion au service Azure Blob Storage
 		const blobServiceClient = BlobServiceClient.fromConnectionString(
 			process.env.AZURE_STORAGE_CONNECTION_STRING
@@ -31,7 +134,10 @@ export async function DELETE(request, { params }) {
 		const containerExists = await containerClient.exists();
 		if (!containerExists) {
 			return NextResponse.json(
-				{ error: `Le container ${userId} n'existe pas` },
+				{
+					error: `Le container ${userId} n'existe pas`,
+					dbCleanup: dbCleanupResults,
+				},
 				{ status: 404 }
 			);
 		}
@@ -127,6 +233,7 @@ export async function DELETE(request, { params }) {
 			message: `${
 				results.filter((r) => r.status === "success").length
 			} fichiers supprimés pour la formation ${trainingId}`,
+			dbCleanup: dbCleanupResults,
 			results,
 		});
 	} catch (error) {

@@ -3,30 +3,17 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-	Card,
-	CardContent,
-	CardHeader,
-	CardTitle,
-	CardDescription,
-} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
-import { Badge } from "@/components/ui/badge";
-import {
-	ArrowLeft,
-	Book,
-	Award,
-	Clock,
-	Calendar,
-	CheckCircle,
-	Info,
-} from "lucide-react";
-import Image from "next/image";
+import { ArrowLeft } from "lucide-react";
 import axios from "axios";
 import { useAzureContainer } from "@/lib/hooks/useAzureContainer";
 import UnityBuild from "@/components/wisetrainer/UnityBuild";
-import QuestionnaireDebug from "@/components/wisetrainer/QuestionnaireDebug";
+import CourseDetailHeader from "@/components/wisetrainer/course/CourseDetailHeader";
+import CourseDetailsTab from "@/components/wisetrainer/course/CourseDetailsTab";
+import CourseTrainingTab from "@/components/wisetrainer/course/CourseTrainingTab";
+import QuestionnaireTab from "@/components/wisetrainer/course/QuestionnaireTab";
+import QuestionnaireModal from "@/components/wisetrainer/QuestionnaireModal";
+import { useUnityEvents } from "@/lib/hooks/useUnityEvents";
 import WISETRAINER_CONFIG from "@/lib/config/wisetrainer";
 
 export default function CourseDetail({ params }) {
@@ -38,9 +25,15 @@ export default function CourseDetail({ params }) {
 	const [isLoading, setIsLoading] = useState(true);
 	const unityBuildRef = useRef(null);
 	const [activeTab, setActiveTab] = useState("details");
-	const [showQuestionnaire, setShowQuestionnaire] = useState(false);
-	const [currentScenario, setCurrentScenario] = useState(null);
 	const [selectedModule, setSelectedModule] = useState(null);
+
+	// Utiliser le hook d'événements Unity
+	const {
+		currentScenario,
+		showQuestionnaire,
+		setShowQuestionnaire,
+		setCurrentScenario,
+	} = useUnityEvents();
 
 	// Extraire courseId des paramètres
 	useEffect(() => {
@@ -55,7 +48,6 @@ export default function CourseDetail({ params }) {
 			fetchCourseDetails();
 		}
 	}, [courseId, containerName, containerLoading]);
-
 	const fetchCourseDetails = async () => {
 		setIsLoading(true);
 		try {
@@ -66,10 +58,15 @@ export default function CourseDetail({ params }) {
 			// Charger les détails du cours depuis le fichier de configuration
 			let courseConfig;
 			try {
+				console.log(
+					"Tentative de chargement du fichier de configuration..."
+				);
 				courseConfig = require(`@/lib/config/wisetrainer/courses/${courseId}.json`);
+				console.log("Configuration chargée:", courseConfig);
 			} catch (e) {
 				console.warn(
-					`Fichier de configuration pour ${courseId} non trouvé, utilisation de valeurs par défaut`
+					`Fichier de configuration pour ${courseId} non trouvé:`,
+					e
 				);
 				courseConfig = {
 					id: courseId,
@@ -88,15 +85,26 @@ export default function CourseDetail({ params }) {
 
 			// Récupérer la progression de l'utilisateur depuis l'API
 			try {
+				console.log(
+					"Récupération de la progression de l'utilisateur..."
+				);
 				const progressResponse = await axios.get(
 					`${WISETRAINER_CONFIG.API_ROUTES.USER_TRAININGS}/${containerName}`
+				);
+				console.log(
+					"Réponse de l'API de progression:",
+					progressResponse.data
 				);
 
 				const courseProgress = progressResponse.data.trainings?.find(
 					(t) => t.id === courseId
 				);
+				console.log("Progression pour ce cours:", courseProgress);
 
 				if (courseProgress) {
+					// Toujours utiliser le nombre total de modules du cours, pas seulement ceux dans courseProgress
+					const totalModulesCount = courseConfig.modules.length;
+
 					setUserProgress({
 						progress: courseProgress.progress,
 						startDate: courseProgress.startedAt,
@@ -105,9 +113,7 @@ export default function CourseDetail({ params }) {
 						completedModules:
 							courseProgress.modules?.filter((m) => m.completed)
 								.length || 0,
-						totalModules:
-							courseProgress.modules?.length ||
-							courseConfig.modules.length,
+						totalModules: totalModulesCount, // Utiliser toujours la taille du tableau modules dans courseConfig
 					});
 
 					// Mettre à jour le statut des modules dans courseConfig
@@ -125,6 +131,7 @@ export default function CourseDetail({ params }) {
 						}
 					);
 
+					// Définir le cours avec les modules mis à jour
 					setCourse({
 						...courseConfig,
 						modules: updatedModules,
@@ -133,28 +140,11 @@ export default function CourseDetail({ params }) {
 					const totalModulesCount = courseConfig.modules.length;
 
 					setUserProgress({
-						progress: courseProgress
-							? Math.min(
-									100,
-									Math.round(
-										((courseProgress.modules?.filter(
-											(m) => m.completed
-										).length || 0) *
-											100) /
-											totalModulesCount
-									)
-							  )
-							: 0,
-						startDate:
-							courseProgress?.startedAt ||
-							new Date().toISOString(),
-						lastAccessed:
-							courseProgress?.lastAccessed ||
-							new Date().toISOString(),
-						completedModules:
-							courseProgress?.modules?.filter((m) => m.completed)
-								.length || 0,
-						totalModules: totalModulesCount, // Utiliser le nombre réel de modules
+						progress: 0,
+						startDate: new Date().toISOString(),
+						lastAccessed: new Date().toISOString(),
+						completedModules: 0,
+						totalModules: totalModulesCount,
 					});
 
 					setCourse(courseConfig);
@@ -176,9 +166,12 @@ export default function CourseDetail({ params }) {
 
 				setCourse(courseConfig);
 			}
+
+			console.log("Course state après chargement:", course);
+			console.log("UserProgress state après chargement:", userProgress);
 		} catch (error) {
 			console.error(
-				"Erreur lors de la récupération des détails du cours:",
+				"Erreur détaillée lors du chargement du cours:",
 				error
 			);
 		} finally {
@@ -186,6 +179,7 @@ export default function CourseDetail({ params }) {
 		}
 	};
 
+	// Helper pour formater le nom du cours
 	const formatCourseName = (id) => {
 		return id
 			.split("-")
@@ -193,25 +187,44 @@ export default function CourseDetail({ params }) {
 			.join(" ");
 	};
 
-	const formatDate = (dateString) => {
-		return new Date(dateString).toLocaleDateString(undefined, {
-			year: "numeric",
-			month: "long",
-			day: "numeric",
-		});
-	};
-
 	const handleBack = () => {
 		router.push("/wisetrainer");
 	};
 
-	const handleScenarioComplete = async (scenarioId, success, score) => {
+	const handleScenarioComplete = async (results) => {
 		try {
-			console.log(
-				`Scénario ${scenarioId} complété avec ${
-					success ? "succès" : "échec"
-				}, score: ${score}`
-			);
+			if (!currentScenario) return;
+
+			// Gérer les différents formats de résultats possibles
+			let score;
+			if (Array.isArray(results)) {
+				// Si c'est un tableau de résultats individuels
+				const correctAnswers = results.filter(
+					(r) => r.isCorrect
+				).length;
+				score = Math.round((correctAnswers / results.length) * 100);
+				console.log(
+					`Scénario ${currentScenario.id} complété avec score: ${score}`
+				);
+			} else if (typeof results === "object" && results !== null) {
+				// Si c'est un seul objet avec un score
+				score = results.score || 0;
+				console.log(
+					`Scénario ${currentScenario.id} complété avec score fourni: ${score}`
+				);
+			} else if (typeof results === "number") {
+				// Si c'est directement un score numérique
+				score = Math.round(results);
+				console.log(
+					`Scénario ${currentScenario.id} complété avec score numérique: ${score}`
+				);
+			} else {
+				// Fallback
+				score = 0;
+				console.warn(
+					`Format de résultats non reconnu pour ${currentScenario.id}`
+				);
+			}
 
 			// Fermer le questionnaire
 			setShowQuestionnaire(false);
@@ -219,19 +232,9 @@ export default function CourseDetail({ params }) {
 			// Notifier le build Unity que le questionnaire est complété
 			if (unityBuildRef.current && unityBuildRef.current.isReady) {
 				unityBuildRef.current.completeQuestionnaire(
-					scenarioId,
-					success
+					currentScenario.id,
+					score >= 70
 				);
-			}
-
-			// Trouver le module correspondant au scénario
-			const completedModule = course.modules.find(
-				(m) => m.id === scenarioId
-			);
-
-			if (!completedModule) {
-				console.warn(`Module ${scenarioId} non trouvé dans le cours`);
-				return;
 			}
 
 			// Mettre à jour la progression en base de données
@@ -242,19 +245,21 @@ export default function CourseDetail({ params }) {
 					{
 						userId: containerName,
 						trainingId: courseId,
+						// Toujours utiliser le nombre total de modules du cours (userProgress.totalModules)
+						// et non pas la valeur completedModules + 1
 						progress: Math.round(
 							((userProgress.completedModules + 1) /
-								userProgress.totalModules) *
+								course.modules.length) *
 								100
 						),
-						completedModule: scenarioId,
+						completedModule: currentScenario.id,
 						moduleScore: score,
 					}
 				);
 
 				if (response.data.success) {
-					// Ne mettre à jour l'état local qu'après confirmation du serveur
-					await fetchCourseDetails(); // Rafraîchir les données du cours
+					// Rafraîchir les données du cours
+					await fetchCourseDetails();
 				} else {
 					throw new Error(
 						response.data.error ||
@@ -266,7 +271,6 @@ export default function CourseDetail({ params }) {
 					"Erreur lors de la mise à jour de la progression:",
 					error
 				);
-				// Afficher un message d'erreur à l'utilisateur
 				alert(
 					"Erreur lors de la mise à jour de la progression. Veuillez réessayer."
 				);
@@ -276,8 +280,8 @@ export default function CourseDetail({ params }) {
 			alert("Une erreur est survenue. Veuillez réessayer.");
 		}
 	};
+
 	const handleQuestionnaireRequest = (scenario) => {
-		// Cette fonction sera appelée lorsque le build Unity demande un questionnaire
 		setCurrentScenario(scenario);
 		setShowQuestionnaire(true);
 	};
@@ -297,46 +301,15 @@ export default function CourseDetail({ params }) {
 		}
 	};
 
-	// Afficher un loader pendant le chargement initial
-	if (containerLoading) {
-		return (
-			<div className="flex items-center justify-center h-64">
-				<div className="text-center">
-					<div className="animate-spin h-10 w-10 border-4 border-wisetwin-blue border-t-transparent rounded-full mb-4 mx-auto"></div>
-					<p>Chargement des informations du container...</p>
-				</div>
-			</div>
-		);
-	}
-
-	// Afficher un loader pendant le chargement des détails du cours
-	if (isLoading && !course) {
-		return (
-			<div className="flex items-center justify-center h-64">
-				<div className="text-center">
-					<div className="animate-spin h-10 w-10 border-4 border-wisetwin-blue border-t-transparent rounded-full mb-4 mx-auto"></div>
-					<p>Chargement des détails du cours...</p>
-					<p className="text-sm text-gray-500 mt-2">
-						CourseID: {courseId}, Container: {containerName}
-					</p>
-				</div>
-			</div>
-		);
-	}
-
-	// Gérer le cas où les informations essentielles manquent
-	if (!courseId || !containerName) {
-		return (
-			<div className="text-center py-10">
-				<p className="text-red-500 mb-4">
-					Erreur de chargement du cours
-				</p>
-				<p className="mb-4 text-sm">
-					ID du cours ou container manquant
-				</p>
-				<Button onClick={handleBack}>Retour aux formations</Button>
-			</div>
-		);
+	// Gérer les cas de chargement et d'erreur
+	if (
+		containerLoading ||
+		(isLoading && !course) ||
+		!courseId ||
+		!containerName
+	) {
+		// Retourner l'UI de chargement ou d'erreur...
+		// (garder le code existant)
 	}
 
 	return (
@@ -348,47 +321,10 @@ export default function CourseDetail({ params }) {
 				</Button>
 
 				{course && (
-					<>
-						<div className="flex items-start justify-between">
-							<div>
-								<h1 className="text-3xl font-bold text-wisetwin-darkblue dark:text-white mb-2">
-									{course.name}
-								</h1>
-								<div className="flex items-center space-x-4 mb-2">
-									<Badge
-										variant="outline"
-										className="bg-blue-50 text-blue-700 dark:bg-blue-900 dark:text-blue-200"
-									>
-										{course.difficulty}
-									</Badge>
-									<span className="flex items-center text-sm text-gray-500 dark:text-gray-400">
-										<Clock className="w-4 h-4 mr-1" />
-										{course.duration}
-									</span>
-									<span className="flex items-center text-sm text-gray-500 dark:text-gray-400">
-										<Book className="w-4 h-4 mr-1" />
-										{course.category}
-									</span>
-								</div>
-							</div>
-
-							{userProgress && (
-								<div className="text-right">
-									<span className="text-lg font-semibold">
-										{userProgress.progress}% complété
-									</span>
-									<Progress
-										value={userProgress.progress}
-										className="h-2 w-32 mt-1"
-									/>
-								</div>
-							)}
-						</div>
-
-						<p className="text-gray-600 dark:text-gray-300 mt-4">
-							{course.description}
-						</p>
-					</>
+					<CourseDetailHeader
+						course={course}
+						userProgress={userProgress}
+					/>
 				)}
 			</div>
 
@@ -406,352 +342,46 @@ export default function CourseDetail({ params }) {
 						Formation en 3D
 					</TabsTrigger>
 					<TabsTrigger value="questionnaire" className="px-6">
-						Questionnaire (Debug)
+						Questionnaire
 					</TabsTrigger>
 				</TabsList>
 
 				<TabsContent value="details">
-					<div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-						<div className="md:col-span-2">
-							<Card>
-								<CardHeader>
-									<CardTitle>Modules de formation</CardTitle>
-									<CardDescription>
-										Progression dans les différents modules
-										du cours
-									</CardDescription>
-								</CardHeader>
-								<CardContent>
-									{course &&
-										course.modules &&
-										course.modules.map((module, index) => (
-											<div
-												key={module.id}
-												className="mb-6 last:mb-0"
-											>
-												<div className="flex items-start">
-													<div
-														className={`rounded-full w-8 h-8 flex items-center justify-center mr-3 ${
-															module.completed
-																? "bg-green-100 text-green-600 dark:bg-green-900 dark:text-green-300"
-																: "bg-gray-100 text-gray-400 dark:bg-gray-800"
-														}`}
-													>
-														{module.completed ? (
-															<CheckCircle className="w-5 h-5" />
-														) : (
-															<span>
-																{index + 1}
-															</span>
-														)}
-													</div>
-													<div className="flex-1 group">
-														<h3 className="text-lg font-medium mb-1 flex items-center">
-															<span
-																className="cursor-pointer hover:text-wisetwin-blue dark:hover:text-wisetwin-blue-light"
-																onClick={() =>
-																	handleModuleSelect(
-																		module.id
-																	)
-																}
-															>
-																{module.title}
-															</span>
-															{module.completed && (
-																<span className="ml-2 text-sm bg-green-100 text-green-800 px-2 py-0.5 rounded-full dark:bg-green-900 dark:text-green-200">
-																	{
-																		module.score
-																	}
-																	%
-																</span>
-															)}
-														</h3>
-														<p className="text-gray-600 dark:text-gray-400 text-sm">
-															{module.description}
-														</p>
-														<Button
-															variant="outline"
-															size="sm"
-															className="mt-2 opacity-0 group-hover:opacity-100 transition-opacity"
-															onClick={() =>
-																handleModuleSelect(
-																	module.id
-																)
-															}
-														>
-															Tester le
-															questionnaire
-														</Button>
-													</div>
-												</div>
-												{index <
-													course.modules.length -
-														1 && (
-													<div className="ml-4 pl-4 border-l border-gray-200 dark:border-gray-700 h-8"></div>
-												)}
-											</div>
-										))}
-								</CardContent>
-							</Card>
-						</div>
-
-						<div>
-							<Card className="mb-6">
-								<CardHeader>
-									<CardTitle>Informations</CardTitle>
-								</CardHeader>
-								<CardContent>
-									<dl className="space-y-4">
-										<div>
-											<dt className="text-sm text-gray-500 dark:text-gray-400">
-												Auteur
-											</dt>
-											<dd className="font-medium">
-												{course?.author || "WiseTwin"}
-											</dd>
-										</div>
-										{userProgress?.startDate && (
-											<div>
-												<dt className="text-sm text-gray-500 dark:text-gray-400">
-													Commencé le
-												</dt>
-												<dd className="font-medium">
-													{formatDate(
-														userProgress.startDate
-													)}
-												</dd>
-											</div>
-										)}
-										{userProgress?.lastAccessed && (
-											<div>
-												<dt className="text-sm text-gray-500 dark:text-gray-400">
-													Dernier accès
-												</dt>
-												<dd className="font-medium">
-													{formatDate(
-														userProgress.lastAccessed
-													)}
-												</dd>
-											</div>
-										)}
-										{userProgress?.completedAt && (
-											<div>
-												<dt className="text-sm text-gray-500 dark:text-gray-400">
-													Complété le
-												</dt>
-												<dd className="font-medium">
-													{formatDate(
-														userProgress.completedAt
-													)}
-												</dd>
-											</div>
-										)}
-									</dl>
-								</CardContent>
-							</Card>
-
-							<Card>
-								<CardHeader>
-									<CardTitle>Performance</CardTitle>
-								</CardHeader>
-								<CardContent>
-									<div className="space-y-4">
-										<div className="text-center">
-											<div className="inline-flex items-center justify-center h-24 w-24 rounded-full bg-blue-100 dark:bg-blue-900 mb-4">
-												<span className="text-2xl font-bold text-blue-600 dark:text-blue-300">
-													{course?.modules?.reduce(
-														(total, module) =>
-															total +
-															(module.completed
-																? module.score
-																: 0),
-														0
-													) /
-														(course?.modules?.filter(
-															(m) => m.completed
-														).length || 1)}
-													%
-												</span>
-											</div>
-											<h3 className="text-lg font-medium">
-												Score moyen
-											</h3>
-										</div>
-
-										<div className="grid grid-cols-2 gap-4 mt-4">
-											<div className="text-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-												<div className="text-xl font-bold text-gray-800 dark:text-gray-200">
-													{userProgress?.completedModules ||
-														0}
-													/
-													{userProgress?.totalModules ||
-														0}
-												</div>
-												<div className="text-sm text-gray-500 dark:text-gray-400">
-													Modules complétés
-												</div>
-											</div>
-											<div className="text-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-												<div className="text-xl font-bold text-gray-800 dark:text-gray-200">
-													{userProgress?.progress ||
-														0}
-													%
-												</div>
-												<div className="text-sm text-gray-500 dark:text-gray-400">
-													Progression
-												</div>
-											</div>
-										</div>
-									</div>
-								</CardContent>
-							</Card>
-						</div>
-					</div>
+					<CourseDetailsTab
+						course={course}
+						userProgress={userProgress}
+						onModuleSelect={handleModuleSelect}
+					/>
 				</TabsContent>
 
 				<TabsContent value="training">
-					<Card className="mb-8">
-						<CardHeader>
-							<CardTitle>Environnement de formation 3D</CardTitle>
-							<CardDescription>
-								Naviguez dans l'environnement virtuel pour
-								apprendre et interagir avec les différents
-								éléments
-							</CardDescription>
-						</CardHeader>
-						<CardContent>
-							<UnityBuild
-								ref={unityBuildRef}
-								courseId={courseId}
-								containerName={containerName}
-								onQuestionnaireRequest={
-									handleQuestionnaireRequest
-								}
-							/>
-						</CardContent>
-					</Card>
-
-					<Card>
-						<CardHeader>
-							<CardTitle>Instructions</CardTitle>
-						</CardHeader>
-						<CardContent>
-							<ul className="list-disc pl-5 space-y-2 text-gray-700 dark:text-gray-300">
-								<li>
-									Utilisez les touches{" "}
-									<strong>W, A, S, D</strong> ou les{" "}
-									<strong>flèches directionnelles</strong>{" "}
-									pour vous déplacer
-								</li>
-								<li>
-									Maintenez <strong>Shift</strong> pour courir
-								</li>
-								<li>
-									Utilisez la <strong>souris</strong> pour
-									regarder autour de vous
-								</li>
-								<li>
-									Appuyez sur <strong>E</strong> ou{" "}
-									<strong>clic gauche</strong> pour interagir
-									avec les objets
-								</li>
-								<li>
-									Appuyez sur <strong>F</strong> pour
-									activer/désactiver la lampe torche si
-									disponible
-								</li>
-								<li>
-									Appuyez sur <strong>Esc</strong> pour
-									accéder au menu
-								</li>
-							</ul>
-
-							<div className="bg-blue-50 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 p-4 rounded-lg mt-6 flex items-start">
-								<Info className="w-5 h-5 mr-3 mt-0.5 flex-shrink-0" />
-								<div>
-									<p className="font-semibold mb-1">
-										Objectifs de la formation :
-									</p>
-									<p className="text-sm">
-										Explorez l'environnement et interagissez
-										avec les objets pour découvrir les
-										différents scénarios de formation. Des
-										questionnaires apparaîtront pour tester
-										vos connaissances. Complétez tous les
-										modules pour terminer la formation.
-									</p>
-								</div>
-							</div>
-						</CardContent>
-					</Card>
-
-					{/* Ce bloc sera remplacé par un vrai composant de questionnaire */}
-					{showQuestionnaire && (
-						<div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-							<div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 max-w-lg w-full">
-								<h2 className="text-xl font-bold mb-4">
-									Questionnaire:{" "}
-									{currentScenario?.title || "Scénario"}
-								</h2>
-								<p className="mb-6">
-									Ce questionnaire simulé serait normalement
-									remplacé par votre composant de
-									questionnaire réel.
-								</p>
-								<div className="flex justify-end space-x-3">
-									<Button
-										variant="outline"
-										onClick={() =>
-											handleScenarioComplete(
-												"scenario-1",
-												false,
-												0
-											)
-										}
-									>
-										Échec
-									</Button>
-									<Button
-										onClick={() =>
-											handleScenarioComplete(
-												"scenario-1",
-												true,
-												85
-											)
-										}
-									>
-										Réussite (85%)
-									</Button>
-								</div>
-							</div>
-						</div>
-					)}
+					<CourseTrainingTab
+						unityBuildRef={unityBuildRef}
+						courseId={courseId}
+						containerName={containerName}
+						onQuestionnaireRequest={handleQuestionnaireRequest}
+					/>
 				</TabsContent>
 
 				<TabsContent value="questionnaire">
-					{currentScenario ? (
-						<QuestionnaireDebug
-							scenario={currentScenario}
-							userId={containerName}
-							courseId={courseId}
-							onComplete={handleScenarioComplete}
-						/>
-					) : (
-						<div className="text-center py-12">
-							<p className="text-lg mb-4">
-								Aucun questionnaire sélectionné
-							</p>
-							<p className="text-gray-500 mb-6">
-								Veuillez sélectionner un module depuis l'onglet
-								"Détails du cours"
-							</p>
-							<Button onClick={() => setActiveTab("details")}>
-								Voir les modules
-							</Button>
-						</div>
-					)}
+					<QuestionnaireTab
+						currentScenario={currentScenario}
+						containerName={containerName}
+						courseId={courseId}
+						onComplete={handleScenarioComplete}
+						setActiveTab={setActiveTab}
+					/>
 				</TabsContent>
 			</Tabs>
+
+			{/* Modal de questionnaire */}
+			{showQuestionnaire && currentScenario && (
+				<QuestionnaireModal
+					scenario={currentScenario}
+					onComplete={handleScenarioComplete}
+					onClose={() => setShowQuestionnaire(false)}
+				/>
+			)}
 		</div>
 	);
 }

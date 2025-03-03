@@ -1,3 +1,4 @@
+//components/wisetrainer/QuestionnaireModal.jsx
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, XCircle } from "lucide-react";
@@ -91,7 +92,16 @@ export default function QuestionnaireModal({ scenario, onComplete, onClose }) {
 
 	const handleClose = () => {
 		if (results) {
-			onComplete(results);
+			// Calculer le score avant de le passer
+			const correctAnswers = results.filter((r) => r.isCorrect).length;
+			const score = Math.round((correctAnswers / results.length) * 100);
+
+			// Passer un objet avec le score et les résultats détaillés
+			onComplete({
+				score: score,
+				scenarioId: scenario.id,
+				detailedResults: results,
+			});
 		} else {
 			onClose();
 		}
