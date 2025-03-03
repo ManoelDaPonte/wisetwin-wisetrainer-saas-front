@@ -1,41 +1,72 @@
-//lib/hooks/useUnityEvents.jsx
 import { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import WISETRAINER_CONFIG from "@/lib/config/wisetrainer";
 
-export function useUnityEvents() {
+// Importation statique du mapping
+import wiseTrainer01Config from "@/lib/config/wisetrainer/courses/WiseTrainer_01.json";
+
+export function useUnityEvents(courseId = null) {
 	const [currentScenario, setCurrentScenario] = useState(null);
 	const [showQuestionnaire, setShowQuestionnaire] = useState(false);
 
+	// Utiliser directement le mapping du fichier importé
+	const objectMapping = wiseTrainer01Config.objectMapping;
+
 	// Gestionnaire pour les événements GameObject sélectionnés
-	const handleGameObjectSelected = useCallback(async (event) => {
-		console.log("GameObject selected:", event.detail);
+	const handleGameObjectSelected = useCallback(
+		async (event) => {
+			console.log("GameObject selected:", event.detail);
 
-		try {
-			// Analyser les données si nécessaire
-			const data =
-				typeof event.detail === "string"
-					? JSON.parse(event.detail)
-					: event.detail;
+			try {
+				// Analyser les données si nécessaire
+				const data =
+					typeof event.detail === "string"
+						? JSON.parse(event.detail)
+						: event.detail;
 
-			// Vérifier si on a un scenarioId
-			if (data.scenarioId) {
-				console.log(`Récupération du scénario: ${data.scenarioId}`);
+				// Vérifier si on a un nom d'objet
+				if (data.name) {
+					console.log(`Objet sélectionné: ${data.name}`);
 
-				const response = await axios.get(
-					`${WISETRAINER_CONFIG.API_ROUTES.FETCH_SCENARIO}/${data.scenarioId}`
-				);
+					// Logging du mapping pour debug
+					console.log("Mapping d'objets disponible:", objectMapping);
 
-				if (response.data) {
-					console.log("Scénario récupéré:", response.data.title);
-					setCurrentScenario(response.data);
-					setShowQuestionnaire(true);
+					// Trouver le scénario correspondant à cet objet
+					const scenarioId = objectMapping[data.name];
+
+					if (scenarioId) {
+						console.log(
+							`Scénario trouvé pour ${data.name}: ${scenarioId}`
+						);
+
+						// Récupérer les détails du scénario
+						const response = await axios.get(
+							`${WISETRAINER_CONFIG.API_ROUTES.FETCH_SCENARIO}/${scenarioId}`
+						);
+
+						if (response.data) {
+							console.log(
+								"Scénario récupéré:",
+								response.data.title
+							);
+							setCurrentScenario(response.data);
+							setShowQuestionnaire(true);
+						}
+					} else {
+						console.warn(
+							`Aucun scénario associé à l'objet ${data.name}`
+						);
+					}
 				}
+			} catch (error) {
+				console.error(
+					"Erreur lors du traitement de l'événement:",
+					error
+				);
 			}
-		} catch (error) {
-			console.error("Erreur lors du traitement de l'événement:", error);
-		}
-	}, []);
+		},
+		[objectMapping]
+	);
 
 	// Gestionnaire pour les demandes explicites de questionnaire
 	const handleQuestionnaireRequest = useCallback(async (event) => {
@@ -62,10 +93,29 @@ export function useUnityEvents() {
 
 	// Ajouter/supprimer les écouteurs d'événements
 	useEffect(() => {
+		const handleObjectNamesReceived = (e) =>
+			console.log("ObjectNamesReceived:", e.detail);
+		const handleGUIDDataReceived = (e) =>
+			console.log("GUIDDataReceived:", e.detail);
+		const handleSphereDataReceived = (e) =>
+			console.log("SphereDataReceived:", e.detail);
+		const handleDropdownDataReceived = (e) =>
+			console.log("DropdownDataReceived:", e.detail);
+
 		window.addEventListener("GameObjectSelected", handleGameObjectSelected);
 		window.addEventListener(
 			"QuestionnaireRequest",
 			handleQuestionnaireRequest
+		);
+		window.addEventListener(
+			"ObjectNamesReceived",
+			handleObjectNamesReceived
+		);
+		window.addEventListener("GUIDDataReceived", handleGUIDDataReceived);
+		window.addEventListener("SphereDataReceived", handleSphereDataReceived);
+		window.addEventListener(
+			"DropdownDataReceived",
+			handleDropdownDataReceived
 		);
 
 		return () => {
@@ -76,6 +126,22 @@ export function useUnityEvents() {
 			window.removeEventListener(
 				"QuestionnaireRequest",
 				handleQuestionnaireRequest
+			);
+			window.removeEventListener(
+				"ObjectNamesReceived",
+				handleObjectNamesReceived
+			);
+			window.removeEventListener(
+				"GUIDDataReceived",
+				handleGUIDDataReceived
+			);
+			window.removeEventListener(
+				"SphereDataReceived",
+				handleSphereDataReceived
+			);
+			window.removeEventListener(
+				"DropdownDataReceived",
+				handleDropdownDataReceived
 			);
 		};
 	}, [handleGameObjectSelected, handleQuestionnaireRequest]);
