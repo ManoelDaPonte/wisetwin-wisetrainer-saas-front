@@ -75,26 +75,23 @@ export default function TrainingProgressSection({
 function TrainingProgressList({ trainings, formatDate }) {
 	// Fonction pour déterminer le nombre correct de modules
 	const getModuleCount = (training) => {
-		// Si nous avons les données explicites de modules
-		if (training.modules && Array.isArray(training.modules)) {
-			return {
-				total: training.modules.length,
-				completed: training.modules.filter((m) => m.completed).length,
-			};
-		}
-
-		// Si nous avons des données de totalModules explicites
-		if (
-			training.totalModules &&
-			typeof training.totalModules === "number"
-		) {
+		// Utiliser la propriété totalModules si elle existe
+		if (training.totalModules) {
 			return {
 				total: training.totalModules,
 				completed: training.completedModules || 0,
 			};
 		}
 
-		// Valeur par défaut pour les cours (3 modules est une valeur typique)
+		// Si nous avons les données explicites de modules
+		if (training.modules && Array.isArray(training.modules)) {
+			return {
+				total: training.modules.length || 3, // Minimum 3 modules
+				completed: training.modules.filter((m) => m.completed).length,
+			};
+		}
+
+		// Valeur par défaut pour les cours (3 modules)
 		return {
 			total: 3,
 			completed: 0,

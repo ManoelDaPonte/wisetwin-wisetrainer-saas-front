@@ -5,7 +5,6 @@ import axios from "axios";
 import { useRouter } from "next/navigation";
 import { useUser } from "@auth0/nextjs-auth0/client";
 import { useAzureContainer } from "@/lib/hooks/useAzureContainer";
-import achievementService from "@/lib/services/achievementService";
 
 // Création du contexte
 const DashboardContext = createContext();
@@ -29,10 +28,8 @@ export function DashboardProvider({ children }) {
 		correctAnswers: 0,
 		successRate: 0,
 	});
-	const [achievements, setAchievements] = useState([]);
 	const [recentProjects, setRecentProjects] = useState([]);
 	const [isLoading, setIsLoading] = useState(true);
-	const [newAchievements, setNewAchievements] = useState([]);
 	const [lastRefresh, setLastRefresh] = useState(null);
 
 	// Charger toutes les données de l'utilisateur
@@ -50,13 +47,15 @@ export function DashboardProvider({ children }) {
 		setIsLoading(true);
 		try {
 			// Charger les formations
-			await loadTrainings();
+			const enrichedTrainings = await loadTrainings();
 
 			// Charger les statistiques depuis l'API
 			await loadUserStats();
 
-			// Charger les achievements depuis l'API
-			await loadAchievements();
+			const userData = {
+				trainings: enrichedTrainings,
+				stats: stats,
+			};
 
 			// Mettre à jour la date de dernière actualisation
 			setLastRefresh(new Date());
@@ -85,7 +84,7 @@ export function DashboardProvider({ children }) {
 			const enrichedTrainings = await Promise.all(
 				userTrainings.map(async (training) => {
 					try {
-						// Essayer de récupérer les détails du cours via une API
+						// Récupérer les détails du cours directement depuis l'API qui lit les fichiers JSON
 						const courseDetails = await axios
 							.get(
 								`/api/db/wisetrainer/course-details/${training.id}`
@@ -93,25 +92,32 @@ export function DashboardProvider({ children }) {
 							.then((res) => res.data)
 							.catch(() => null);
 
-						// Déterminer le nombre total de modules
-						const totalModules =
-							courseDetails && courseDetails.modules
-								? courseDetails.modules.length
-								: training.modules && training.modules.length
-								? training.modules.length
-								: 3; // Valeur par défaut
+						// Récupérer les modules disponibles depuis les détails du cours
+						const availableModules = courseDetails?.modules || [];
+
+						// Fusionner avec les modules complétés par l'utilisateur
+						const mergedModules = availableModules.map((module) => {
+							// Chercher si l'utilisateur a déjà complété ce module
+							const userModule = training.modules?.find(
+								(m) => m.id === module.id
+							);
+
+							return {
+								...module,
+								completed: userModule
+									? userModule.completed
+									: false,
+								score: userModule ? userModule.score : 0,
+							};
+						});
 
 						return {
 							...training,
-							// Assurer que nous avons des données de modules
-							modules: training.modules || [],
-							// Définir explicitement le nombre total de modules
-							totalModules: totalModules,
-							// Calculer le nombre de modules complétés
-							completedModules: training.modules
-								? training.modules.filter((m) => m.completed)
-										.length
-								: 0,
+							modules: mergedModules,
+							totalModules: availableModules.length || 3, // Utiliser 3 comme valeur par défaut si aucun module trouvé
+							completedModules:
+								training.modules?.filter((m) => m.completed)
+									.length || 0,
 						};
 					} catch (error) {
 						console.warn(
@@ -121,13 +127,10 @@ export function DashboardProvider({ children }) {
 						return {
 							...training,
 							modules: training.modules || [],
-							totalModules: training.modules
-								? training.modules.length
-								: 3,
-							completedModules: training.modules
-								? training.modules.filter((m) => m.completed)
-										.length
-								: 0,
+							totalModules: 3, // Valeur par défaut de 3 modules
+							completedModules:
+								training.modules?.filter((m) => m.completed)
+									.length || 0,
 						};
 					}
 				})
@@ -220,115 +223,6 @@ export function DashboardProvider({ children }) {
 		}
 	};
 
-	// Charger les achievements de l'utilisateur
-	const loadAchievements = async () => {
-		try {
-			const response = await axios.get(
-				`/api/db/achievements/user/${containerName}`
-			);
-
-			if (response.data && response.data.achievements) {
-				setAchievements(response.data.achievements);
-			}
-		} catch (error) {
-			console.error("Erreur lors du chargement des achievements:", error);
-			// Utiliser des données de démo pour les achievements
-			const demoAchievements = [
-				{
-					id: "first-training",
-					title: "Première formation",
-					description:
-						"Vous avez commencé votre parcours de formation",
-					iconName: "GraduationCap",
-					unlocked: trainings.length > 0,
-					unlockedAt:
-						trainings.length > 0
-							? new Date(
-									Date.now() - 7 * 24 * 60 * 60 * 1000
-							  ).toISOString()
-							: null,
-				},
-				{
-					id: "complete-training",
-					title: "Formation complétée",
-					description:
-						"Vous avez terminé votre première formation avec succès",
-					iconName: "Award",
-					unlocked: trainings.some((t) => t.progress === 100),
-					unlockedAt: trainings.some((t) => t.progress === 100)
-						? new Date().toISOString()
-						: null,
-				},
-				{
-					id: "explorer",
-					title: "Explorateur",
-					description:
-						"Vous avez découvert au moins 3 formations différentes",
-					iconName: "Layers",
-					unlocked: trainings.length >= 3,
-					unlockedAt:
-						trainings.length >= 3 ? new Date().toISOString() : null,
-				},
-			];
-
-			setAchievements(demoAchievements);
-		}
-	};
-
-	// Définir des données de démo pour les tests
-	const setDemoData = () => {
-		// Définir des statistiques par défaut
-		setStats({
-			digitalTwin: 0,
-			wiseTrainer: trainings.length || 2,
-			totalTime: 3,
-			completionRate: calculateCompletionRate(trainings) || 65,
-			questionsAnswered: 24,
-			correctAnswers: 18,
-			successRate: 75,
-		});
-
-		// Définir des accomplissements par défaut
-		const demoAchievements = [
-			{
-				id: "first-training",
-				title: "Première formation",
-				description: "Vous avez commencé votre parcours de formation",
-				iconName: "GraduationCap",
-				unlocked: trainings.length > 0,
-				unlockedAt:
-					trainings.length > 0
-						? new Date(
-								Date.now() - 7 * 24 * 60 * 60 * 1000
-						  ).toISOString()
-						: null,
-			},
-			{
-				id: "complete-training",
-				title: "Formation complétée",
-				description:
-					"Vous avez terminé votre première formation avec succès",
-				iconName: "Award",
-				unlocked: trainings.some((t) => t.progress === 100),
-				unlockedAt: trainings.some((t) => t.progress === 100)
-					? new Date().toISOString()
-					: null,
-			},
-			{
-				id: "explorer",
-				title: "Explorateur",
-				description:
-					"Vous avez découvert au moins 3 formations différentes",
-				iconName: "Layers",
-				unlocked: trainings.length >= 3,
-				unlockedAt:
-					trainings.length >= 3 ? new Date().toISOString() : null,
-			},
-		];
-
-		setAchievements(demoAchievements);
-	};
-
 	// Utilité pour calculer le taux de complétion moyen
 	const calculateCompletionRate = (trainings) => {
 		if (!trainings || trainings.length === 0) return 0;
@@ -340,24 +234,14 @@ export function DashboardProvider({ children }) {
 		return Math.round(totalProgress / trainings.length);
 	};
 
-	// Gérer la fermeture des notifications d'accomplissement
-	const handleAchievementNotificationClose = (achievementId) => {
-		setNewAchievements((prev) =>
-			prev.filter((a) => a.id !== achievementId)
-		);
-	};
-
 	// Valeur du contexte à fournir
 	const contextValue = {
 		trainings,
 		stats,
-		achievements,
 		recentProjects,
 		isLoading,
-		newAchievements,
 		lastRefresh,
 		refreshData: loadUserData,
-		handleAchievementNotificationClose,
 	};
 
 	return (

@@ -9,7 +9,6 @@ import { RefreshCw } from "lucide-react";
 // Import des composants principaux
 import DashboardTab from "@/components/overview/DashboardTab";
 import TrainingTab from "@/components/overview/TrainingTab";
-import AchievementsTab from "@/components/overview/AchievementsTab";
 
 import { useDashboard } from "@/lib/contexts/DashboardContext";
 
@@ -78,7 +77,6 @@ export default function OverviewPage() {
 				<TabsList>
 					<TabsTrigger value="dashboard">Vue d'ensemble</TabsTrigger>
 					<TabsTrigger value="trainings">Formations</TabsTrigger>
-					<TabsTrigger value="achievements">Réalisations</TabsTrigger>
 				</TabsList>
 
 				{/* Onglet Vue d'ensemble */}
@@ -89,11 +87,6 @@ export default function OverviewPage() {
 				{/* Onglet Formations */}
 				<TabsContent value="trainings">
 					<TrainingTab />
-				</TabsContent>
-
-				{/* Onglet Réalisations */}
-				<TabsContent value="achievements">
-					<AchievementsTab />
 				</TabsContent>
 			</Tabs>
 		</div>

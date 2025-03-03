@@ -1,7 +1,9 @@
 //app/api/db/wisetrainer/update-progress/route.jsx
+
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
-import wisetrainerTemplate from "@/lib/config/wisetrainer/courses/wisetrainer-template.json";
+import fs from "fs";
+import path from "path";
 
 const prisma = new PrismaClient();
 
@@ -9,6 +11,35 @@ export async function POST(request) {
 	try {
 		const { userId, trainingId, progress, completedModule, moduleScore } =
 			await request.json();
+
+		// Fonction pour charger un fichier de configuration de cours
+		const loadCourseConfig = (courseId) => {
+			try {
+				const configPath = path.join(
+					process.cwd(),
+					"lib/config/wisetrainer/courses",
+					`${courseId}.json`
+				);
+				if (fs.existsSync(configPath)) {
+					return JSON.parse(fs.readFileSync(configPath, "utf-8"));
+				}
+				return null;
+			} catch (error) {
+				console.error(
+					`Erreur lors du chargement du fichier de configuration ${courseId}:`,
+					error
+				);
+				return null;
+			}
+		};
+
+		// Charger la configuration du cours
+		const courseConfig = loadCourseConfig(trainingId);
+		if (!courseConfig) {
+			console.warn(
+				`Configuration du cours ${trainingId} non trouvée, utilisation des valeurs par défaut`
+			);
+		}
 
 		// Récupérer l'ID utilisateur basé sur le container Azure
 		let user = await prisma.user.findFirst({
@@ -25,8 +56,8 @@ export async function POST(request) {
 
 			user = await prisma.user.create({
 				data: {
-					auth0Id: `temp-${userId}`, // ID temporaire
-					email: `temp-${userId}@example.com`, // Email temporaire
+					auth0Id: `temp-${userId}`,
+					email: `temp-${userId}@example.com`,
 					name: "Utilisateur Temporaire",
 					azureContainer: userId,
 				},
@@ -44,23 +75,23 @@ export async function POST(request) {
 
 		// Si le cours n'existe pas, le créer
 		if (!course) {
-			// Vérifier s'il s'agit de notre cours de base
-			if (trainingId === "wisetrainer-template") {
+			if (courseConfig) {
+				// Utiliser les données du fichier de configuration
 				course = await prisma.course.create({
 					data: {
-						courseId: "wisetrainer-template",
-						name: wisetrainerTemplate.name,
-						description: wisetrainerTemplate.description,
+						courseId: trainingId,
+						name: courseConfig.name,
+						description: courseConfig.description,
 						imageUrl:
-							wisetrainerTemplate.imageUrl ||
+							courseConfig.imageUrl ||
 							"/images/png/placeholder.png",
-						category: wisetrainerTemplate.category,
-						difficulty: wisetrainerTemplate.difficulty,
-						duration: wisetrainerTemplate.duration,
+						category: courseConfig.category || "Formation",
+						difficulty: courseConfig.difficulty || "Intermédiaire",
+						duration: courseConfig.duration || "30 min",
 					},
 				});
 			} else {
-				// Créer un cours générique si ce n'est pas notre cours de base
+				// Utiliser des valeurs par défaut
 				course = await prisma.course.create({
 					data: {
 						courseId: trainingId,
@@ -98,18 +129,25 @@ export async function POST(request) {
 				},
 			});
 		} else {
-			// Récupérer tous les modules du cours
-			const courseModules = await prisma.module.findMany({
-				where: {
-					courseId: course.id,
-				},
-			});
-			const totalModules = courseModules.length || 1; // Éviter division par zéro
+			// Calculer le nombre total de modules du cours
+			let totalModules = 3; // Valeur par défaut
+
+			if (courseConfig && courseConfig.modules) {
+				totalModules = courseConfig.modules.length;
+			} else {
+				// Récupérer tous les modules du cours depuis la base de données
+				const courseModules = await prisma.module.findMany({
+					where: {
+						courseId: course.id,
+					},
+				});
+				totalModules = courseModules.length || totalModules;
+			}
 
 			// Calculer le nombre de modules complétés
 			const completedModuleCount =
 				userTraining.userModules.filter((module) => module.completed)
-					.length + (completedModule ? 1 : 0); // +1 si un nouveau module vient d'être complété
+					.length + (completedModule ? 1 : 0);
 
 			// S'assurer que nous n'avons pas compté deux fois le même module
 			const uniqueCompletedModules = new Set(
@@ -166,10 +204,9 @@ export async function POST(request) {
 
 			// Si le module n'existe pas, le créer
 			if (!moduleEntity) {
-				// Vérifier s'il s'agit d'un module de notre cours de base
 				let moduleData = null;
-				if (trainingId === "wisetrainer-template") {
-					moduleData = wisetrainerTemplate.modules.find(
+				if (courseConfig && courseConfig.modules) {
+					moduleData = courseConfig.modules.find(
 						(m) => m.id === completedModule
 					);
 				}

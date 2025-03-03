@@ -147,6 +147,7 @@ export default function RecentProjectsSection({ projects, isLoading }) {
 						>
 							<Card
 								className="flex flex-col h-full overflow-hidden hover:shadow-lg transition-shadow duration-300 cursor-pointer border hover:border-wisetwin-blue dark:hover:border-wisetwin-blue-light"
+								noPaddingTop
 								onClick={() => handleProjectClick(project)}
 							>
 								<div className="relative h-40 w-full">

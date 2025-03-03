@@ -7,11 +7,9 @@ import { useDashboard } from "@/lib/contexts/DashboardContext";
 import StatisticsSection from "@/components/overview/dashboard/StatisticsSection";
 import RecentProjectsSection from "@/components/overview/dashboard/RecentProjectsSection";
 import TrainingProgressSection from "@/components/overview/dashboard/TrainingProgressSection";
-import RecentAchievementsSection from "@/components/overview/dashboard/RecentAchievementsSection";
 
 export default function DashboardTab({ setActiveTab }) {
-	const { stats, recentProjects, trainings, achievements, isLoading } =
-		useDashboard();
+	const { stats, recentProjects, trainings, isLoading } = useDashboard();
 
 	// Animation variants
 	const containerVariants = {
@@ -56,13 +54,6 @@ export default function DashboardTab({ setActiveTab }) {
 							trainings={trainings}
 							isLoading={isLoading}
 							onViewAll={() => setActiveTab("trainings")}
-						/>
-					</div>
-					<div>
-						<RecentAchievementsSection
-							achievements={achievements}
-							isLoading={isLoading}
-							onViewAll={() => setActiveTab("achievements")}
 						/>
 					</div>
 				</div>

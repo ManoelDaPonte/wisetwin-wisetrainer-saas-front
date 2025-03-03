@@ -6,7 +6,6 @@ import LeftNavBar from "@/components/layout/LeftNavBar";
 import TermsAcceptanceModal from "@/components/cookies/TermsAcceptanceModal";
 import { UserProvider } from "@auth0/nextjs-auth0/client";
 import { DashboardProvider } from "@/lib/contexts/DashboardContext";
-import AchievementNotificationsContainer from "@/components/achievements/AchievementNotificationsContainer";
 import { Toaster } from "@/components/ui/toaster";
 import "@/app/globals.css";
 
@@ -66,9 +65,6 @@ export default function RootLayout({ children, pathname }) {
 										</div>
 									</main>
 								</div>
-
-								{/* Conteneur de notifications pour les accomplissements */}
-								<AchievementNotificationsContainer />
 							</div>
 						)}
 						<Toaster />

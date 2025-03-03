@@ -1,4 +1,5 @@
 //components/wisetrainer/courses/CourseCard.jsx
+
 import React from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
@@ -13,63 +14,128 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { Clock, BookOpen, Calendar } from "lucide-react";
 import WISETRAINER_CONFIG from "@/lib/config/wisetrainer/wisetrainer";
+
 const CourseCard = ({ course, onSelect, onUnenroll, itemVariants }) => {
+	// Formatage de la date
+	const formatDate = (dateString) => {
+		if (!dateString) return "Date inconnue";
+		return new Date(dateString).toLocaleDateString("fr-FR", {
+			year: "numeric",
+			month: "short",
+			day: "numeric",
+		});
+	};
+
 	return (
 		<motion.div variants={itemVariants}>
 			<Card
-				className="h-full hover:shadow-lg transition-shadow duration-300 cursor-pointer border-2 hover:border-wisetwin-blue dark:hover:border-wisetwin-blue-light"
-				onClick={() => onSelect(course)}
+				className="flex flex-col h-full hover:shadow-lg transition-shadow duration-300 cursor-pointer"
+				noPaddingTop
 			>
-				<div className="relative h-48 w-full">
+				{/* Image du cours couvrant toute la largeur */}
+				<div className="relative w-full h-52 overflow-hidden rounded-t-lg">
 					<Image
 						src={
 							course.imageUrl || WISETRAINER_CONFIG.DEFAULT_IMAGE
 						}
 						alt={course.name}
 						fill
-						className="object-cover rounded-t-lg"
+						className="object-cover"
 						onError={(e) => {
 							e.target.src = WISETRAINER_CONFIG.DEFAULT_IMAGE;
 						}}
 					/>
-				</div>
-				<CardHeader>
-					<div className="flex justify-between items-start">
-						<CardTitle>{course.name}</CardTitle>
+					{/* Badge de difficulté superposé sur l'image */}
+					<div className="absolute top-3 right-3">
 						<Badge
 							variant="outline"
-							className="bg-blue-50 text-blue-700 dark:bg-blue-900 dark:text-blue-200"
+							className="bg-white/90 dark:bg-black/70 text-blue-700 dark:text-blue-200 font-medium"
 						>
 							{course.difficulty || "Intermédiaire"}
 						</Badge>
 					</div>
-					<CardDescription>
-						Dernier accès:{" "}
-						{new Date(course.lastAccessed).toLocaleDateString()}
+				</div>
+
+				<CardHeader className="pb-2">
+					<CardTitle className="text-xl">{course.name}</CardTitle>
+					<CardDescription className="flex items-center gap-1 text-sm">
+						<Calendar className="h-4 w-4" />
+						Dernier accès: {formatDate(course.lastAccessed)}
 					</CardDescription>
 				</CardHeader>
-				<CardContent>
-					<p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
+
+				<CardContent className="flex-grow">
+					<p className="text-gray-600 dark:text-gray-300 mb-4 line-clamp-2">
 						{course.description}
 					</p>
-					<div className="space-y-2">
-						<div className="flex justify-between">
-							<span className="text-sm text-muted-foreground">
-								Progression
-							</span>
-							<span className="text-sm font-medium">
-								{course.progress}%
-							</span>
+
+					<div className="space-y-4">
+						<div>
+							<div className="flex justify-between mb-1">
+								<span className="text-sm text-muted-foreground">
+									Progression
+								</span>
+								<span className="text-sm font-medium">
+									{course.progress}%
+								</span>
+							</div>
+							<Progress value={course.progress} className="h-2" />
 						</div>
-						<Progress value={course.progress} className="h-2" />
-						<div className="text-sm text-gray-500 mt-2">
-							{course.completedModules}/{course.totalModules || 3}{" "}
-							modules complétés
+
+						<div className="pt-3 border-t border-gray-100 dark:border-gray-800">
+							<h4 className="text-sm font-medium mb-2 flex items-center gap-1">
+								<BookOpen className="h-4 w-4" />
+								Modules ({course.completedModules}/
+								{course.totalModules || 3})
+							</h4>
+							<ul className="space-y-1">
+								{course.modules?.slice(0, 3).map((module) => (
+									<li
+										key={module.id}
+										className="flex items-center text-sm"
+									>
+										<div
+											className={`w-2 h-2 rounded-full mr-2 ${
+												module.completed
+													? "bg-green-500"
+													: "bg-gray-300 dark:bg-gray-600"
+											}`}
+										></div>
+										<span
+											className={
+												module.completed
+													? ""
+													: "text-gray-500"
+											}
+										>
+											{module.title ||
+												`Module ${module.id}`}
+										</span>
+										{module.completed && module.score && (
+											<span className="ml-auto text-xs bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100 px-1.5 py-0.5 rounded">
+												{module.score}%
+											</span>
+										)}
+									</li>
+								))}
+								{(course.totalModules > 3 ||
+									(course.modules?.length || 0) > 3) && (
+									<li className="text-xs text-gray-500 pl-4">
+										+{" "}
+										{(course.totalModules ||
+											course.modules?.length ||
+											3) - 3}{" "}
+										autres modules
+									</li>
+								)}
+							</ul>
 						</div>
 					</div>
 				</CardContent>
-				<CardFooter className="flex gap-2">
+
+				<CardFooter className="flex gap-2 mt-auto pt-2">
 					<Button
 						className="flex-1"
 						onClick={(e) => {
@@ -94,4 +160,5 @@ const CourseCard = ({ course, onSelect, onUnenroll, itemVariants }) => {
 		</motion.div>
 	);
 };
+
 export default CourseCard;

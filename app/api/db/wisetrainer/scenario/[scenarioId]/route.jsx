@@ -1,6 +1,8 @@
-//app/api/db/wisetrainer/save-questionnaire/route.jsx
+//app/api/db/wisetrainer/scenario/[scenarioId]/route.jsx
+
 import { NextResponse } from "next/server";
-import wisetrainerTemplate from "@/lib/config/wisetrainer/courses/wisetrainer-template.json";
+import fs from "fs";
+import path from "path";
 
 export async function GET(request, { params }) {
 	try {
@@ -13,12 +15,50 @@ export async function GET(request, { params }) {
 			);
 		}
 
-		// Trouver le module correspondant dans la configuration
-		const module = wisetrainerTemplate.modules.find(
-			(m) => m.id === scenarioId
-		);
+		// Fonction pour charger un fichier de configuration de cours
+		const loadCourseConfig = (courseId) => {
+			try {
+				const configPath = path.join(
+					process.cwd(),
+					"lib/config/wisetrainer/courses",
+					`${courseId}.json`
+				);
+				if (fs.existsSync(configPath)) {
+					return JSON.parse(fs.readFileSync(configPath, "utf-8"));
+				}
+				return null;
+			} catch (error) {
+				console.error(
+					`Erreur lors du chargement du fichier de configuration ${courseId}:`,
+					error
+				);
+				return null;
+			}
+		};
 
-		if (!module) {
+		// Examiner tous les fichiers de configuration disponibles pour trouver le module
+		const courseFiles = [
+			"wisetrainer-template.json",
+			"WiseTrainer_01.json",
+		];
+
+		let foundModule = null;
+		let courseConfig = null;
+
+		// Parcourir les fichiers de configuration jusqu'à trouver le module
+		for (const courseFile of courseFiles) {
+			const courseId = courseFile.replace(".json", "");
+			courseConfig = loadCourseConfig(courseId);
+
+			if (courseConfig) {
+				foundModule = courseConfig.modules.find(
+					(m) => m.id === scenarioId
+				);
+				if (foundModule) break;
+			}
+		}
+
+		if (!foundModule) {
 			return NextResponse.json(
 				{ error: "Scénario non trouvé" },
 				{ status: 404 }
@@ -27,7 +67,7 @@ export async function GET(request, { params }) {
 
 		// Formatter les données pour le client
 		// Important: ne pas inclure l'information sur les réponses correctes
-		const formattedQuestions = module.questions.map((q) => ({
+		const formattedQuestions = foundModule.questions.map((q) => ({
 			id: q.id,
 			text: q.text,
 			type: q.type,
@@ -39,9 +79,9 @@ export async function GET(request, { params }) {
 		}));
 
 		const formattedScenario = {
-			id: module.id,
-			title: module.title,
-			description: module.description,
+			id: foundModule.id,
+			title: foundModule.title,
+			description: foundModule.description,
 			questions: formattedQuestions,
 		};
 

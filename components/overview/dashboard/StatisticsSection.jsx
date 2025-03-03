@@ -37,15 +37,6 @@ export default function StatisticsSection({ stats, isLoading }) {
 			action: "Analyser",
 			route: null,
 		},
-		{
-			title: "Taux de réussite",
-			value: `${stats.successRate}%`,
-			icon: Award,
-			description: "Questions répondues",
-			action: "Voir détails",
-			route: null,
-			additionalInfo: `${stats.correctAnswers}/${stats.questionsAnswered} réponses correctes`,
-		},
 	];
 
 	// Animation variants
@@ -69,7 +60,7 @@ export default function StatisticsSection({ stats, isLoading }) {
 				</h2>
 			</div>
 
-			<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+			<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
 				{statCards.map((stat, index) => (
 					<motion.div
 						key={index}

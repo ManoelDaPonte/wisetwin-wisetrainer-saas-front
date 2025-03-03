@@ -29,7 +29,7 @@ const PersonalCoursesTab = ({
 					variants={containerVariants}
 					initial="hidden"
 					animate="visible"
-					className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+					className="grid grid-cols-1 md:grid-cols-2 gap-8" // Augmenter l'espace entre les cartes
 				>
 					{courses.map((course) => (
 						<CourseCard

@@ -1,4 +1,5 @@
 //app/api/db/wisetrainer/course-details/[courseId]/route.jsx
+
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 import fs from "fs";
@@ -18,7 +19,55 @@ export async function GET(request, { params }) {
 			);
 		}
 
-		// Essayer de récupérer les détails du cours depuis la base de données
+		// Essayer d'abord de charger depuis les fichiers de configuration
+		try {
+			const configDir = path.join(
+				process.cwd(),
+				"lib/config/wisetrainer/courses"
+			);
+			const configFile = path.join(configDir, `${courseId}.json`);
+
+			// Vérifier si le fichier existe pour ce cours spécifique
+			if (fs.existsSync(configFile)) {
+				const courseData = JSON.parse(
+					fs.readFileSync(configFile, "utf-8")
+				);
+				return NextResponse.json(courseData);
+			}
+
+			// Si le fichier n'existe pas, essayer wisetrainer-template.json
+			const templateFile = path.join(
+				configDir,
+				"wisetrainer-template.json"
+			);
+			if (fs.existsSync(templateFile)) {
+				const templateData = JSON.parse(
+					fs.readFileSync(templateFile, "utf-8")
+				);
+
+				// Adapter le template avec l'ID du cours demandé
+				const adaptedData = {
+					...templateData,
+					id: courseId,
+					name: courseId
+						.split("-")
+						.map(
+							(word) =>
+								word.charAt(0).toUpperCase() + word.slice(1)
+						)
+						.join(" "),
+				};
+
+				return NextResponse.json(adaptedData);
+			}
+		} catch (error) {
+			console.error(
+				`Erreur lors de la lecture du fichier de configuration pour ${courseId}:`,
+				error
+			);
+		}
+
+		// Si aucun fichier JSON trouvé, essayer la base de données
 		const course = await prisma.course.findUnique({
 			where: {
 				courseId: courseId,
@@ -44,56 +93,6 @@ export async function GET(request, { params }) {
 					order: m.order,
 				})),
 			});
-		}
-
-		// Si le cours n'existe pas dans la base de données, essayer de charger
-		// depuis les fichiers de configuration
-		try {
-			// Chemin vers les fichiers de configuration des cours
-			const configDir = path.join(
-				process.cwd(),
-				"lib/config/wisetrainer/courses"
-			);
-			const configFile = path.join(configDir, `${courseId}.json`);
-
-			// Vérifier si le fichier existe
-			if (fs.existsSync(configFile)) {
-				const configData = JSON.parse(
-					fs.readFileSync(configFile, "utf-8")
-				);
-				return NextResponse.json(configData);
-			}
-
-			// Si le fichier n'existe pas, vérifier wisetrainer-template.json
-			const templateFile = path.join(
-				configDir,
-				"wisetrainer-template.json"
-			);
-			if (fs.existsSync(templateFile)) {
-				const templateData = JSON.parse(
-					fs.readFileSync(templateFile, "utf-8")
-				);
-
-				// Créer une version modifiée du template
-				const courseData = {
-					...templateData,
-					id: courseId,
-					name: courseId
-						.split("-")
-						.map(
-							(word) =>
-								word.charAt(0).toUpperCase() + word.slice(1)
-						)
-						.join(" "),
-				};
-
-				return NextResponse.json(courseData);
-			}
-		} catch (error) {
-			console.error(
-				`Erreur lors de la lecture du fichier de configuration pour ${courseId}:`,
-				error
-			);
 		}
 
 		// Si aucune information n'est trouvée, retourner une structure par défaut

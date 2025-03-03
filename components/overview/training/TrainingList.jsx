@@ -34,7 +34,10 @@ function TrainingList({ trainings }) {
 		<div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 			{trainings.map((training) => (
 				<motion.div key={training.id} variants={itemVariants}>
-					<Card className="overflow-hidden hover:shadow-md transition-shadow">
+					<Card
+						className="overflow-hidden hover:shadow-md transition-shadow"
+						noPaddingTop
+					>
 						<div className="relative h-40 bg-gray-100 dark:bg-gray-800">
 							{training.imageUrl && (
 								<div
@@ -97,9 +100,14 @@ function TrainingList({ trainings }) {
 										{training.modules?.filter(
 											(m) => m.completed
 										).length || 0}
-										/{training.modules?.length || 0})
+										/
+										{training.totalModules ||
+											training.modules?.length ||
+											3}
+										)
 									</h4>
 									<ul className="space-y-1">
+										{/* Afficher tous les modules, pas seulement les complétés */}
 										{training.modules
 											?.slice(0, 3)
 											.map((module) => (
@@ -121,7 +129,8 @@ function TrainingList({ trainings }) {
 																: "text-gray-500"
 														}
 													>
-														{module.title}
+														{module.title ||
+															`Module ${module.id}`}
 													</span>
 													{module.completed &&
 														module.score && (
@@ -131,12 +140,14 @@ function TrainingList({ trainings }) {
 														)}
 												</li>
 											))}
-										{(training.modules?.length || 0) >
-											3 && (
+										{(training.totalModules > 3 ||
+											(training.modules?.length || 0) >
+												3) && (
 											<li className="text-xs text-gray-500 pl-4">
 												+{" "}
-												{(training.modules?.length ||
-													0) - 3}{" "}
+												{(training.totalModules ||
+													training.modules?.length ||
+													3) - 3}{" "}
 												autres modules
 											</li>
 										)}
