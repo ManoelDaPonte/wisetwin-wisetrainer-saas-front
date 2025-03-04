@@ -1,6 +1,6 @@
 //components/settings/tabs/AccountTab.jsx
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useUser } from "@auth0/nextjs-auth0/client";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle } from "lucide-react";
@@ -18,70 +18,9 @@ const AccountTab = () => {
 	const [newPassword, setNewPassword] = useState("");
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [error, setError] = useState(null);
-	const [userDetails, setUserDetails] = useState(null);
-	const [isLoading, setIsLoading] = useState(true);
-
-	// Récupérer les détails complets de l'utilisateur
-	// useEffect(() => {
-	// 	if (user) {
-	// 		const fetchUserDetails = async () => {
-	// 			try {
-	// 				setIsLoading(true);
-	// 				const response = await axios.get(
-	// 					`/api/auth/user-details/${encodeURIComponent(user.sub)}`
-	// 				);
-	// 				setUserDetails(response.data);
-	// 			} catch (error) {
-	// 				console.error(
-	// 					"Erreur lors de la récupération des détails utilisateur:",
-	// 					error
-	// 				);
-	// 			} finally {
-	// 				setIsLoading(false);
-	// 			}
-	// 		};
-
-	// 		fetchUserDetails();
-	// 	}
-	// }, [user]);
-
-	// Formater la date d'inscription
-	const getRegistrationDate = () => {
-		if (userDetails && userDetails.created_at) {
-			return new Date(userDetails.created_at).toLocaleDateString(
-				"fr-FR",
-				{
-					day: "numeric",
-					month: "long",
-					year: "numeric",
-				}
-			);
-		}
-		return "date inconnue";
-	};
 
 	const openConfirmationModal = () => {
 		setIsConfirmationModalOpen(true);
-	};
-
-	const openPasswordModal = () => {
-		setIsPasswordModalOpen(true);
-	};
-
-	const handlePasswordChange = async () => {
-		try {
-			const response = await axios.post("/api/auth/change-password", {
-				userId: user.sub,
-			});
-
-			if (response.data.success) {
-				// Rediriger vers l'URL de changement de mot de passe Auth0
-				window.location.href = response.data.changePasswordUrl;
-			}
-		} catch (error) {
-			console.error("Erreur:", error);
-			setError(error.response?.data?.error || "Une erreur est survenue");
-		}
 	};
 
 	const handleDeleteAccount = async () => {
@@ -142,31 +81,7 @@ const AccountTab = () => {
 							<p className="text-sm text-gray-500 dark:text-gray-400">
 								{user.email}
 							</p>
-							{/* <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-								Membre depuis{" "}
-								{isLoading ? "..." : getRegistrationDate()}
-							</p> */}
-							{userDetails && userDetails.last_login && (
-								<p className="text-xs text-gray-400 dark:text-gray-500">
-									Dernière connexion:{" "}
-									{new Date(
-										userDetails.last_login
-									).toLocaleDateString("fr-FR")}
-								</p>
-							)}
 						</div>
-					</div>
-
-					{/* Actions du compte */}
-					<div className="pt-4 border-t border-gray-200 dark:border-gray-700">
-						<Button
-							variant="outline"
-							size="sm"
-							onClick={openPasswordModal}
-							className="w-full mb-4"
-						>
-							Changer mon mot de passe
-						</Button>
 					</div>
 
 					{/* Suppression du compte */}
