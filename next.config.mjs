@@ -9,6 +9,11 @@ const nextConfig = {
         },
         {
           protocol: 'https',
+          hostname: 'lh3.googleusercontent.com',
+          pathname: '/**',
+        },
+        {
+          protocol: 'https',
           hostname: 'cdn.auth0.com',
           pathname: '/**',
         },
@@ -19,24 +24,6 @@ const nextConfig = {
         }
       ],
     },
-    async headers() {
-      return [
-        {
-          source: '/(.*)', // Appliquer cette règle à toutes les routes
-          headers: [
-            {
-              key: 'X-Frame-Options',
-              value: 'ALLOW-FROM http://91.108.112.9 http://88.172.167.249',
-            },
-            {
-              key: 'Content-Security-Policy',
-              value: "frame-ancestors 'self' http://91.108.112.9 http://88.172.167.249",
-            },
-          ],
-        },
-      ];
-    },
   };
-  
   export default nextConfig;
   
