@@ -1,4 +1,4 @@
-//components/wisetrainer/courses/CourseCard.jsx
+// components/wisetrainer/courses/CourseCard.jsx
 
 import React from "react";
 import Image from "next/image";
@@ -28,11 +28,17 @@ const CourseCard = ({ course, onSelect, onUnenroll, itemVariants }) => {
 		});
 	};
 
+	// Gérer le clic sur la carte
+	const handleCardClick = () => {
+		onSelect(course);
+	};
+
 	return (
 		<motion.div variants={itemVariants}>
 			<Card
 				className="flex flex-col h-full hover:shadow-lg transition-shadow duration-300 cursor-pointer"
 				noPaddingTop
+				onClick={handleCardClick}
 			>
 				{/* Image du cours couvrant toute la largeur */}
 				<div className="relative w-full h-52 overflow-hidden rounded-t-lg">
@@ -54,6 +60,23 @@ const CourseCard = ({ course, onSelect, onUnenroll, itemVariants }) => {
 							className="bg-white/90 dark:bg-black/70 text-blue-700 dark:text-blue-200 font-medium"
 						>
 							{course.difficulty || "Intermédiaire"}
+						</Badge>
+					</div>
+					<div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-4">
+						<Badge
+							className={
+								course.progress === 100
+									? "bg-green-500"
+									: course.progress > 0
+									? "bg-blue-500"
+									: "bg-gray-500"
+							}
+						>
+							{course.progress === 100
+								? "Terminé"
+								: course.progress > 0
+								? "En cours"
+								: "Non commencé"}
 						</Badge>
 					</div>
 				</div>
@@ -87,37 +110,53 @@ const CourseCard = ({ course, onSelect, onUnenroll, itemVariants }) => {
 						<div className="pt-3 border-t border-gray-100 dark:border-gray-800">
 							<h4 className="text-sm font-medium mb-2 flex items-center gap-1">
 								<BookOpen className="h-4 w-4" />
-								Modules ({course.completedModules}/
+								Modules ({course.completedModules || 0}/
 								{course.totalModules || 3})
 							</h4>
 							<ul className="space-y-1">
+								{/* Ajoutons un log pour vérifier les modules */}
+								{console.log(
+									"CourseCard - modules pour",
+									course.id,
+									":",
+									course.modules
+								)}
+
 								{course.modules?.slice(0, 3).map((module) => (
 									<li
 										key={module.id}
-										className="flex items-center text-sm"
+										className="flex items-center justify-between text-sm"
 									>
-										<div
-											className={`w-2 h-2 rounded-full mr-2 ${
-												module.completed
-													? "bg-green-500"
-													: "bg-gray-300 dark:bg-gray-600"
-											}`}
-										></div>
-										<span
-											className={
-												module.completed
-													? ""
-													: "text-gray-500"
-											}
-										>
-											{module.title ||
-												`Module ${module.id}`}
-										</span>
-										{module.completed && module.score && (
-											<span className="ml-auto text-xs bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100 px-1.5 py-0.5 rounded">
-												{module.score}%
+										<div className="flex items-center">
+											<div
+												className={`w-2 h-2 rounded-full mr-2 ${
+													module.completed
+														? "bg-green-500"
+														: "bg-gray-300 dark:bg-gray-600"
+												}`}
+											></div>
+											<span
+												className={
+													module.completed
+														? ""
+														: "text-gray-500"
+												}
+											>
+												{module.title ||
+													`Module ${module.id}`}
 											</span>
-										)}
+										</div>
+										<span
+											className={`ml-2 text-xs px-1.5 py-0.5 rounded ${
+												module.completed
+													? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100"
+													: "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400"
+											}`}
+										>
+											{module.completed
+												? `${module.score || 0}%`
+												: "0%"}
+										</span>
 									</li>
 								))}
 								{(course.totalModules > 3 ||
@@ -139,7 +178,7 @@ const CourseCard = ({ course, onSelect, onUnenroll, itemVariants }) => {
 					<Button
 						className="flex-1"
 						onClick={(e) => {
-							e.stopPropagation();
+							e.stopPropagation(); // Empêcher la propagation du clic au parent
 							onSelect(course);
 						}}
 					>
@@ -149,7 +188,7 @@ const CourseCard = ({ course, onSelect, onUnenroll, itemVariants }) => {
 						variant="outline"
 						className="flex-shrink-0"
 						onClick={(e) => {
-							e.stopPropagation();
+							e.stopPropagation(); // Empêcher la propagation du clic au parent
 							onUnenroll(course);
 						}}
 					>

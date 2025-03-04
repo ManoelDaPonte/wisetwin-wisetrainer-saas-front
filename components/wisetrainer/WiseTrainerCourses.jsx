@@ -9,6 +9,7 @@ import PersonalCoursesTab from "@/components/wisetrainer/courses/PersonalCourses
 import CatalogCoursesTab from "@/components/wisetrainer/courses/CatalogCoursesTab";
 import { processBuildNames } from "@/components/wisetrainer/courses/helper";
 import { useToast } from "@/lib/hooks/useToast";
+
 export default function WiseTrainerCourses() {
 	const router = useRouter();
 	const { containerName, isLoading: containerLoading } = useAzureContainer();
@@ -111,6 +112,44 @@ export default function WiseTrainerCourses() {
 							? courseInfo.modules.length
 							: 3; // Valeur par défaut: 3 modules si non spécifié
 
+						// Ce log va nous aider à voir si les données sont bien passées
+						console.log(
+							"Données de progression pour le cours",
+							build.id,
+							":",
+							progressData
+						);
+
+						// Assurons-nous que modules contient les informations correctes
+						const moduleData = progressData?.modules || [];
+
+						// Créons une structure de modules combinant les informations du cours et de progression
+						const combinedModules = courseInfo.modules
+							? courseInfo.modules.map((moduleTemplate) => {
+									// Trouver la progression du module correspondant
+									const moduleProgress = moduleData.find(
+										(m) => m.id === moduleTemplate.id
+									);
+
+									return {
+										...moduleTemplate,
+										completed: moduleProgress
+											? moduleProgress.completed
+											: false,
+										score: moduleProgress
+											? moduleProgress.score
+											: 0,
+									};
+							  })
+							: [];
+
+						console.log(
+							"Modules combinés pour le cours",
+							build.id,
+							":",
+							combinedModules
+						);
+
 						return {
 							...build,
 							progress: progressData?.progress || 0,
@@ -122,6 +161,10 @@ export default function WiseTrainerCourses() {
 									(m) => m.completed
 								).length || 0,
 							totalModules: totalModules,
+							modules:
+								combinedModules.length > 0
+									? combinedModules
+									: moduleData,
 						};
 					});
 
@@ -131,7 +174,6 @@ export default function WiseTrainerCourses() {
 						"Erreur lors de la récupération des formations utilisateur:",
 						error
 					);
-					// Si le container n'existe pas encore ou autre erreur, initialiser avec un tableau vide
 					setPersonalCourses([]);
 				}
 			}

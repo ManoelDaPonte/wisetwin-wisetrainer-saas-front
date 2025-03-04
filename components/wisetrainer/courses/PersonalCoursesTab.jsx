@@ -1,9 +1,10 @@
-//components/wisetrainer/courses/PersonalCoursesTab.jsx
+// components/wisetrainer/courses/PersonalCoursesTab.jsx
 import React from "react";
 import { motion } from "framer-motion";
 import CourseCard from "@/components/wisetrainer/courses/CourseCard";
 import EmptyCoursesState from "@/components/wisetrainer/courses/EmptyCoursesState";
 import CoursesLoading from "@/components/wisetrainer/courses/CoursesLoading";
+
 const PersonalCoursesTab = ({
 	isLoading,
 	courses,
@@ -13,6 +14,9 @@ const PersonalCoursesTab = ({
 	containerVariants,
 	itemVariants,
 }) => {
+	// Ajoutons un log pour vérifier les données des cours
+	console.log("PersonalCoursesTab - courses:", courses);
+
 	return (
 		<>
 			<div className="flex justify-between items-center mb-6">

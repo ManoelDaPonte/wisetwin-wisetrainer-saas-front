@@ -21,7 +21,7 @@ export async function middleware(req) {
 
 export const config = {
   matcher: [
-    // Exclure les routes publiques du middleware
-    "/((?!api/auth|login|api/auth/.*|_next/static|_next/image|favicon.ico|.*\\..*$).*)",
+    // Exclure les routes publiques et les ressources statiques du middleware
+    "/((?!api/auth|login|api/auth/.*|_next/static|_next/image|favicon.ico|images|logos|.*\\..*$).*)",
   ],
 };

@@ -1,4 +1,3 @@
-//components/wisetrainer/course/CourseDetailsTab.jsx
 import React from "react";
 import {
 	Card,
@@ -9,7 +8,7 @@ import {
 	CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CheckCircle, Calendar } from "lucide-react";
+import { CheckCircle, XCircle, Calendar } from "lucide-react";
 
 export default function CourseDetailsTab({
 	course,
@@ -42,13 +41,21 @@ export default function CourseDetailsTab({
 									<div className="flex items-start">
 										<div
 											className={`rounded-full w-8 h-8 flex items-center justify-center mr-3 ${
-												module.completed
+												module.completed &&
+												module.score >= 50
 													? "bg-green-100 text-green-600 dark:bg-green-900 dark:text-green-300"
+													: module.completed &&
+													  module.score < 50
+													? "bg-red-100 text-red-600 dark:bg-red-900 dark:text-red-300"
 													: "bg-gray-100 text-gray-400 dark:bg-gray-800"
 											}`}
 										>
 											{module.completed ? (
-												<CheckCircle className="w-5 h-5" />
+												module.score >= 50 ? (
+													<CheckCircle className="w-5 h-5" />
+												) : (
+													<XCircle className="w-5 h-5" />
+												)
 											) : (
 												<span>{index + 1}</span>
 											)}
@@ -57,7 +64,13 @@ export default function CourseDetailsTab({
 											<h3 className="text-lg font-medium mb-1 flex items-center">
 												<span>{module.title}</span>
 												{module.completed && (
-													<span className="ml-2 text-sm bg-green-100 text-green-800 px-2 py-0.5 rounded-full dark:bg-green-900 dark:text-green-200">
+													<span
+														className={`ml-2 text-sm px-2 py-0.5 rounded-full ${
+															module.score >= 50
+																? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+																: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
+														}`}
+													>
 														{module.score}%
 													</span>
 												)}
@@ -158,6 +171,15 @@ function CoursePerformanceCard({ course, userProgress }) {
 		return Math.round(totalScore / completedModules.length);
 	};
 
+	// Obtenir la couleur du score moyen
+	const getScoreColorClass = (score) => {
+		if (score >= 70) return "text-blue-600 dark:text-blue-300";
+		if (score >= 50) return "text-green-600 dark:text-green-300";
+		return "text-red-600 dark:text-red-300";
+	};
+
+	const score = averageScore();
+
 	return (
 		<Card>
 			<CardHeader>
@@ -166,9 +188,21 @@ function CoursePerformanceCard({ course, userProgress }) {
 			<CardContent>
 				<div className="space-y-4">
 					<div className="text-center">
-						<div className="inline-flex items-center justify-center h-24 w-24 rounded-full bg-blue-100 dark:bg-blue-900 mb-4">
-							<span className="text-2xl font-bold text-blue-600 dark:text-blue-300">
-								{averageScore()}%
+						<div
+							className={`inline-flex items-center justify-center h-24 w-24 rounded-full ${
+								score >= 70
+									? "bg-blue-100 dark:bg-blue-900"
+									: score >= 50
+									? "bg-green-100 dark:bg-green-900"
+									: "bg-red-100 dark:bg-red-900"
+							} mb-4`}
+						>
+							<span
+								className={`text-2xl font-bold ${getScoreColorClass(
+									score
+								)}`}
+							>
+								{score}%
 							</span>
 						</div>
 						<h3 className="text-lg font-medium">Score moyen</h3>

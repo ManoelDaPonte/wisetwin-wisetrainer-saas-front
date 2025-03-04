@@ -307,8 +307,33 @@ export default function CourseDetail({ params }) {
 		!courseId ||
 		!containerName
 	) {
-		// Retourner l'UI de chargement ou d'erreur...
-		// (garder le code existant)
+		return (
+			<div className="container mx-auto py-8">
+				<div className="flex flex-col items-center justify-center h-64">
+					{!courseId || !containerName ? (
+						// Erreur: informations essentielles manquantes
+						<div className="text-center">
+							<div className="text-red-500 text-xl mb-4">
+								Informations manquantes
+							</div>
+							<p className="text-gray-600 dark:text-gray-300 mb-4">
+								Impossible de charger le cours. Informations
+								nécessaires manquantes.
+							</p>
+							<Button onClick={handleBack}>
+								Retour aux formations
+							</Button>
+						</div>
+					) : (
+						// Chargement en cours
+						<div className="text-center">
+							<div className="animate-spin h-10 w-10 border-4 border-wisetwin-blue border-t-transparent rounded-full mb-4 mx-auto"></div>
+							<p>Chargement du cours...</p>
+						</div>
+					)}
+				</div>
+			</div>
+		);
 	}
 
 	return (

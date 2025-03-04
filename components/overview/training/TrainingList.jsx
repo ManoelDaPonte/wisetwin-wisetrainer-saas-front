@@ -1,4 +1,3 @@
-//components/overview/training/TrainingList.jsx
 import React from "react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
@@ -6,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { Calendar } from "lucide-react";
+import { Calendar, BookOpen } from "lucide-react";
 
 function TrainingList({ trainings }) {
 	const router = useRouter();
@@ -35,8 +34,11 @@ function TrainingList({ trainings }) {
 			{trainings.map((training) => (
 				<motion.div key={training.id} variants={itemVariants}>
 					<Card
-						className="overflow-hidden hover:shadow-md transition-shadow"
+						className="overflow-hidden hover:shadow-md transition-shadow cursor-pointer"
 						noPaddingTop
+						onClick={() =>
+							router.push(`/wisetrainer/${training.id}`)
+						}
 					>
 						<div className="relative h-40 bg-gray-100 dark:bg-gray-800">
 							{training.imageUrl && (
@@ -95,7 +97,8 @@ function TrainingList({ trainings }) {
 								</div>
 
 								<div className="pt-3 border-t border-gray-100 dark:border-gray-800">
-									<h4 className="text-sm font-medium mb-2">
+									<h4 className="text-sm font-medium mb-2 flex items-center gap-1">
+										<BookOpen className="h-4 w-4" />
 										Modules (
 										{training.modules?.filter(
 											(m) => m.completed
@@ -113,31 +116,41 @@ function TrainingList({ trainings }) {
 											.map((module) => (
 												<li
 													key={module.id}
-													className="flex items-center text-sm"
+													className="flex items-center justify-between text-sm"
 												>
-													<div
-														className={`w-2 h-2 rounded-full mr-2 ${
-															module.completed
-																? "bg-green-500"
-																: "bg-gray-300 dark:bg-gray-600"
-														}`}
-													></div>
+													<div className="flex items-center">
+														<div
+															className={`w-2 h-2 rounded-full mr-2 ${
+																module.completed
+																	? "bg-green-500"
+																	: "bg-gray-300 dark:bg-gray-600"
+															}`}
+														></div>
+														<span
+															className={
+																module.completed
+																	? ""
+																	: "text-gray-500"
+															}
+														>
+															{module.title ||
+																`Module ${module.id}`}
+														</span>
+													</div>
 													<span
-														className={
+														className={`ml-2 text-xs px-1.5 py-0.5 rounded ${
 															module.completed
-																? ""
-																: "text-gray-500"
-														}
+																? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100"
+																: "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400"
+														}`}
 													>
-														{module.title ||
-															`Module ${module.id}`}
+														{module.completed
+															? `${
+																	module.score ||
+																	0
+															  }%`
+															: "0%"}
 													</span>
-													{module.completed &&
-														module.score && (
-															<span className="ml-auto text-xs bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100 px-1.5 py-0.5 rounded">
-																{module.score}%
-															</span>
-														)}
 												</li>
 											))}
 										{(training.totalModules > 3 ||
@@ -156,11 +169,12 @@ function TrainingList({ trainings }) {
 
 								<Button
 									className="w-full mt-4"
-									onClick={() =>
+									onClick={(e) => {
+										e.stopPropagation();
 										router.push(
 											`/wisetrainer/${training.id}`
-										)
-									}
+										);
+									}}
 								>
 									{training.progress === 0
 										? "Commencer"

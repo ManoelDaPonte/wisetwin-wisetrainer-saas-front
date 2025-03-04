@@ -4,11 +4,6 @@ import axios from "axios";
 import { useUser } from "@auth0/nextjs-auth0/client";
 import { useAzureContainer } from "@/lib/hooks/useAzureContainer";
 
-/**
- * Hook pour suivre les sessions utilisateur
- * @param {string} courseId - Identifiant du cours (optionnel)
- * @returns {Object} - Informations sur la session et fonctions de gestion
- */
 export function useSessionTracker(courseId = null) {
 	const { user } = useUser();
 	const { containerName, isLoading: containerLoading } = useAzureContainer();
@@ -18,6 +13,7 @@ export function useSessionTracker(courseId = null) {
 	const [duration, setDuration] = useState(0);
 	const [error, setError] = useState(null);
 	const [modulesViewed, setModulesViewed] = useState([]);
+	const [formattedTime, setFormattedTime] = useState("00:00");
 
 	// Démarrer une session lorsque le composant est monté
 	useEffect(() => {
@@ -33,6 +29,14 @@ export function useSessionTracker(courseId = null) {
 					(new Date() - startTime) / 1000
 				);
 				setDuration(currentDuration);
+
+				// Mettre à jour le format du temps à chaque tic
+				const minutes = Math.floor(currentDuration / 60);
+				const seconds = currentDuration % 60;
+				const formatted = `${minutes
+					.toString()
+					.padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
+				setFormattedTime(formatted);
 			}
 		}, 1000);
 
@@ -43,22 +47,21 @@ export function useSessionTracker(courseId = null) {
 				endSession();
 			}
 		};
-	}, [user, containerName, containerLoading]);
+	}, [user, containerName, containerLoading, isActive, startTime]);
 
 	// Gérer la fin de session lorsque l'utilisateur quitte la page
 	useEffect(() => {
 		const handleBeforeUnload = () => {
-			if (isActive) {
+			if (isActive && sessionId) {
 				// Version synchrone pour le cas où l'utilisateur quitte la page
-				navigator.sendBeacon(
-					"/api/db/sessions",
-					JSON.stringify({
-						userId: containerName,
-						sessionId,
-						modulesViewed,
-						method: "PUT",
-					})
-				);
+				const data = JSON.stringify({
+					userId: containerName,
+					sessionId: sessionId,
+					modulesViewed: modulesViewed,
+				});
+
+				// Utiliser POST au lieu de PUT pour la compatibilité avec sendBeacon
+				navigator.sendBeacon("/api/db/sessions/end", data);
 			}
 		};
 
@@ -83,6 +86,7 @@ export function useSessionTracker(courseId = null) {
 				setIsActive(true);
 				setStartTime(new Date());
 				setDuration(0);
+				setFormattedTime("00:00");
 				setModulesViewed([]);
 			} else {
 				throw new Error(
@@ -98,13 +102,15 @@ export function useSessionTracker(courseId = null) {
 	};
 
 	// Fonction pour terminer une session
+	// Fonction pour terminer une session
 	const endSession = async () => {
 		if (!isActive || !sessionId) return;
 
 		try {
 			setError(null);
 
-			const response = await axios.put("/api/db/sessions", {
+			// Utiliser le nouvel endpoint POST au lieu de PUT
+			const response = await axios.post("/api/db/sessions/end", {
 				userId: containerName,
 				sessionId,
 				modulesViewed,
@@ -139,20 +145,11 @@ export function useSessionTracker(courseId = null) {
 		}
 	};
 
-	// Formatage de la durée pour l'affichage
-	const formattedDuration = () => {
-		const minutes = Math.floor(duration / 60);
-		const seconds = duration % 60;
-		return `${minutes.toString().padStart(2, "0")}:${seconds
-			.toString()
-			.padStart(2, "0")}`;
-	};
-
 	return {
 		isActive,
 		sessionId,
 		duration,
-		formattedDuration: formattedDuration(),
+		formattedDuration: formattedTime,
 		error,
 		modulesViewed,
 		startSession,
