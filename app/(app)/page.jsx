@@ -53,7 +53,7 @@ export default function HomePage() {
 					Bienvenue sur{" "}
 					<span className="text-wisetwin-blue">WiseTwin</span>
 				</h1>
-				<p className="text-gray-600 dark:text-gray-300 text-lg">
+				<p className="text-foreground-muted dark:text-foreground-muted text-lg">
 					Plateforme innovante de formation industrielle en réalité
 					virtuelle
 				</p>
@@ -74,9 +74,9 @@ export default function HomePage() {
 							className="h-full"
 						>
 							<Card
-								className={`h-full flex flex-col shadow-soft border-2 transition-all duration-300 ${
+								className={`h-full flex flex-col shadow-soft transition-all duration-300 ${
 									card.disabled
-										? "opacity-75 cursor-not-allowed border-gray-200 dark:border-gray-700"
+										? "opacity-75 cursor-not-allowed border-muted"
 										: "cursor-pointer hover:border-wisetwin-blue dark:hover:border-wisetwin-blue-light"
 								}`}
 								onClick={() =>
@@ -85,15 +85,15 @@ export default function HomePage() {
 							>
 								<div className="relative">
 									{card.disabled && (
-										<span className="absolute top-3 right-3 text-xs bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300 px-2 py-1 rounded-full">
+										<span className="absolute top-3 right-3 text-xs bg-muted text-muted-foreground px-2 py-1 rounded-full">
 											Bientôt
 										</span>
 									)}
 									<CardHeader className="pb-2">
-										<div className="w-12 h-12 bg-wisetwin-darkblue/10 rounded-lg flex items-center justify-center mb-4">
+										<div className="w-12 h-12 bg-wisetwin-darkblue/10 dark:bg-wisetwin-darkblue/20 rounded-lg flex items-center justify-center mb-4">
 											<CardIcon
 												size={24}
-												className="text-wisetwin-darkblue"
+												className="text-wisetwin-darkblue dark:text-wisetwin-blue"
 											/>
 										</div>
 										<CardTitle className="text-xl text-wisetwin-darkblue dark:text-white">
@@ -103,12 +103,12 @@ export default function HomePage() {
 								</div>
 
 								<CardContent className="flex-grow">
-									<CardDescription className="text-sm text-gray-600 dark:text-gray-300">
+									<CardDescription className="text-sm text-muted-foreground">
 										{card.description}
 									</CardDescription>
 								</CardContent>
 
-								<CardFooter className="pt-0  mt-auto">
+								<CardFooter className="pt-0 mt-auto">
 									<div className="flex w-full items-center justify-end text-wisetwin-darkblue dark:text-wisetwin-blue text-sm font-medium">
 										<span>{card.primaryAction}</span>
 										<ArrowRight className="ml-2 h-4 w-4" />
@@ -128,7 +128,7 @@ export default function HomePage() {
 				className="mt-12"
 			>
 				<Button
-					className="bg-wisetwin-darkblue hover:bg-wisetwin-darkblue-light"
+					className="bg-wisetwin-darkblue hover:bg-wisetwin-darkblue-light text-white dark:bg-wisetwin-blue dark:hover:bg-wisetwin-blue-light dark:text-white"
 					size="lg"
 					onClick={() => router.push("/wisetrainer")}
 				>
@@ -144,7 +144,7 @@ export default function HomePage() {
 				transition={{ delay: 1, duration: 0.8 }}
 				className="mt-16 text-center"
 			>
-				<p className="text-sm text-gray-500 dark:text-gray-400">
+				<p className="text-sm text-muted-foreground">
 					Sécurité • Formation • Immersion • Excellence
 				</p>
 			</motion.div>

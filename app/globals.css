@@ -43,34 +43,36 @@
 	}
 
 	.dark {
-		--background: 222.2 84% 4.9%;
-		--foreground: 210 40% 98%;
+		--background: 222.2 84% 4.9%; /* Fond très sombre presque noir */
+		--foreground: 210 40% 98%; /* Texte clair */
 
-		--card: 222.2 84% 4.9%;
-		--card-foreground: 210 40% 98%;
+		--card: 222.2 84% 4.9%; /* Fond de carte sombre */
+		--card-foreground: 210 40% 98%; /* Texte de carte clair */
 
-		--popover: 222.2 84% 4.9%;
-		--popover-foreground: 210 40% 98%;
+		--popover: 222.2 84% 4.9%; /* Fond de popover sombre */
+		--popover-foreground: 210 40% 98%; /* Texte de popover clair */
 
-		/* Mise à jour pour le thème sombre */
+		/* La couleur primaire reste le bleu foncé WiseTwin */
 		--primary: var(--wisetwin-darkblue);
 		--primary-foreground: 210 40% 98%;
 
-		--secondary: 217.2 32.6% 17.5%;
-		--secondary-foreground: 210 40% 98%;
+		--secondary: 217.2 32.6% 17.5%; /* Couleur secondaire sombre */
+		--secondary-foreground: 210 40% 98%; /* Texte secondaire clair */
 
-		--muted: 217.2 32.6% 17.5%;
-		--muted-foreground: 215 20.2% 65.1%;
+		--muted: 217.2 32.6% 17.5%; /* Éléments atténués sombres */
+		--muted-foreground: 215 20.2% 65.1%; /* Texte atténué gris clair */
 
-		--accent: 217.2 32.6% 17.5%;
-		--accent-foreground: 210 40% 98%;
+		--accent: 217.2 32.6% 17.5%; /* Accentuation sombre */
+		--accent-foreground: 210 40% 98%; /* Texte d'accentuation clair */
 
-		--destructive: 0 62.8% 30.6%;
-		--destructive-foreground: 210 40% 98%;
+		--destructive: 0 62.8% 30.6%; /* Rouge plus sombre pour destructif */
+		--destructive-foreground: 210 40% 98%; /* Texte clair sur destructif */
 
-		--border: 217.2 32.6% 17.5%;
-		--input: 217.2 32.6% 17.5%;
-		--ring: var(--wisetwin-blue-light);
+		--border: 217.2 32.6% 17.5%; /* Bordures sombres */
+		--input: 217.2 32.6% 17.5%; /* Inputs sombres */
+		--ring: var(
+			--wisetwin-blue-light
+		); /* Anneau avec le bleu clair WiseTwin */
 	}
 }
 

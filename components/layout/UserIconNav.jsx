@@ -1,11 +1,11 @@
-// components/UserIconNav.jsx
+// components/layout/UserIconNav.jsx
 "use client";
 import React, { useState, useEffect, useRef } from "react";
 import { useUser } from "@auth0/nextjs-auth0/client";
 import NavButton from "@/components/common/NavButton";
 import Image from "next/image";
 import SettingsModal from "@/components/settings/SettingsModal";
-import { Settings, LogOut } from "lucide-react";
+import { Settings, LogOut, Moon } from "lucide-react";
 
 const UserIconNav = () => {
 	const { user, error, isLoading } = useUser();
@@ -39,40 +39,41 @@ const UserIconNav = () => {
 	}, []);
 
 	if (error) {
-		return <div>Error: {error.message}</div>;
+		return <div className="text-destructive">Error: {error.message}</div>;
 	}
 
 	return (
 		<div className="relative flex">
 			{isLoading ? (
-				<div className="w-8 h-8 rounded-3xl bg-gray-300 animate-pulse"></div>
+				<div className="w-8 h-8 rounded-3xl bg-muted animate-pulse"></div>
 			) : (
 				user && (
 					<div ref={dropdownRef}>
 						<Image
 							src={user.picture}
 							alt="User profile"
-							className="w-8 h-8 rounded-3xl cursor-pointer"
+							className="w-8 h-8 rounded-3xl cursor-pointer ring-2 ring-border hover:ring-primary transition-all"
 							onClick={toggleDropdown}
 							width={32}
 							height={32}
 						/>
 						{isOpen && (
-							<div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-md shadow-lg z-50 py-2 p-2">
+							<div className="absolute right-0 mt-2 w-48 bg-card border border-border rounded-md shadow-lg z-50 py-2 p-2">
 								<NavButton
 									className="w-full text-left"
-									icon={<Settings size={18} />} // Pre-rendered JSX element
+									icon={<Settings size={18} />}
 									onClick={() =>
 										closeMenuAndExecute(() =>
 											setIsModalOpen(true)
 										)
 									}
 								>
-									Settings
+									Paramètres
 								</NavButton>
+
 								<NavButton
-									className="w-full text-left"
-									icon={<LogOut size={18} />} // Pre-rendered JSX element
+									className="w-full text-left text-destructive hover:text-destructive/90"
+									icon={<LogOut size={18} />}
 									onClick={() =>
 										closeMenuAndExecute(
 											() =>
@@ -81,7 +82,7 @@ const UserIconNav = () => {
 										)
 									}
 								>
-									Logout
+									Déconnexion
 								</NavButton>
 							</div>
 						)}

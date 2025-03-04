@@ -1,61 +1,72 @@
-// components/common/Modal.jsx
+// components/settings/SettingsModal.jsx
 
 import React, { useState } from "react";
-import NavButton from "@/components/common/NavButton"; // Importer le composant NavButton
-import { cn } from "@/lib/utils"; // Assure-toi que cette fonction est définie pour gérer les classes conditionnelles
+import NavButton from "@/components/common/NavButton";
+import { cn } from "@/lib/utils";
 import GeneralTab from "@/components/settings/tabs/GeneralTab";
-import TeamsTab from "@/components/settings/tabs/TeamsTab";
 import AccountTab from "@/components/settings/tabs/AccountTab";
+import { Settings as SettingsIcon, User, LogOut, Moon, X } from "lucide-react";
 
 const SettingsModal = ({ isOpen, onClose }) => {
 	const [activeTab, setActiveTab] = useState("general");
-
 	const tabs = [
-		{ id: "general", label: "General", icon: "/icons/svg/settings.svg" },
 		{
-			id: "teams",
-			label: "Teams",
-			icon: "/icons/svg/users.svg",
-			badge: { label: "soon", color: "purple" },
-			disabled: true,
+			id: "general",
+			label: "Préférences",
+			icon: <SettingsIcon size={18} />,
 		},
 		{
 			id: "account",
-			label: "Account",
-			icon: "/icons/svg/user-round-cog.svg",
+			label: "Mon Compte",
+			icon: <User size={18} />,
+		},
+		{
+			id: "logout",
+			label: "Déconnexion",
+			icon: <LogOut size={18} />,
+			action: () => (window.location.href = "/api/auth/logout"),
+			className: "mt-auto text-destructive hover:text-destructive/90",
 		},
 	];
 
 	if (!isOpen) return null;
 
 	return (
-		<div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50">
-			<div className="bg-white w-[600px] rounded-lg shadow-lg p-6 relative flex">
+		<div className="fixed inset-0 flex items-center justify-center z-50 bg-black/50 backdrop-blur-sm">
+			<div className="bg-background w-[550px] rounded-lg shadow-lg border border-border p-6 relative flex">
 				{/* Bouton de fermeture */}
 				<button
-					className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
+					className="absolute top-2 right-2 text-muted-foreground hover:text-foreground rounded-full p-1 hover:bg-accent transition-colors"
 					onClick={onClose}
+					aria-label="Fermer"
 				>
-					✕
+					<X size={18} />
 				</button>
 
 				{/* Barre latérale pour les onglets */}
-				<div className="w-1/3 border-r border-gray-200 pr-4">
-					<h2 className="text-lg font-semibold mb-4">Settings</h2>
-					<nav className="flex flex-col space-y-2">
+				<div className="w-1/3 border-r border-border pr-4">
+					<h2 className="text-lg font-semibold mb-4 text-foreground">
+						Paramètres
+					</h2>
+					<nav className="flex flex-col space-y-2 h-[400px]">
 						{tabs.map((tab) => (
 							<NavButton
 								key={tab.id}
-								onClick={() => setActiveTab(tab.id)}
+								onClick={() =>
+									tab.action
+										? tab.action()
+										: setActiveTab(tab.id)
+								}
 								icon={tab.icon}
 								className={cn(
 									"flex items-center justify-between w-full h-10 px-4 rounded-md text-sm font-medium",
 									activeTab === tab.id
-										? "bg-gray-200 text-gray-900"
-										: "hover:bg-gray-50"
+										? "bg-accent text-accent-foreground"
+										: "hover:bg-accent/50 text-foreground",
+									tab.className
 								)}
 								badge={tab.badge}
-								disabled={tab.disabled} // Utilisation directe du paramètre disabled
+								disabled={tab.disabled}
 							>
 								{tab.label}
 							</NavButton>
@@ -64,7 +75,6 @@ const SettingsModal = ({ isOpen, onClose }) => {
 				</div>
 				<div className="w-2/3 pl-6">
 					{activeTab === "general" && <GeneralTab />}
-					{activeTab === "teams" && <TeamsTab />}
 					{activeTab === "account" && <AccountTab />}
 				</div>
 			</div>

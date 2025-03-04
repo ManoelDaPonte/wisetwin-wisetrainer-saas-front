@@ -1,106 +1,136 @@
-// components/settings/GeneralTab.jsx
+// components/settings/tabs/GeneralTab.jsx
 
-import React from "react";
-import { useState } from "react";
-import axios from "axios";
-import { Button } from "@/components/ui/button";
-import { Trash, RefreshCw } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { useUser } from "@auth0/nextjs-auth0/client";
+import { Moon, Sun, Globe, Bell } from "lucide-react";
+import { useTheme } from "@/lib/hooks/useTheme";
 
-// Modifier le composant
 const GeneralTab = () => {
-	const [isCleaning, setIsCleaning] = useState(false);
-	const [cleanupResult, setCleanupResult] = useState(null);
+	const { theme, setTheme } = useTheme();
+	const [language, setLanguage] = useState("fr");
+	const [notifications, setNotifications] = useState(true);
 
-	const handleCleanupProjects = async () => {
-		if (!metadata?.azure_container_name) {
-			alert("User information not available. Please try again later.");
-			return;
-		}
-
-		if (!confirm("This will clean up orphaned project files. Continue?")) {
-			return;
-		}
-
-		setIsCleaning(true);
-		setCleanupResult(null);
-
-		try {
-			const response = await axios.post(
-				`/api/maintenance/cleanup-projects/${metadata.azure_container_name}`
-			);
-
-			setCleanupResult({
-				success: true,
-				deleted: response.data.deleted,
-				failed: response.data.failed,
-			});
-
-			alert(
-				`Cleanup completed. ${response.data.deleted.length} files removed.`
-			);
-		} catch (error) {
-			console.error("Error cleaning up projects:", error);
-			setCleanupResult({
-				success: false,
-				error: error.response?.data?.error || "Error during cleanup",
-			});
-
-			alert("Failed to clean up projects. Please try again.");
-		} finally {
-			setIsCleaning(false);
-		}
+	// Fonction pour changer le thème
+	const handleThemeChange = (value) => {
+		setTheme(value);
 	};
 
 	return (
 		<div>
-			<h3 className="text-md font-medium mb-4">General</h3>
-			<div className="space-y-4">
-				<div className="flex justify-between items-center py-2">
-					<span>Theme</span>
-					<select className="border rounded p-1">
-						<option>System</option>
-						<option>Light</option>
-						<option>Dark</option>
-					</select>
+			<h3 className="text-md font-medium mb-5 dark:text-white">
+				Préférences
+			</h3>
+
+			<div className="space-y-6">
+				{/* Paramètres d'apparence */}
+				<div>
+					<h4 className="text-sm font-medium flex items-center mb-3 dark:text-white">
+						<Moon className="h-4 w-4 mr-2" />
+						Apparence
+					</h4>
+
+					<div className="space-y-4">
+						<div className="flex justify-between items-center">
+							<span className="text-sm dark:text-gray-300">
+								Thème
+							</span>
+							<div className="w-32">
+								<select
+									value={theme}
+									onChange={(e) =>
+										handleThemeChange(e.target.value)
+									}
+									className="w-full px-2 py-1 text-sm rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+								>
+									<option value="light">Clair</option>
+									<option value="dark">Sombre</option>
+									<option value="system">Système</option>
+								</select>
+							</div>
+						</div>
+					</div>
 				</div>
 
-				<div className="border-t pt-4">
-					<h4 className="font-medium mb-2">Maintenance</h4>
-					<Button
-						variant="outline"
-						size="sm"
-						className="flex items-center"
-						onClick={handleCleanupProjects}
-						disabled={isCleaning}
-					>
-						{isCleaning ? (
-							<RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-						) : (
-							<Trash className="h-4 w-4 mr-2" />
-						)}
-						{isCleaning ? "Cleaning..." : "Clean Up Orphaned Files"}
-					</Button>
+				{/* Paramètres de langue */}
+				<div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+					<h4 className="text-sm font-medium flex items-center mb-3 dark:text-white">
+						<Globe className="h-4 w-4 mr-2" />
+						Langue et région
+					</h4>
 
-					{cleanupResult && (
-						<div className="mt-2 text-sm">
-							{cleanupResult.success ? (
-								<p className="text-green-600">
-									{cleanupResult.deleted.length} files removed
-									successfully.
-									{cleanupResult.failed.length > 0 && (
-										<span className="text-amber-600 ml-1">
-											{cleanupResult.failed.length} files
-											failed to remove.
-										</span>
-									)}
-								</p>
-							) : (
-								<p className="text-red-500">
-									{cleanupResult.error}
-								</p>
-							)}
+					<div className="space-y-4">
+						<div className="flex justify-between items-center">
+							<span className="text-sm dark:text-gray-300">
+								Langue
+							</span>
+							<div className="w-32">
+								<select
+									value={language}
+									onChange={(e) =>
+										setLanguage(e.target.value)
+									}
+									className="w-full px-2 py-1 text-sm rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+								>
+									<option value="fr">Français</option>
+									<option value="en">English</option>
+								</select>
+							</div>
 						</div>
-					)}
+					</div>
+				</div>
+
+				{/* Paramètres de notifications */}
+				<div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+					<h4 className="text-sm font-medium flex items-center mb-3 dark:text-white">
+						<Bell className="h-4 w-4 mr-2" />
+						Notifications
+					</h4>
+
+					<div className="space-y-4">
+						<div className="flex justify-between items-center">
+							<span className="text-sm dark:text-gray-300">
+								Notifications de progression
+							</span>
+							<div className="flex items-center h-5">
+								<input
+									type="checkbox"
+									checked={notifications}
+									onChange={() =>
+										setNotifications(!notifications)
+									}
+									className="h-4 w-4 rounded border-gray-300 text-wisetwin-blue focus:ring-wisetwin-blue dark:border-gray-600"
+								/>
+							</div>
+						</div>
+
+						<div className="flex justify-between items-center">
+							<span className="text-sm dark:text-gray-300">
+								Alertes par email
+							</span>
+							<div className="flex items-center h-5">
+								<input
+									type="checkbox"
+									checked={notifications}
+									onChange={() =>
+										setNotifications(!notifications)
+									}
+									className="h-4 w-4 rounded border-gray-300 text-wisetwin-blue focus:ring-wisetwin-blue dark:border-gray-600"
+								/>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				{/* Version de l'application */}
+				<div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+					<div className="flex justify-between items-center">
+						<span className="text-sm text-gray-500 dark:text-gray-400">
+							Version
+						</span>
+						<span className="text-xs bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded text-gray-600 dark:text-gray-300">
+							v1.2.0
+						</span>
+					</div>
 				</div>
 			</div>
 		</div>

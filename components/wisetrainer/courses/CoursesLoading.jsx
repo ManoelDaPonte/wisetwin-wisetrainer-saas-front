@@ -7,7 +7,7 @@ const CoursesLoading = ({ count = 2 }) => {
 	return (
 		<div className="grid grid-cols-1 md:grid-cols-2 gap-8">
 			{Array.from({ length: count }).map((_, i) => (
-				<Card key={i} className="h-full">
+				<Card key={i} className="h-full" noPaddingTop>
 					<div className="animate-pulse">
 						<div className="h-52 bg-gray-200 dark:bg-gray-700 rounded-t-lg"></div>
 						<CardHeader>
