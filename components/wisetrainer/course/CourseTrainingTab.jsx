@@ -26,13 +26,6 @@ export default function CourseTrainingTab({
 	return (
 		<>
 			<Card className="mb-8">
-				<CardHeader>
-					<CardTitle>Environnement de formation 3D</CardTitle>
-					<CardDescription>
-						Naviguez dans l'environnement virtuel pour apprendre et
-						interagir avec les différents éléments
-					</CardDescription>
-				</CardHeader>
 				<CardContent>
 					<div className="flex justify-end mb-4">
 						<Button
