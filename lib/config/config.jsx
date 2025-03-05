@@ -84,12 +84,12 @@ export const navigationItems = {
 		},
 	],
 	otherItems: [
-		{
-			id: "documentation",
-			label: "Docs",
-			icon: BookText,
-			external: true,
-		},
+		// {
+		// 	id: "documentation",
+		// 	label: "Docs",
+		// 	icon: BookText,
+		// 	external: true,
+		// },
 		{
 			id: "collaborate",
 			label: "Collaborate",

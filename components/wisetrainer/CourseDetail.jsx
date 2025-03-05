@@ -26,6 +26,10 @@ export default function CourseDetail({ params }) {
 	const [activeTab, setActiveTab] = useState("details");
 	const [selectedModule, setSelectedModule] = useState(null);
 
+	const handleSwitchTab = (tabId) => {
+		setActiveTab(tabId);
+	};
+
 	// Utiliser le hook d'événements Unity
 	const {
 		currentScenario,
@@ -372,6 +376,7 @@ export default function CourseDetail({ params }) {
 						course={course}
 						userProgress={userProgress}
 						onModuleSelect={handleModuleSelect}
+						onSwitchTab={handleSwitchTab} // Passer la fonction de changement d'onglet
 					/>
 				</TabsContent>
 

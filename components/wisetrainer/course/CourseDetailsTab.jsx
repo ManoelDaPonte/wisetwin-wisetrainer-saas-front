@@ -1,3 +1,4 @@
+//components/wisetrainer/course/CourseDetailsTab.jsx
 import React from "react";
 import {
 	Card,
@@ -8,12 +9,13 @@ import {
 	CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CheckCircle, XCircle, Calendar } from "lucide-react";
+import { CheckCircle, XCircle, Calendar, Play } from "lucide-react";
 
 export default function CourseDetailsTab({
 	course,
 	userProgress,
 	onModuleSelect,
+	onSwitchTab,
 }) {
 	const formatDate = (dateString) => {
 		return new Date(dateString).toLocaleDateString(undefined, {
@@ -23,84 +25,107 @@ export default function CourseDetailsTab({
 		});
 	};
 
-	return (
-		<div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-			<div className="md:col-span-2">
-				<Card>
-					<CardHeader>
-						<CardTitle>Modules de formation</CardTitle>
-						<CardDescription>
-							Progression dans les différents modules du cours
-						</CardDescription>
-					</CardHeader>
-					<CardContent>
-						{course &&
-							course.modules &&
-							course.modules.map((module, index) => (
-								<div key={module.id} className="mb-6 last:mb-0">
-									<div className="flex items-start">
-										<div
-											className={`rounded-full w-8 h-8 flex items-center justify-center mr-3 ${
-												module.completed &&
-												module.score >= 50
-													? "bg-green-100 text-green-600 dark:bg-green-900 dark:text-green-300"
-													: module.completed &&
-													  module.score < 50
-													? "bg-red-100 text-red-600 dark:bg-red-900 dark:text-red-300"
-													: "bg-gray-100 text-gray-400 dark:bg-gray-800"
-											}`}
-										>
-											{module.completed ? (
-												module.score >= 50 ? (
-													<CheckCircle className="w-5 h-5" />
-												) : (
-													<XCircle className="w-5 h-5" />
-												)
-											) : (
-												<span>{index + 1}</span>
-											)}
-										</div>
-										<div className="flex-1 group">
-											<h3 className="text-lg font-medium mb-1 flex items-center">
-												<span>{module.title}</span>
-												{module.completed && (
-													<span
-														className={`ml-2 text-sm px-2 py-0.5 rounded-full ${
-															module.score >= 50
-																? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
-																: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
-														}`}
-													>
-														{module.score}%
-													</span>
-												)}
-											</h3>
-											<p className="text-gray-600 dark:text-gray-400 text-sm">
-												{module.description}
-											</p>
-										</div>
-									</div>
-									{index < course.modules.length - 1 && (
-										<div className="ml-4 pl-4 border-l border-gray-200 dark:border-gray-700 h-8"></div>
-									)}
-								</div>
-							))}
-					</CardContent>
-				</Card>
-			</div>
+	// Fonction pour gérer le clic sur les boutons "Lancer la formation"
+	const handleLaunchTraining = () => {
+		// Appeler la fonction qui change l'onglet actif
+		onSwitchTab("training");
+	};
 
-			<div>
-				<CourseInfoCard
-					course={course}
-					userProgress={userProgress}
-					formatDate={formatDate}
-				/>
-				<CoursePerformanceCard
-					course={course}
-					userProgress={userProgress}
-				/>
+	return (
+		<>
+			<div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+				<div className="md:col-span-2">
+					<Card>
+						<CardHeader>
+							<CardTitle>Modules de formation</CardTitle>
+							<CardDescription>
+								Progression dans les différents modules du cours
+							</CardDescription>
+						</CardHeader>
+						<CardContent>
+							{course &&
+								course.modules &&
+								course.modules.map((module, index) => (
+									<div
+										key={module.id}
+										className="mb-6 last:mb-0"
+									>
+										<div className="flex items-start">
+											<div
+												className={`rounded-full w-8 h-8 flex items-center justify-center mr-3 ${
+													module.completed &&
+													module.score >= 50
+														? "bg-green-100 text-green-600 dark:bg-green-900 dark:text-green-300"
+														: module.completed &&
+														  module.score < 50
+														? "bg-red-100 text-red-600 dark:bg-red-900 dark:text-red-300"
+														: "bg-gray-100 text-gray-400 dark:bg-gray-800"
+												}`}
+											>
+												{module.completed ? (
+													module.score >= 50 ? (
+														<CheckCircle className="w-5 h-5" />
+													) : (
+														<XCircle className="w-5 h-5" />
+													)
+												) : (
+													<span>{index + 1}</span>
+												)}
+											</div>
+											<div className="flex-1 group">
+												<h3 className="text-lg font-medium mb-1 flex items-center">
+													<span>{module.title}</span>
+													{module.completed && (
+														<span
+															className={`ml-2 text-sm px-2 py-0.5 rounded-full ${
+																module.score >=
+																50
+																	? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+																	: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
+															}`}
+														>
+															{module.score}%
+														</span>
+													)}
+												</h3>
+												<p className="text-gray-600 dark:text-gray-400 text-sm">
+													{module.description}
+												</p>
+											</div>
+										</div>
+										{index < course.modules.length - 1 && (
+											<div className="ml-4 pl-4 border-l border-gray-200 dark:border-gray-700 h-8"></div>
+										)}
+									</div>
+								))}
+						</CardContent>
+					</Card>
+
+					{/* Bouton en dessous de la liste des modules */}
+					<div className="mt-4 flex justify-center">
+						<Button
+							className="bg-wisetwin-darkblue hover:bg-wisetwin-darkblue-light text-white flex items-center gap-2"
+							onClick={handleLaunchTraining}
+						>
+							<Play className="w-4 h-4" />
+							Commencer l'environnement 3D
+						</Button>
+					</div>
+				</div>
+
+				<div>
+					<CourseInfoCard
+						course={course}
+						userProgress={userProgress}
+						formatDate={formatDate}
+					/>
+					<CoursePerformanceCard
+						course={course}
+						userProgress={userProgress}
+					/>
+				</div>
 			</div>
-		</div>
+		</>
 	);
 }
 

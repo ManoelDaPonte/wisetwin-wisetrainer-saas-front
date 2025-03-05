@@ -7,7 +7,8 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
-import { Info } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Info, RotateCcw } from "lucide-react";
 import UnityBuild from "@/components/wisetrainer/UnityBuild";
 
 export default function CourseTrainingTab({
@@ -16,6 +17,12 @@ export default function CourseTrainingTab({
 	containerName,
 	onQuestionnaireRequest,
 }) {
+	const handleResetCamera = () => {
+		if (unityBuildRef.current && unityBuildRef.current.isReady) {
+			unityBuildRef.current.sendMessage("GameManager", "ResetCamera", "");
+		}
+	};
+
 	return (
 		<>
 			<Card className="mb-8">
@@ -27,6 +34,16 @@ export default function CourseTrainingTab({
 					</CardDescription>
 				</CardHeader>
 				<CardContent>
+					<div className="flex justify-end mb-4">
+						<Button
+							variant="outline"
+							className="flex items-center gap-2"
+							onClick={handleResetCamera}
+						>
+							<RotateCcw className="w-4 h-4" />
+							Réinitialiser la caméra
+						</Button>
+					</div>
 					<UnityBuild
 						ref={unityBuildRef}
 						courseId={courseId}
@@ -53,26 +70,17 @@ function TrainingInstructions() {
 		<>
 			<ul className="list-disc pl-5 space-y-2 text-gray-700 dark:text-gray-300">
 				<li>
-					Utilisez les touches <strong>W, A, S, D</strong> ou les{" "}
-					<strong>flèches directionnelles</strong> pour vous déplacer
+					Maintenez le <strong>clic droit</strong> et déplacez la
+					souris pour regarder autour de vous
 				</li>
 				<li>
-					Maintenez <strong>Shift</strong> pour courir
+					Utilisez le <strong>clic gauche</strong> sur un travailleur
+					pour interagir et lancer un questionnaire
 				</li>
+
 				<li>
-					Utilisez la <strong>souris</strong> pour regarder autour de
-					vous
-				</li>
-				<li>
-					Appuyez sur <strong>E</strong> ou{" "}
-					<strong>clic gauche</strong> pour interagir avec les objets
-				</li>
-				<li>
-					Appuyez sur <strong>F</strong> pour activer/désactiver la
-					lampe torche si disponible
-				</li>
-				<li>
-					Appuyez sur <strong>Esc</strong> pour accéder au menu
+					Utilisez le bouton <strong>Réinitialiser la caméra</strong>{" "}
+					pour revenir à la position de départ
 				</li>
 			</ul>
 
