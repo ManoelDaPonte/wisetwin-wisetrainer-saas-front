@@ -1,10 +1,10 @@
-//lib/contexts/DashboardContext.jsx
 "use client";
 import React, { createContext, useContext, useState, useEffect } from "react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
 import { useUser } from "@auth0/nextjs-auth0/client";
 import { useAzureContainer } from "@/lib/hooks/useAzureContainer";
+import WISETRAINER_CONFIG from "@/lib/config/wisetrainer/wisetrainer";
 
 // Création du contexte
 const DashboardContext = createContext();
@@ -52,11 +52,6 @@ export function DashboardProvider({ children }) {
 			// Charger les statistiques depuis l'API
 			await loadUserStats();
 
-			const userData = {
-				trainings: enrichedTrainings,
-				stats: stats,
-			};
-
 			// Mettre à jour la date de dernière actualisation
 			setLastRefresh(new Date());
 		} catch (error) {
@@ -65,7 +60,7 @@ export function DashboardProvider({ children }) {
 				error
 			);
 			// En cas d'erreur, utiliser quand même les données de démo
-			setDemoData();
+			setRecentProjects([]);
 		} finally {
 			setIsLoading(false);
 		}
@@ -76,24 +71,30 @@ export function DashboardProvider({ children }) {
 		try {
 			// Récupérer les formations de l'utilisateur
 			const response = await axios.get(
-				`/api/db/wisetrainer/user-trainings/${containerName}`
+				`${WISETRAINER_CONFIG.API_ROUTES.USER_TRAININGS}/${containerName}`
 			);
 			const userTrainings = response.data.trainings || [];
 
-			// Enrichir chaque formation avec le nombre correct de modules
+			// Enrichir chaque formation avec le nombre correct de modules et l'image correcte du fichier JSON
 			const enrichedTrainings = await Promise.all(
 				userTrainings.map(async (training) => {
 					try {
 						// Récupérer les détails du cours directement depuis l'API qui lit les fichiers JSON
 						const courseDetails = await axios
 							.get(
-								`/api/db/wisetrainer/course-details/${training.id}`
+								`${WISETRAINER_CONFIG.API_ROUTES.COURSE_DETAILS}/${training.id}`
 							)
 							.then((res) => res.data)
 							.catch(() => null);
 
 						// Récupérer les modules disponibles depuis les détails du cours
 						const availableModules = courseDetails?.modules || [];
+
+						// Utiliser l'URL d'image du fichier JSON si disponible
+						const imageUrl =
+							courseDetails?.imageUrl ||
+							training.imageUrl ||
+							WISETRAINER_CONFIG.DEFAULT_IMAGE;
 
 						// Fusionner avec les modules complétés par l'utilisateur
 						const mergedModules = availableModules.map((module) => {
@@ -113,6 +114,7 @@ export function DashboardProvider({ children }) {
 
 						return {
 							...training,
+							imageUrl: imageUrl, // Utiliser l'URL d'image correcte
 							modules: mergedModules,
 							totalModules: availableModules.length || 3, // Utiliser 3 comme valeur par défaut si aucun module trouvé
 							completedModules:
@@ -138,14 +140,14 @@ export function DashboardProvider({ children }) {
 
 			setTrainings(enrichedTrainings);
 
-			// Mettre à jour les projets récents
+			// Mettre à jour les projets récents avec les images correctes
 			const projects = enrichedTrainings
 				.map((training) => ({
 					id: training.id,
 					name: training.name,
 					type: "wiseTrainer",
 					imageUrl:
-						training.imageUrl || "/images/png/placeholder.png",
+						training.imageUrl || WISETRAINER_CONFIG.DEFAULT_IMAGE,
 					progress: training.progress,
 					lastModified: training.lastAccessed,
 					totalUsers: 1,
@@ -173,7 +175,7 @@ export function DashboardProvider({ children }) {
 		try {
 			// Récupérer les statistiques depuis l'API
 			const response = await axios.get(
-				`/api/db/stats/user/${containerName}`
+				`${WISETRAINER_CONFIG.API_ROUTES.STATS_USER}/${containerName}`
 			);
 
 			if (response.data) {

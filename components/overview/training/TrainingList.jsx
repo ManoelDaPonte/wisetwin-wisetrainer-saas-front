@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, BookOpen } from "lucide-react";
+import WISETRAINER_CONFIG from "@/lib/config/wisetrainer/wisetrainer";
+import Image from "next/image";
 
 function TrainingList({ trainings }) {
 	const router = useRouter();
@@ -41,14 +43,20 @@ function TrainingList({ trainings }) {
 						}
 					>
 						<div className="relative h-40 bg-gray-100 dark:bg-gray-800">
-							{training.imageUrl && (
-								<div
-									className="absolute inset-0 bg-center bg-cover"
-									style={{
-										backgroundImage: `url(${training.imageUrl})`,
-									}}
-								/>
-							)}
+							{/* Remplacer la div par un composant Image de Next.js */}
+							<Image
+								src={
+									training.imageUrl ||
+									WISETRAINER_CONFIG.DEFAULT_IMAGE
+								}
+								alt={training.name}
+								fill
+								className="object-cover"
+								onError={(e) => {
+									e.target.src =
+										WISETRAINER_CONFIG.DEFAULT_IMAGE;
+								}}
+							/>
 							<div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-4">
 								<Badge
 									className={

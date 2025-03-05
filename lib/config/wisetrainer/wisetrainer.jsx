@@ -14,6 +14,8 @@ const WISETRAINER_CONFIG = {
 		SAVE_QUESTIONNAIRE: "/api/db/wisetrainer/save-questionnaire",
 		UPDATE_PROGRESS: "/api/db/wisetrainer/update-progress",
 		USER_TRAININGS: "/api/db/wisetrainer/user-trainings",
+		COURSE_DETAILS: "/api/db/wisetrainer/course-details",
+		STATS_USER: "/api/db/stats/user",
 	},
 	DEFAULT_IMAGE: "/images/png/placeholder.png",
 };
