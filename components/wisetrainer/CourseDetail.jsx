@@ -18,7 +18,7 @@ import WISETRAINER_CONFIG from "@/lib/config/wisetrainer/wisetrainer";
 export default function CourseDetail({ params }) {
 	const router = useRouter();
 	const { containerName, isLoading: containerLoading } = useAzureContainer();
-	const [courseId, setCourseId] = useState(null);
+	const [courseId, setCourseId] = useState(params?.courseId || null);
 	const [course, setCourse] = useState(null);
 	const [userProgress, setUserProgress] = useState(null);
 	const [isLoading, setIsLoading] = useState(true);
@@ -36,7 +36,7 @@ export default function CourseDetail({ params }) {
 		showQuestionnaire,
 		setShowQuestionnaire,
 		setCurrentScenario,
-	} = useUnityEvents();
+	} = useUnityEvents(courseId);
 
 	// Extraire courseId des paramètres
 	useEffect(() => {
