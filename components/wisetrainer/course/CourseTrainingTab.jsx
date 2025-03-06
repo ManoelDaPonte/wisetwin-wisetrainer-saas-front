@@ -18,11 +18,15 @@ export default function CourseTrainingTab({
 	onQuestionnaireRequest,
 }) {
 	const handleResetCamera = () => {
+		console.log("Tentative de réinitialisation de la caméra...");
 		if (unityBuildRef.current && unityBuildRef.current.isReady) {
-			unityBuildRef.current.sendMessage("GameManager", "ResetCamera", "");
+			unityBuildRef.current.resetCamera();
+		} else {
+			console.warn(
+				"Unity build n'est pas prêt ou la référence n'est pas disponible"
+			);
 		}
 	};
-
 	return (
 		<>
 			<Card className="mb-8">
