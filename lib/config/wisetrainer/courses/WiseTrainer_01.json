@@ -2,14 +2,14 @@
     "id": "WiseTrainer_01",
     "name": "Sécurité industrielle et prévention des risques",
     "description": "Formation sur les fondamentaux de la sécurité et les bonnes pratiques en environnement industriel",
-    "imageUrl": "/images/png/placeholder.png",
+    "imageUrl": "/images/png/wisetrainer-01.png",
     "category": "Sécurité",
     "difficulty": "Intermédiaire",
     "duration": "45 min",
     "objectMapping": {
-      "Worker_1": "pressure-risk",
-      "Worker_2": "smoking-worker",
-      "worker_3": "chemical-hazard"
+      "worker_1": "pressure-risk",
+      "worker_2": "chemical-hazard",
+      "worker_3": "smoking-worker"
     },
     "modules": [
       {
@@ -97,65 +97,8 @@
         ]
       },
       {
-        "id": "smoking-worker",
-        "order": 2,
-        "title": "Risque d'incendie",
-        "description": "Comprenez les dangers liés au tabagisme en milieu industriel et les mesures de prévention essentielles",
-        "questions": [
-          {
-            "id": "smoking-worker-q1",
-            "text": "Quel est le principal risque associé à un travailleur qui fume dans un environnement industriel?",
-            "type": "SINGLE",
-            "options": [
-              {
-                "id": "sw-q1-o1",
-                "text": "Risque de chute",
-                "isCorrect": false
-              },
-              {
-                "id": "sw-q1-o2",
-                "text": "Risque d'incendie et d'explosion",
-                "isCorrect": true
-              },
-              {
-                "id": "sw-q1-o3",
-                "text": "Risque de troubles musculosquelettiques",
-                "isCorrect": false
-              }
-            ]
-          },
-          {
-            "id": "smoking-worker-q2",
-            "text": "Quelles mesures de prévention sont appropriées face au risque d'incendie en milieu industriel?",
-            "type": "MULTIPLE",
-            "options": [
-              {
-                "id": "sw-q2-o1",
-                "text": "Interdire de fumer dans toutes les zones de travail",
-                "isCorrect": true
-              },
-              {
-                "id": "sw-q2-o2",
-                "text": "Mettre en place des zones fumeurs éloignées des matières inflammables",
-                "isCorrect": true
-              },
-              {
-                "id": "sw-q2-o3",
-                "text": "Permettre de fumer pendant les pauses uniquement",
-                "isCorrect": false
-              },
-              {
-                "id": "sw-q2-o4",
-                "text": "Sensibiliser le personnel aux risques d'incendie et d'explosion",
-                "isCorrect": true
-              }
-            ]
-          }
-        ]
-      },
-      {
         "id": "chemical-hazard",
-        "order": 3,
+        "order": 2,
         "title": "Risques chimiques",
         "description": "Apprenez à identifier les dangers liés aux produits chimiques et à appliquer les protocoles de sécurité adaptés",
         "questions": [
@@ -204,6 +147,63 @@
               {
                 "id": "ch-q2-o4",
                 "text": "Vêtements couvrant l'ensemble du corps",
+                "isCorrect": true
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "smoking-worker",
+        "order": 3,
+        "title": "Risque d'incendie",
+        "description": "Comprenez les dangers liés au tabagisme en milieu industriel et les mesures de prévention essentielles",
+        "questions": [
+          {
+            "id": "smoking-worker-q1",
+            "text": "Quel est le principal risque associé à un travailleur qui fume dans un environnement industriel?",
+            "type": "SINGLE",
+            "options": [
+              {
+                "id": "sw-q1-o1",
+                "text": "Risque de chute",
+                "isCorrect": false
+              },
+              {
+                "id": "sw-q1-o2",
+                "text": "Risque d'incendie et d'explosion",
+                "isCorrect": true
+              },
+              {
+                "id": "sw-q1-o3",
+                "text": "Risque de troubles musculosquelettiques",
+                "isCorrect": false
+              }
+            ]
+          },
+          {
+            "id": "smoking-worker-q2",
+            "text": "Quelles mesures de prévention sont appropriées face au risque d'incendie en milieu industriel?",
+            "type": "MULTIPLE",
+            "options": [
+              {
+                "id": "sw-q2-o1",
+                "text": "Interdire de fumer dans toutes les zones de travail",
+                "isCorrect": true
+              },
+              {
+                "id": "sw-q2-o2",
+                "text": "Mettre en place des zones fumeurs éloignées des matières inflammables",
+                "isCorrect": true
+              },
+              {
+                "id": "sw-q2-o3",
+                "text": "Permettre de fumer pendant les pauses uniquement",
+                "isCorrect": false
+              },
+              {
+                "id": "sw-q2-o4",
+                "text": "Sensibiliser le personnel aux risques d'incendie et d'explosion",
                 "isCorrect": true
               }
             ]

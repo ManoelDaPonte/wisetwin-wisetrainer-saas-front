@@ -50,12 +50,10 @@ export default function HomePage() {
 				className="text-center mb-12 max-w-3xl"
 			>
 				<h1 className="text-3xl md:text-4xl font-bold mb-4 text-wisetwin-darkblue dark:text-white">
-					Bienvenue sur{" "}
-					<span className="text-wisetwin-blue">WiseTwin</span>
+					Bienvenue
 				</h1>
 				<p className="text-foreground-muted dark:text-foreground-muted text-lg">
-					Plateforme innovante de formation industrielle en réalité
-					virtuelle
+					Votre plateforme immersive de formation industrielle
 				</p>
 			</motion.div>
 
