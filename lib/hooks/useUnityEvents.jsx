@@ -183,13 +183,37 @@ export function useUnityEvents(courseId = null) {
 			objectMapping
 		);
 
+		// Fonctions de gestion pour le débogage
+		const handleObjectNamesReceived = (e) =>
+			console.log("ObjectNamesReceived:", e.detail);
+		const handleGUIDDataReceived = (e) =>
+			console.log("GUIDDataReceived:", e.detail);
+		const handleSphereDataReceived = (e) =>
+			console.log("SphereDataReceived:", e.detail);
+		const handleDropdownDataReceived = (e) =>
+			console.log("DropdownDataReceived:", e.detail);
+
+		// Événements principaux
 		window.addEventListener("GameObjectSelected", handleGameObjectSelected);
 		window.addEventListener(
 			"QuestionnaireRequest",
 			handleQuestionnaireRequest
 		);
 
+		// Événements supplémentaires pour le débogage
+		window.addEventListener(
+			"ObjectNamesReceived",
+			handleObjectNamesReceived
+		);
+		window.addEventListener("GUIDDataReceived", handleGUIDDataReceived);
+		window.addEventListener("SphereDataReceived", handleSphereDataReceived);
+		window.addEventListener(
+			"DropdownDataReceived",
+			handleDropdownDataReceived
+		);
+
 		return () => {
+			// Nettoyage des événements principaux
 			window.removeEventListener(
 				"GameObjectSelected",
 				handleGameObjectSelected
@@ -197,6 +221,24 @@ export function useUnityEvents(courseId = null) {
 			window.removeEventListener(
 				"QuestionnaireRequest",
 				handleQuestionnaireRequest
+			);
+
+			// Nettoyage des événements de débogage
+			window.removeEventListener(
+				"ObjectNamesReceived",
+				handleObjectNamesReceived
+			);
+			window.removeEventListener(
+				"GUIDDataReceived",
+				handleGUIDDataReceived
+			);
+			window.removeEventListener(
+				"SphereDataReceived",
+				handleSphereDataReceived
+			);
+			window.removeEventListener(
+				"DropdownDataReceived",
+				handleDropdownDataReceived
 			);
 		};
 	}, [handleGameObjectSelected, handleQuestionnaireRequest]);

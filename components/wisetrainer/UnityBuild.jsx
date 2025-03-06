@@ -146,6 +146,17 @@ const UnityBuild = forwardRef(
 					);
 				}
 			},
+			// Ajouter cette nouvelle méthode
+			resetCamera: () => {
+				if (isLoaded) {
+					console.log("Resetting camera position");
+					sendMessage(
+						"MANAGERS/GameObjectCameraManager",
+						"ResetCamera",
+						""
+					);
+				}
+			},
 			isReady: isLoaded,
 		}));
 
