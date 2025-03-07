@@ -61,6 +61,8 @@ export async function POST(request) {
 			// Chercher dans tous les fichiers de configuration disponibles
 			const courseFiles = [
 				"WiseTrainer_01.json",
+				"WiseTrainer_02.json",
+				"WiseTrainer_03.json",
 				"wisetrainer-template.json",
 			];
 

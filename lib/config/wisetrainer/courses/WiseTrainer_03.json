@@ -1,8 +1,8 @@
 {
-    "id": "WiseTrainer_01",
-    "name": "Sécurité industrielle et prévention des risques",
-    "description": "Formation sur les fondamentaux de la sécurité et les bonnes pratiques en environnement industriel",
-    "imageUrl": "/images/png/wisetrainer-01.png",
+    "id": "WiseTrainer_03",
+    "name": "Sécurité et prévention des machines industrielles",
+    "description": "Avec les machines, le risque est toujours là",
+    "imageUrl": "/images/wisetrainer/Machines.jpg",
     "category": "Sécurité",
     "difficulty": "Intermédiaire",
     "duration": "45 min",

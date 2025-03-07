@@ -40,6 +40,8 @@ export async function GET(request, { params }) {
 		const courseFiles = [
 			"wisetrainer-template.json",
 			"WiseTrainer_01.json",
+			"WiseTrainer_02.json",
+			"WiseTrainer_03.json",
 		];
 
 		let foundModule = null;
