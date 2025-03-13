@@ -73,6 +73,7 @@ export async function GET(request, { params }) {
 			id: q.id,
 			text: q.text,
 			type: q.type,
+			image: q.image, // Ajouter le champ image ici
 			options: q.options.map((o) => ({
 				id: o.id,
 				text: o.text,

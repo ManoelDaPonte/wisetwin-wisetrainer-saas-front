@@ -22,6 +22,7 @@
             "id": "pressure-risk-q1",
             "text": "De quel risque principal s'agit-il dans ce scénario ?",
             "type": "SINGLE",
+            "image": "/images/png/placeholder.png",
             "options": [
               {
                 "id": "pr-q1-o1",

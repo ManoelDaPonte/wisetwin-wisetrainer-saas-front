@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, XCircle, Minimize2, Maximize2 } from "lucide-react";
+import Image from "next/image";
 import axios from "axios";
 import WISETRAINER_CONFIG from "@/lib/config/wisetrainer/wisetrainer";
 
@@ -14,6 +15,7 @@ export default function QuestionnaireModal({ scenario, onComplete, onClose }) {
 	const [isMinimized, setIsMinimized] = useState(false);
 	const questions = scenario.questions;
 	const currentQuestion = questions[currentQuestionIndex];
+	const placeholderImage = "/images/png/placeholder.png";
 
 	useEffect(() => {
 		console.log("Scénario reçu:", scenario);
@@ -238,6 +240,21 @@ export default function QuestionnaireModal({ scenario, onComplete, onClose }) {
 											: "Choix multiple"}
 									</span>
 								</div>
+
+								{/* Ajout de l'image de la question si elle existe */}
+								{currentQuestion.image && (
+									<div className="mb-4 relative w-full h-48 rounded-lg overflow-hidden">
+										<Image
+											src={currentQuestion.image}
+											alt={`Illustration: ${currentQuestion.text}`}
+											fill
+											className="object-cover"
+											onError={(e) => {
+												e.target.src = placeholderImage;
+											}}
+										/>
+									</div>
+								)}
 
 								<h3 className="text-lg font-semibold mb-4 text-gray-800 dark:text-white">
 									{currentQuestion.text}
