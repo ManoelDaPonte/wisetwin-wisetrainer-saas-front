@@ -108,7 +108,7 @@ export default function CourseDetailsTab({
 							onClick={handleLaunchTraining}
 						>
 							<Play className="w-4 h-4" />
-							Commencer l'environnement 3D
+							Commencer
 						</Button>
 					</div>
 				</div>

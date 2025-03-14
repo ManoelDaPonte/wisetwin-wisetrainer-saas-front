@@ -8,7 +8,7 @@
     "duration": "45 min",
     "objectMapping": {
       "ArguingWorker": "risque-psycho",
-      "Kuka": "chemical-hazard",
+      "Kuka": "kuka",
       "Phone-worker": "phone-worker_XX"
     },
     "modules": [
@@ -26,7 +26,7 @@
               {
                 "id": "pr-q1-o1",
                 "text": "Risque psycho-social",
-                "isCorrect": false
+                "isCorrect": true
               },
               {
                 "id": "pr-q1-o2",
@@ -36,7 +36,7 @@
               {
                 "id": "pr-q1-o3",
                 "text": "Risque de chute de plain-pied",
-                "isCorrect": true
+                "isCorrect": false
               }
             ]
           },
@@ -48,12 +48,12 @@
               {
                 "id": "pr-q2-o1",
                 "text": "Rentrer en conflit avec sa hiérarchie",
-                "isCorrect": true
+                "isCorrect": false
               },
               {
                 "id": "pr-q2-o2",
                 "text": "Organiser et planifier le travail afin d’éviter les délais trop tendus voire intenables",
-                "isCorrect": false
+                "isCorrect": true
               },
               {
                 "id": "pr-q2-o3",
@@ -70,13 +70,13 @@
         ]
       },
       {
-        "id": "chemical-hazard",
+        "id": "kuka",
         "order": 2,
-        "title": "Risques chimiques",
-        "description": "Apprenez à identifier les dangers liés aux produits chimiques et à appliquer les protocoles de sécurité adaptés",
+        "title": "Bras robotique",
+        "description": "Apprenez à identifier les dangers liés aux machines automatiques ainsi que leur fonctionnement",
         "questions": [
           {
-            "id": "chemical-hazard-q1",
+            "id": "kuka-q1",
             "text": "Quelle est la première action à réaliser avant d'intervenir sur une canalisation contenant des produits chimiques?",
             "type": "SINGLE",
             "options": [
@@ -98,7 +98,7 @@
             ]
           },
           {
-            "id": "chemical-hazard-q2",
+            "id": "kuka-q2",
             "text": "Quels équipements de protection individuelle sont nécessaires lors d'une intervention impliquant des produits chimiques?",
             "type": "MULTIPLE",
             "options": [
@@ -129,8 +129,8 @@
       {
         "id": "phone-worker",
         "order": 3,
-        "title": "Risque d'incendie",
-        "description": "Comprenez les dangers liés au tabagisme en milieu industriel et les mesures de prévention essentielles",
+        "title": "Innatention",
+        "description": "Comprenez les dangers liés à l'innatention en milieu industriel et les mesures de prévention essentielles",
         "questions": [
           {
             "id": "phone-worker-q1",

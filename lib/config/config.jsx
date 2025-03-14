@@ -34,7 +34,7 @@ export const HomePageCards = [
 	{
 		title: "Jumeau Numérique",
 		description:
-			"Explorez des environnements 3D interactifs représentant fidèlement vos installations et équipements. Cette fonctionnalité sera bientôt disponible pour enrichir votre expérience de formation.",
+			"Explorez des environnements virtuels interactifs représentant fidèlement vos installations et équipements. Cette fonctionnalité sera bientôt disponible pour enrichir votre expérience de formation.",
 		icon: Box,
 		route: "/digital-twin",
 		disabled: true,

@@ -6,10 +6,10 @@ export default function WiseTrainerPage() {
 	return (
 		<div className="container mx-auto py-8">
 			<h1 className="text-3xl font-bold text-wisetwin-darkblue dark:text-white mb-6">
-				WiseTrainer™ - Formation en Réalité Virtuelle
+				WiseTrainer™ - Votre espace de formation virtuel
 			</h1>
 			<p className="text-gray-600 dark:text-gray-300 mb-8">
-				Parcourez nos modules de formation industrielle en 3D et
+				Parcourez nos modules de formation et
 				développez vos compétences
 			</p>
 

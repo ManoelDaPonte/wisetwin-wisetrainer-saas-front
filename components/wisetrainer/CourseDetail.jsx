@@ -367,7 +367,7 @@ export default function CourseDetail({ params }) {
 						Détails du cours
 					</TabsTrigger>
 					<TabsTrigger value="training" className="px-6">
-						Formation en 3D
+						Formation
 					</TabsTrigger>
 				</TabsList>
 
