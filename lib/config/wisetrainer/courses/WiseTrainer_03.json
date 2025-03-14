@@ -1,8 +1,8 @@
 {
     "id": "WiseTrainer_03",
     "name": "Sécurité et prévention des machines industrielles",
-    "description": "Avec les machines, le risque est toujours là",
-    "imageUrl": "/images/wisetrainer/Machines.jpg",
+    "description": "Formation sur les risques en environnement industriel extérieur",
+    "imageUrl": "/images/png/Image_ChemicalPlantDemo.png",
     "category": "Sécurité",
     "difficulty": "Intermédiaire",
     "duration": "45 min",
@@ -17,6 +17,8 @@
         "order": 1,
         "title": "Risque de projection sous pression",
         "description": "Apprenez à gérer les interventions de maintenance dans un environnement à risques spécifiques liés à la pression",
+        "imageUrl": "/images/wisetrainer/Machines.jpg",
+        "videoUrl": "",
         "questions": [
           {
             "id": "pressure-risk-q1",
