@@ -9,7 +9,8 @@
     "objectMapping": {
       "ArguingWorker": "risque-psycho",
       "Kuka": "kuka",
-      "Phone-worker": "phone-worker_XX"
+      "Phone-worker": "phone-worker_XX",
+      "Controller_circleIcon": "controller-guide"
     },
     "modules": [
       {
@@ -180,6 +181,72 @@
                 "isCorrect": true
               }
             ]
+          }
+        ]
+      },
+      {
+        "id": "controller-guide",
+        "order": 4,
+        "title": "Procédure d'accès à la zone robot",
+        "description": "Suivez la procédure de sécurité pour accéder à la zone robot en toute sécurité",
+        "type": "guide",
+        "sequenceButtons": ["DemandAccess", "TurnKey", "SwitchManual", "TakeKeys", "SwitchSettingMode", "PressBlueButton", "IDCard", "TakeKeyTwo"],
+        "steps": [
+          {
+            "id": "step-1",
+            "title": "Demande d'accès",
+            "instruction": "Appuyez sur le bouton vert DEMANDE D'ACCES pour commencer la procédure",
+            "validationEvent": "DemandAccess",
+            "hint": "Recherchez un grand bouton vert sur le panneau de contrôle"
+          },
+          {
+            "id": "step-2",
+            "title": "Tourner la clé opérateur",
+            "instruction": "Tournez la clé opérateur et mettez-la dans votre poche",
+            "validationEvent": "TurnKey",
+            "hint": "La clé se trouve sur le côté gauche du panneau principal"
+          },
+          {
+            "id": "step-3",
+            "title": "Commutateur en manuel",
+            "instruction": "Mettez le commutateur de la baie robot en position 'manuel'",
+            "validationEvent": "SwitchManual",
+            "hint": "Le robot ne peut être manipulé qu'en mode manuel, s'il est laissé en auto il ne fonctionnera pas"
+          },
+          {
+            "id": "step-4",
+            "title": "Prendre le trousseau de clés",
+            "instruction": "Prenez le trousseau 'clé de la baie robot et clé de dérogation 458A' sur la baie robot",
+            "validationEvent": "TakeKeys",
+            "hint": "Le trousseau de clés est accroché sur le côté de la baie robot"
+          },
+          {
+            "id": "step-5",
+            "title": "Activer le mode réglage",
+            "instruction": "Mettez la clé de dérogation 458A sur le commutateur 'mode réglage' en position '1'",
+            "validationEvent": "SwitchSettingMode",
+            "hint": "Le commutateur 'mode réglage' se trouve sur le panneau à droite"
+          },
+          {
+            "id": "step-6",
+            "title": "Réarmer la zone",
+            "instruction": "Appuyez sur le bouton bleu pour réarmer la zone",
+            "validationEvent": "PressBlueButton",
+            "hint": "L'énergie est ainsi de nouveau disponible pour les réglages"
+          },
+          {
+            "id": "step-7",
+            "title": "Badge d'identification",
+            "instruction": "Mettez le badge d'identification LOTO et appuyez sur le bouton bleu REARMEMENT ACCES. Ouvrez la porte et entrez dans la zone",
+            "validationEvent": "IDCard",
+            "hint": "Le badge LOTO doit être placé dans le lecteur avant d'appuyer sur le bouton"
+          },
+          {
+            "id": "step-8",
+            "title": "Seconde personne",
+            "instruction": "La 2ème personne habilitée entrant dans la zone prend la clé n°2",
+            "validationEvent": "TakeKeyTwo",
+            "hint": "La clé n°2 est nécessaire pour la procédure à deux personnes"
           }
         ]
       }

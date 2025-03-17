@@ -157,6 +157,27 @@ const UnityBuild = forwardRef(
 					);
 				}
 			},
+			startTutorial: () => {
+				if (isLoaded) {
+					console.log("Starting tutorial via UnityBuild");
+					try {
+						sendMessage(
+							"MANAGERS/TutorialController",
+							"StartTutorial",
+							""
+						);
+						return true;
+					} catch (error) {
+						console.error(
+							"Erreur lors du démarrage du tutoriel Unity:",
+							error
+						);
+						return false;
+					}
+				}
+				console.warn("Unity not loaded, can't start tutorial");
+				return false;
+			},
 			isReady: isLoaded,
 		}));
 

@@ -12,6 +12,7 @@ import CourseDetailHeader from "@/components/wisetrainer/course/CourseDetailHead
 import CourseDetailsTab from "@/components/wisetrainer/course/CourseDetailsTab";
 import CourseTrainingTab from "@/components/wisetrainer/course/CourseTrainingTab";
 import QuestionnaireModal from "@/components/wisetrainer/QuestionnaireModal";
+import InteractiveGuideModal from "@/components/wisetrainer/InteractiveGuideModal";
 import { useUnityEvents } from "@/lib/hooks/useUnityEvents";
 import WISETRAINER_CONFIG from "@/lib/config/wisetrainer/wisetrainer";
 
@@ -33,9 +34,13 @@ export default function CourseDetail({ params }) {
 	// Utiliser le hook d'événements Unity
 	const {
 		currentScenario,
+		currentGuide,
 		showQuestionnaire,
+		showGuide,
 		setShowQuestionnaire,
+		setShowGuide,
 		setCurrentScenario,
+		setCurrentGuide,
 	} = useUnityEvents(courseId);
 
 	// Extraire courseId des paramètres
@@ -51,6 +56,7 @@ export default function CourseDetail({ params }) {
 			fetchCourseDetails();
 		}
 	}, [courseId, containerName, containerLoading]);
+
 	const fetchCourseDetails = async () => {
 		setIsLoading(true);
 		try {
@@ -284,6 +290,64 @@ export default function CourseDetail({ params }) {
 		}
 	};
 
+	// Nouvelle fonction pour gérer la complétion d'un guide
+	const handleGuideComplete = async (results) => {
+		try {
+			if (!currentGuide) return;
+
+			// Fermer le guide
+			setShowGuide(false);
+
+			// Notifier le build Unity que le guide est complété
+			if (unityBuildRef.current && unityBuildRef.current.isReady) {
+				unityBuildRef.current.completeQuestionnaire(
+					currentGuide.id,
+					results.success
+				);
+			}
+
+			// Mettre à jour la progression en base de données
+			try {
+				// Appeler l'API pour mettre à jour la progression
+				const response = await axios.post(
+					WISETRAINER_CONFIG.API_ROUTES.UPDATE_PROGRESS,
+					{
+						userId: containerName,
+						trainingId: courseId,
+						progress: Math.round(
+							((userProgress.completedModules + 1) /
+								course.modules.length) *
+								100
+						),
+						completedModule: currentGuide.id,
+						moduleScore: 100, // Pour un guide complété, on considère un score parfait
+					}
+				);
+
+				if (response.data.success) {
+					// Rafraîchir les données du cours
+					await fetchCourseDetails();
+				} else {
+					throw new Error(
+						response.data.error ||
+							"Échec de la mise à jour de la progression"
+					);
+				}
+			} catch (error) {
+				console.error(
+					"Erreur lors de la mise à jour de la progression:",
+					error
+				);
+				alert(
+					"Erreur lors de la mise à jour de la progression. Veuillez réessayer."
+				);
+			}
+		} catch (error) {
+			console.error("Erreur lors du traitement du guide:", error);
+			alert("Une erreur est survenue. Veuillez réessayer.");
+		}
+	};
+
 	const handleQuestionnaireRequest = (scenario) => {
 		setCurrentScenario(scenario);
 		setShowQuestionnaire(true);
@@ -298,9 +362,31 @@ export default function CourseDetail({ params }) {
 			const response = await axios.get(
 				`${WISETRAINER_CONFIG.API_ROUTES.FETCH_SCENARIO}/${moduleId}`
 			);
-			setCurrentScenario(response.data);
+
+			// Vérifier si c'est un guide ou un questionnaire standard
+			if (response.data.type === "guide") {
+				setCurrentGuide(response.data);
+				setShowGuide(true);
+			} else {
+				setCurrentScenario(response.data);
+				setShowQuestionnaire(true);
+			}
 		} catch (error) {
 			console.error("Erreur lors de la récupération du scénario:", error);
+		}
+	};
+
+	const handleStartTutorial = () => {
+		console.log("Tentative de démarrage du tutoriel...");
+		if (unityBuildRef.current && unityBuildRef.current.isReady) {
+			console.log("Démarrage du tutoriel");
+			unityBuildRef.current.startTutorial();
+			return true;
+		} else {
+			console.warn(
+				"Unity build n'est pas prêt ou la référence n'est pas disponible"
+			);
+			return false;
 		}
 	};
 
@@ -376,7 +462,7 @@ export default function CourseDetail({ params }) {
 						course={course}
 						userProgress={userProgress}
 						onModuleSelect={handleModuleSelect}
-						onSwitchTab={handleSwitchTab} // Passer la fonction de changement d'onglet
+						onSwitchTab={handleSwitchTab}
 					/>
 				</TabsContent>
 
@@ -386,6 +472,10 @@ export default function CourseDetail({ params }) {
 						courseId={courseId}
 						containerName={containerName}
 						onQuestionnaireRequest={handleQuestionnaireRequest}
+						currentGuide={currentGuide}
+						showGuide={showGuide}
+						setShowGuide={setShowGuide}
+						onGuideComplete={handleGuideComplete}
 					/>
 				</TabsContent>
 			</Tabs>
@@ -396,6 +486,16 @@ export default function CourseDetail({ params }) {
 					scenario={currentScenario}
 					onComplete={handleScenarioComplete}
 					onClose={() => setShowQuestionnaire(false)}
+				/>
+			)}
+
+			{/* Modal de guide interactif */}
+			{showGuide && currentGuide && (
+				<InteractiveGuideModal
+					guide={currentGuide}
+					onComplete={handleGuideComplete}
+					onClose={() => setShowGuide(false)}
+					onStartTutorial={handleStartTutorial} // Passer la fonction au lieu de la référence
 				/>
 			)}
 		</div>

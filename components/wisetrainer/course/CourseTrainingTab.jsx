@@ -74,7 +74,10 @@ function TrainingInstructions() {
 					Utilisez le <strong>clic gauche</strong> sur un travailleur
 					pour interagir et lancer un questionnaire
 				</li>
-
+				<li>
+					Cliquez sur le <strong>contrôleur</strong> pour démarrer un
+					guide interactif de la séquence d'utilisation
+				</li>
 				<li>
 					Utilisez le bouton <strong>Réinitialiser la caméra</strong>{" "}
 					pour revenir à la position de départ
@@ -90,9 +93,9 @@ function TrainingInstructions() {
 					<p className="text-sm">
 						Explorez l'environnement et interagissez avec les objets
 						pour découvrir les différents scénarios de formation.
-						Des questionnaires apparaîtront pour tester vos
-						connaissances. Complétez tous les modules pour terminer
-						la formation.
+						Des questionnaires et guides interactifs apparaîtront
+						pour tester vos connaissances et vous guider. Complétez
+						tous les modules pour terminer la formation.
 					</p>
 				</div>
 			</div>

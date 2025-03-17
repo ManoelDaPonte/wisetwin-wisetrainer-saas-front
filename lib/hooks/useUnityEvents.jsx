@@ -3,16 +3,11 @@ import { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import WISETRAINER_CONFIG from "@/lib/config/wisetrainer/wisetrainer";
 
-// Mapping par défaut pour les objets courants
-// const DEFAULT_MAPPING = {
-// 	Worker_1: "pressure-risk",
-// 	Worker_2: "smoking-worker",
-// 	worker_3: "chemical-hazard",
-// };
-
 export function useUnityEvents(courseId = null) {
 	const [currentScenario, setCurrentScenario] = useState(null);
+	const [currentGuide, setCurrentGuide] = useState(null);
 	const [showQuestionnaire, setShowQuestionnaire] = useState(false);
+	const [showGuide, setShowGuide] = useState(false);
 	const [objectMapping, setObjectMapping] = useState({});
 
 	// Log explicite pour le courseId reçu
@@ -47,7 +42,7 @@ export function useUnityEvents(courseId = null) {
 					console.warn(
 						"⚠️ Pas de mapping dans la réponse API, fallback au mapping par défaut"
 					);
-					setObjectMapping(DEFAULT_MAPPING);
+					setObjectMapping({});
 				}
 			} catch (error) {
 				console.error(
@@ -55,7 +50,7 @@ export function useUnityEvents(courseId = null) {
 					error
 				);
 				console.warn("⚠️ Utilisation du mapping par défaut");
-				setObjectMapping(DEFAULT_MAPPING);
+				setObjectMapping({});
 			}
 		};
 
@@ -115,6 +110,11 @@ export function useUnityEvents(courseId = null) {
 							console.log(
 								`🔄 Mapping par convention pour ${data.name} -> ${scenarioId}`
 							);
+						} else if (normalizedName.includes("controller")) {
+							scenarioId = "controller-guide";
+							console.log(
+								`🔄 Mapping par convention pour contrôleur -> ${scenarioId}`
+							);
 						}
 					}
 
@@ -131,8 +131,15 @@ export function useUnityEvents(courseId = null) {
 								"✅ Détails du scénario récupérés:",
 								response.data.title
 							);
-							setCurrentScenario(response.data);
-							setShowQuestionnaire(true);
+
+							// Vérifier si c'est un guide ou un questionnaire standard
+							if (response.data.type === "guide") {
+								setCurrentGuide(response.data);
+								setShowGuide(true);
+							} else {
+								setCurrentScenario(response.data);
+								setShowQuestionnaire(true);
+							}
 						}
 					} else {
 						console.warn(
@@ -165,8 +172,15 @@ export function useUnityEvents(courseId = null) {
 					"✅ Scénario récupéré pour questionnaire:",
 					response.data.title
 				);
-				setCurrentScenario(response.data);
-				setShowQuestionnaire(true);
+
+				// Vérifier si c'est un guide ou un questionnaire standard
+				if (response.data.type === "guide") {
+					setCurrentGuide(response.data);
+					setShowGuide(true);
+				} else {
+					setCurrentScenario(response.data);
+					setShowQuestionnaire(true);
+				}
 			}
 		} catch (error) {
 			console.error(
@@ -245,8 +259,12 @@ export function useUnityEvents(courseId = null) {
 
 	return {
 		currentScenario,
+		currentGuide,
 		showQuestionnaire,
+		showGuide,
 		setShowQuestionnaire,
+		setShowGuide,
 		setCurrentScenario,
+		setCurrentGuide,
 	};
 }
