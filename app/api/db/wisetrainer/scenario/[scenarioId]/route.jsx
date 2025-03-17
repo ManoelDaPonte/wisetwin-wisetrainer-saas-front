@@ -1,5 +1,3 @@
-//app/api/db/wisetrainer/scenario/[scenarioId]/route.jsx
-
 import { NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
@@ -67,6 +65,13 @@ export async function GET(request, { params }) {
 			);
 		}
 
+		// Vérifier si c'est un guide ou un questionnaire
+		if (foundModule.type === "guide" && foundModule.steps) {
+			// C'est un guide interactif, le retourner comme tel
+			return NextResponse.json(foundModule);
+		}
+
+		// C'est un questionnaire standard
 		// Formatter les données pour le client
 		// Important: ne pas inclure l'information sur les réponses correctes
 		const formattedQuestions = foundModule.questions.map((q) => ({

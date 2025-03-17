@@ -1,4 +1,3 @@
-//components/wisetrainer/course/CourseTrainingTab.jsx
 import React from "react";
 import {
 	Card,
@@ -15,7 +14,7 @@ export default function CourseTrainingTab({
 	unityBuildRef,
 	courseId,
 	containerName,
-	onQuestionnaireRequest,
+	onContentRequest,
 }) {
 	const handleResetCamera = () => {
 		console.log("Tentative de réinitialisation de la caméra...");
@@ -27,6 +26,32 @@ export default function CourseTrainingTab({
 			);
 		}
 	};
+
+	// Gestionnaire pour les événements de demande de contenu
+	const handleUnityEvent = (event) => {
+		// Traiter l'événement et appeler onContentRequest avec les données appropriées
+		const eventData =
+			typeof event.detail === "string"
+				? JSON.parse(event.detail)
+				: event.detail;
+
+		if (eventData.type === "guide" || eventData.moduleType === "guide") {
+			// C'est une demande de guide
+			onContentRequest({
+				type: "guide",
+				id: eventData.moduleId || eventData.id,
+				...eventData,
+			});
+		} else {
+			// C'est une demande de questionnaire
+			onContentRequest({
+				type: "questionnaire",
+				id: eventData.moduleId || eventData.id,
+				...eventData,
+			});
+		}
+	};
+
 	return (
 		<>
 			<Card className="mb-8">
@@ -45,7 +70,7 @@ export default function CourseTrainingTab({
 						ref={unityBuildRef}
 						courseId={courseId}
 						containerName={containerName}
-						onQuestionnaireRequest={onQuestionnaireRequest}
+						onQuestionnaireRequest={onContentRequest}
 					/>
 				</CardContent>
 			</Card>
@@ -72,9 +97,12 @@ function TrainingInstructions() {
 				</li>
 				<li>
 					Utilisez le <strong>clic gauche</strong> sur un travailleur
-					pour interagir et lancer un questionnaire
+					ou un terminal pour interagir
 				</li>
-
+				<li>
+					Suivez les instructions qui apparaissent pour chaque
+					interaction
+				</li>
 				<li>
 					Utilisez le bouton <strong>Réinitialiser la caméra</strong>{" "}
 					pour revenir à la position de départ
@@ -88,11 +116,12 @@ function TrainingInstructions() {
 						Objectifs de la formation :
 					</p>
 					<p className="text-sm">
-						Explorez l'environnement et interagissez avec les objets
-						pour découvrir les différents scénarios de formation.
-						Des questionnaires apparaîtront pour tester vos
-						connaissances. Complétez tous les modules pour terminer
-						la formation.
+						Explorez l'environnement et interagissez avec les
+						travailleurs et les terminaux pour découvrir les
+						différents scénarios de formation. Des questionnaires et
+						guides interactifs apparaîtront pour tester vos
+						connaissances et vous guider dans les procédures.
+						Complétez tous les modules pour terminer la formation.
 					</p>
 				</div>
 			</div>

@@ -9,7 +9,8 @@
     "objectMapping": {
       "ArguingWorker": "risque-psycho",
       "Kuka": "kuka",
-      "Phone-worker": "phone-worker_XX"
+      "Phone-worker": "phone-worker_XX",
+      "Controller_circleIcon":"controller-guide"
     },
     "modules": [
       {
@@ -180,6 +181,51 @@
                 "isCorrect": true
               }
             ]
+          }
+        ]
+      },
+      {
+        "id": "controller-guide",
+        "order": 1,
+        "title": "Utilisation du contrôleur",
+        "description": "Apprenez à utiliser le contrôleur industriel en suivant la séquence de boutons correcte",
+        "type": "guide",
+        "sequenceButtons": ["Button1", "Button2", "Button3", "Button4", "Button5"],
+        "steps": [
+          {
+            "id": "step-1",
+            "title": "Démarrer le contrôleur",
+            "instruction": "Cliquez sur le bouton d'alimentation du contrôleur pour démarrer la séquence",
+            "validationEvent": "Button1",
+            "hint": "Le bouton d'alimentation est généralement de couleur rouge et situé sur la gauche du panneau"
+          },
+          {
+            "id": "step-2",
+            "title": "Confirmer l'opération",
+            "instruction": "Appuyez sur le bouton de confirmation (vert)",
+            "validationEvent": "Button2",
+            "hint": "Le bouton de confirmation est de couleur verte et situé à côté du bouton d'alimentation"
+          },
+          {
+            "id": "step-3",
+            "title": "Régler le paramètre",
+            "instruction": "Utilisez le bouton de réglage central pour configurer le paramètre",
+            "validationEvent": "Button3",
+            "hint": "Le bouton de réglage est le grand bouton rotatif au centre du panneau"
+          },
+          {
+            "id": "step-4",
+            "title": "Valider les réglages",
+            "instruction": "Appuyez sur le bouton de validation des paramètres",
+            "validationEvent": "Button4",
+            "hint": "Le bouton de validation est marqué d'un symbole de coche √"
+          },
+          {
+            "id": "step-5",
+            "title": "Démarrer la production",
+            "instruction": "Appuyez sur le bouton de démarrage de la production",
+            "validationEvent": "Button5",
+            "hint": "Le bouton de démarrage est le grand bouton bleu en bas du panneau"
           }
         ]
       }

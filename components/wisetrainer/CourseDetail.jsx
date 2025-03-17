@@ -1,4 +1,3 @@
-//components/wisetrainer/CourseDetail.jsx
 "use client";
 import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
@@ -12,7 +11,7 @@ import CourseDetailHeader from "@/components/wisetrainer/course/CourseDetailHead
 import CourseDetailsTab from "@/components/wisetrainer/course/CourseDetailsTab";
 import CourseTrainingTab from "@/components/wisetrainer/course/CourseTrainingTab";
 import QuestionnaireModal from "@/components/wisetrainer/QuestionnaireModal";
-import { useUnityEvents } from "@/lib/hooks/useUnityEvents";
+import InteractiveGuideModal from "@/components/wisetrainer/InteractiveGuideModal";
 import WISETRAINER_CONFIG from "@/lib/config/wisetrainer/wisetrainer";
 
 export default function CourseDetail({ params }) {
@@ -26,17 +25,15 @@ export default function CourseDetail({ params }) {
 	const [activeTab, setActiveTab] = useState("details");
 	const [selectedModule, setSelectedModule] = useState(null);
 
+	// État pour gérer les questionnaires et guides
+	const [showQuestionnaire, setShowQuestionnaire] = useState(false);
+	const [showGuide, setShowGuide] = useState(false);
+	const [currentScenario, setCurrentScenario] = useState(null);
+	const [currentGuide, setCurrentGuide] = useState(null);
+
 	const handleSwitchTab = (tabId) => {
 		setActiveTab(tabId);
 	};
-
-	// Utiliser le hook d'événements Unity
-	const {
-		currentScenario,
-		showQuestionnaire,
-		setShowQuestionnaire,
-		setCurrentScenario,
-	} = useUnityEvents(courseId);
 
 	// Extraire courseId des paramètres
 	useEffect(() => {
@@ -51,6 +48,114 @@ export default function CourseDetail({ params }) {
 			fetchCourseDetails();
 		}
 	}, [courseId, containerName, containerLoading]);
+
+	// Effet pour écouter les événements Unity personnalisés
+	useEffect(() => {
+		const handleGuideRequest = (event) => {
+			const moduleId =
+				typeof event.detail === "string"
+					? event.detail
+					: event.detail.moduleId;
+			console.log(`Guide demandé pour le module: ${moduleId}`);
+
+			if (!moduleId || !course) return;
+
+			// Trouver le module correspondant dans le cours
+			const module = course.modules.find((m) => m.id === moduleId);
+
+			if (module && module.type === "guide") {
+				console.log("Module de type guide trouvé:", module);
+				setCurrentGuide(module);
+				setShowGuide(true);
+			}
+		};
+
+		const handleQuestionnaireRequest = (event) => {
+			const moduleId =
+				typeof event.detail === "string"
+					? event.detail
+					: event.detail.moduleId;
+			console.log(`Questionnaire demandé pour le module: ${moduleId}`);
+
+			if (!moduleId || !course) return;
+
+			// Trouver le module correspondant dans le cours
+			const module = course.modules.find((m) => m.id === moduleId);
+
+			if (module && (!module.type || module.type === "questionnaire")) {
+				fetchScenarioDetails(moduleId);
+			}
+		};
+
+		// Écouter les clics sur les objets dans Unity
+		const handleGameObjectSelected = (event) => {
+			const data =
+				typeof event.detail === "string"
+					? JSON.parse(event.detail)
+					: event.detail;
+			console.log("GameObject sélectionné:", data);
+
+			// Si l'objet a un scenarioId défini
+			if (data.scenarioId) {
+				// Cas où l'objet spécifie directement un scenarioId
+				handleModuleInteraction(data.scenarioId);
+			}
+			// Si l'objet a uniquement un nom, utiliser le mapping dans la configuration du cours
+			else if (data.name && course?.objectMapping) {
+				const moduleId = course.objectMapping[data.name];
+				if (moduleId) {
+					console.log(
+						`Objet ${data.name} mappé au module ${moduleId}`
+					);
+					handleModuleInteraction(moduleId);
+				} else {
+					console.warn(
+						`Aucun mapping trouvé pour l'objet ${data.name}`
+					);
+				}
+			}
+		};
+
+		const handleModuleInteraction = (moduleId) => {
+			// Trouver le module correspondant dans le cours
+			const module = course?.modules?.find((m) => m.id === moduleId);
+
+			if (module) {
+				if (module.type === "guide") {
+					console.log("Guide demandé pour:", moduleId);
+					setCurrentGuide(module);
+					setShowGuide(true);
+				} else {
+					console.log("Questionnaire demandé pour:", moduleId);
+					fetchScenarioDetails(moduleId);
+				}
+			} else {
+				console.warn(`Module ${moduleId} non trouvé dans le cours`);
+			}
+		};
+
+		// Ajouter les écouteurs d'événements
+		window.addEventListener("GuideRequest", handleGuideRequest);
+		window.addEventListener(
+			"QuestionnaireRequest",
+			handleQuestionnaireRequest
+		);
+		window.addEventListener("GameObjectSelected", handleGameObjectSelected);
+
+		// Nettoyer les écouteurs à la destruction du composant
+		return () => {
+			window.removeEventListener("GuideRequest", handleGuideRequest);
+			window.removeEventListener(
+				"QuestionnaireRequest",
+				handleQuestionnaireRequest
+			);
+			window.removeEventListener(
+				"GameObjectSelected",
+				handleGameObjectSelected
+			);
+		};
+	}, [course]);
+
 	const fetchCourseDetails = async () => {
 		setIsLoading(true);
 		try {
@@ -169,9 +274,6 @@ export default function CourseDetail({ params }) {
 
 				setCourse(courseConfig);
 			}
-
-			console.log("Course state après chargement:", course);
-			console.log("UserProgress state après chargement:", userProgress);
 		} catch (error) {
 			console.error(
 				"Erreur détaillée lors du chargement du cours:",
@@ -194,7 +296,24 @@ export default function CourseDetail({ params }) {
 		router.push("/wisetrainer");
 	};
 
-	const handleScenarioComplete = async (results) => {
+	// Fonction pour récupérer les détails d'un scénario/questionnaire
+	const fetchScenarioDetails = async (moduleId) => {
+		try {
+			const response = await axios.get(
+				`${WISETRAINER_CONFIG.API_ROUTES.FETCH_SCENARIO}/${moduleId}`
+			);
+
+			if (response.data) {
+				setCurrentScenario(response.data);
+				setShowQuestionnaire(true);
+			}
+		} catch (error) {
+			console.error("Erreur lors de la récupération du scénario:", error);
+		}
+	};
+
+	// Gestionnaires pour la complétion des questionnaires et guides
+	const handleQuestionnaireComplete = async (results) => {
 		try {
 			if (!currentScenario) return;
 
@@ -231,6 +350,7 @@ export default function CourseDetail({ params }) {
 
 			// Fermer le questionnaire
 			setShowQuestionnaire(false);
+			setCurrentScenario(null);
 
 			// Notifier le build Unity que le questionnaire est complété
 			if (unityBuildRef.current && unityBuildRef.current.isReady) {
@@ -241,66 +361,104 @@ export default function CourseDetail({ params }) {
 			}
 
 			// Mettre à jour la progression en base de données
-			try {
-				// Appeler l'API pour mettre à jour la progression
-				const response = await axios.post(
-					WISETRAINER_CONFIG.API_ROUTES.UPDATE_PROGRESS,
-					{
-						userId: containerName,
-						trainingId: courseId,
-						// Toujours utiliser le nombre total de modules du cours (userProgress.totalModules)
-						// et non pas la valeur completedModules + 1
-						progress: Math.round(
-							((userProgress.completedModules + 1) /
-								course.modules.length) *
-								100
-						),
-						completedModule: currentScenario.id,
-						moduleScore: score,
-					}
-				);
-
-				if (response.data.success) {
-					// Rafraîchir les données du cours
-					await fetchCourseDetails();
-				} else {
-					throw new Error(
-						response.data.error ||
-							"Échec de la mise à jour de la progression"
-					);
-				}
-			} catch (error) {
-				console.error(
-					"Erreur lors de la mise à jour de la progression:",
-					error
-				);
-				alert(
-					"Erreur lors de la mise à jour de la progression. Veuillez réessayer."
-				);
-			}
+			await updateModuleProgress(currentScenario.id, score);
 		} catch (error) {
 			console.error("Erreur lors du traitement du questionnaire:", error);
 			alert("Une erreur est survenue. Veuillez réessayer.");
 		}
 	};
 
-	const handleQuestionnaireRequest = (scenario) => {
-		setCurrentScenario(scenario);
-		setShowQuestionnaire(true);
+	const handleGuideComplete = async (results) => {
+		try {
+			if (!currentGuide) return;
+
+			// On considère que le guide est toujours réussi à 100% s'il est terminé
+			const score = 100;
+
+			// Fermer le guide
+			setShowGuide(false);
+			setCurrentGuide(null);
+
+			// Notifier le build Unity que le guide est complété
+			if (unityBuildRef.current && unityBuildRef.current.isReady) {
+				unityBuildRef.current.completeQuestionnaire(
+					currentGuide.id,
+					true // toujours true car on considère le guide comme réussi
+				);
+			}
+
+			// Mettre à jour la progression en base de données
+			await updateModuleProgress(currentGuide.id, score);
+		} catch (error) {
+			console.error("Erreur lors du traitement du guide:", error);
+			alert("Une erreur est survenue. Veuillez réessayer.");
+		}
+	};
+
+	// Fonction commune pour mettre à jour la progression d'un module
+	const updateModuleProgress = async (moduleId, score) => {
+		try {
+			// Appeler l'API pour mettre à jour la progression
+			const response = await axios.post(
+				WISETRAINER_CONFIG.API_ROUTES.UPDATE_PROGRESS,
+				{
+					userId: containerName,
+					trainingId: courseId,
+					progress: Math.round(
+						((userProgress.completedModules + 1) /
+							course.modules.length) *
+							100
+					),
+					completedModule: moduleId,
+					moduleScore: score,
+				}
+			);
+
+			if (response.data.success) {
+				// Rafraîchir les données du cours
+				await fetchCourseDetails();
+			} else {
+				throw new Error(
+					response.data.error ||
+						"Échec de la mise à jour de la progression"
+				);
+			}
+		} catch (error) {
+			console.error(
+				"Erreur lors de la mise à jour de la progression:",
+				error
+			);
+			alert(
+				"Erreur lors de la mise à jour de la progression. Veuillez réessayer."
+			);
+		}
 	};
 
 	const handleModuleSelect = async (moduleId) => {
 		setSelectedModule(moduleId);
-		setActiveTab("questionnaire");
+		setActiveTab("training");
 
-		try {
-			// Récupérer les détails du scénario/module
-			const response = await axios.get(
-				`${WISETRAINER_CONFIG.API_ROUTES.FETCH_SCENARIO}/${moduleId}`
-			);
-			setCurrentScenario(response.data);
-		} catch (error) {
-			console.error("Erreur lors de la récupération du scénario:", error);
+		// Trouver le module dans la liste
+		const selectedModule = course.modules.find((m) => m.id === moduleId);
+
+		if (selectedModule && selectedModule.type === "guide") {
+			// C'est un guide interactif
+			setCurrentGuide(selectedModule);
+			setShowGuide(true);
+		} else {
+			// C'est un questionnaire standard
+			fetchScenarioDetails(moduleId);
+		}
+	};
+
+	// Gestionnaire pour les événements de requêtes de guides ou questionnaires
+	const handleContentRequest = (content) => {
+		if (content.type === "guide") {
+			setCurrentGuide(content);
+			setShowGuide(true);
+		} else {
+			setCurrentScenario(content);
+			setShowQuestionnaire(true);
 		}
 	};
 
@@ -385,7 +543,7 @@ export default function CourseDetail({ params }) {
 						unityBuildRef={unityBuildRef}
 						courseId={courseId}
 						containerName={containerName}
-						onQuestionnaireRequest={handleQuestionnaireRequest}
+						onContentRequest={handleContentRequest}
 					/>
 				</TabsContent>
 			</Tabs>
@@ -394,8 +552,23 @@ export default function CourseDetail({ params }) {
 			{showQuestionnaire && currentScenario && (
 				<QuestionnaireModal
 					scenario={currentScenario}
-					onComplete={handleScenarioComplete}
-					onClose={() => setShowQuestionnaire(false)}
+					onComplete={handleQuestionnaireComplete}
+					onClose={() => {
+						setShowQuestionnaire(false);
+						setCurrentScenario(null);
+					}}
+				/>
+			)}
+
+			{/* Modal de guide interactif */}
+			{showGuide && currentGuide && (
+				<InteractiveGuideModal
+					guide={currentGuide}
+					onComplete={handleGuideComplete}
+					onClose={() => {
+						setShowGuide(false);
+						setCurrentGuide(null);
+					}}
 				/>
 			)}
 		</div>
