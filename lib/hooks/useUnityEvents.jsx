@@ -1,4 +1,3 @@
-//lib/hooks/useUnityEvents.jsx
 import { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import WISETRAINER_CONFIG from "@/lib/config/wisetrainer/wisetrainer";
@@ -70,6 +69,32 @@ export function useUnityEvents(courseId = null) {
 						? JSON.parse(event.detail)
 						: event.detail;
 
+				// Si nous sommes dans un guide actif, déclencher un événement de validation
+				if (showGuide && currentGuide && data.name) {
+					console.log(
+						`🔍 Vérification de validation de guide: ${data.name}`
+					);
+
+					// Créer un événement de validation pour le guide
+					const validationEvent = new CustomEvent(
+						"GuideValidationEvent",
+						{
+							detail: {
+								name: data.name,
+								buttonName: data.name,
+								eventName: data.name,
+							},
+						}
+					);
+
+					// Dispatcher l'événement
+					window.dispatchEvent(validationEvent);
+					console.log(
+						`🚀 Événement de validation dispatché pour: ${data.name}`
+					);
+					return; // Sortir de la fonction si nous sommes en mode guide
+				}
+
 				// Vérifier si on a un nom d'objet
 				if (data.name) {
 					console.log(`👆 Objet sélectionné: ${data.name}`);
@@ -110,7 +135,10 @@ export function useUnityEvents(courseId = null) {
 							console.log(
 								`🔄 Mapping par convention pour ${data.name} -> ${scenarioId}`
 							);
-						} else if (normalizedName.includes("controller")) {
+						} else if (
+							normalizedName.includes("controller") ||
+							normalizedName === "cylinder"
+						) {
 							scenarioId = "controller-guide";
 							console.log(
 								`🔄 Mapping par convention pour contrôleur -> ${scenarioId}`
@@ -154,7 +182,7 @@ export function useUnityEvents(courseId = null) {
 				);
 			}
 		},
-		[objectMapping]
+		[objectMapping, showGuide, currentGuide]
 	);
 
 	// Gestionnaire pour les demandes explicites de questionnaire
@@ -190,6 +218,11 @@ export function useUnityEvents(courseId = null) {
 		}
 	}, []);
 
+	// Gestionnaire pour les validations du guide
+	const handleGuideValidation = useCallback((event) => {
+		console.log("🎯 Guide validation event reçu:", event.detail);
+	}, []);
+
 	// Ajouter/supprimer les écouteurs d'événements
 	useEffect(() => {
 		console.log(
@@ -213,6 +246,7 @@ export function useUnityEvents(courseId = null) {
 			"QuestionnaireRequest",
 			handleQuestionnaireRequest
 		);
+		window.addEventListener("GuideValidationEvent", handleGuideValidation);
 
 		// Événements supplémentaires pour le débogage
 		window.addEventListener(
@@ -236,6 +270,10 @@ export function useUnityEvents(courseId = null) {
 				"QuestionnaireRequest",
 				handleQuestionnaireRequest
 			);
+			window.removeEventListener(
+				"GuideValidationEvent",
+				handleGuideValidation
+			);
 
 			// Nettoyage des événements de débogage
 			window.removeEventListener(
@@ -255,7 +293,11 @@ export function useUnityEvents(courseId = null) {
 				handleDropdownDataReceived
 			);
 		};
-	}, [handleGameObjectSelected, handleQuestionnaireRequest]);
+	}, [
+		handleGameObjectSelected,
+		handleQuestionnaireRequest,
+		handleGuideValidation,
+	]);
 
 	return {
 		currentScenario,

@@ -178,6 +178,20 @@ const UnityBuild = forwardRef(
 				console.warn("Unity not loaded, can't start tutorial");
 				return false;
 			},
+			sendValidationEvent: (buttonName) => {
+				// Fonction pour envoyer un événement de validation manuellement
+				if (isLoaded) {
+					console.log(
+						`Sending manual validation event for: ${buttonName}`
+					);
+					const event = new CustomEvent("GuideValidationEvent", {
+						detail: { name: buttonName, buttonName: buttonName },
+					});
+					window.dispatchEvent(event);
+					return true;
+				}
+				return false;
+			},
 			isReady: isLoaded,
 		}));
 
@@ -266,6 +280,35 @@ const UnityBuild = forwardRef(
 			[onQuestionnaireRequest]
 		);
 
+		const handleUnityButtonClick = useCallback((event) => {
+			console.log("Bouton cliqué dans Unity:", event.detail);
+
+			// Créer un événement de validation pour le guide
+			const buttonName =
+				typeof event.detail === "string"
+					? event.detail
+					: event.detail.name || event.detail.buttonName;
+
+			if (buttonName) {
+				const validationEvent = new CustomEvent(
+					"GuideValidationEvent",
+					{
+						detail: {
+							name: buttonName,
+							buttonName: buttonName,
+							eventName: buttonName,
+						},
+					}
+				);
+
+				// Dispatcher l'événement
+				window.dispatchEvent(validationEvent);
+				console.log(
+					`Événement de validation dispatché pour: ${buttonName}`
+				);
+			}
+		}, []);
+
 		// Ajouter les écouteurs d'événements lorsque Unity est chargé
 		useEffect(() => {
 			if (isLoaded) {
@@ -277,6 +320,7 @@ const UnityBuild = forwardRef(
 					"QuestionnaireRequest",
 					handleQuestionnaireRequest
 				);
+				addEventListener("ButtonClicked", handleUnityButtonClick); // Ajout d'un nouvel écouteur
 			}
 
 			return () => {
@@ -289,6 +333,10 @@ const UnityBuild = forwardRef(
 						"QuestionnaireRequest",
 						handleQuestionnaireRequest
 					);
+					removeEventListener(
+						"ButtonClicked",
+						handleUnityButtonClick
+					); // Nettoyage
 				}
 			};
 		}, [
@@ -297,6 +345,7 @@ const UnityBuild = forwardRef(
 			removeEventListener,
 			handleGameObjectSelected,
 			handleQuestionnaireRequest,
+			handleUnityButtonClick,
 		]);
 
 		// Détection de timeout de chargement

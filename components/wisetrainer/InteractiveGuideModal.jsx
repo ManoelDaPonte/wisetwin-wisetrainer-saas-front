@@ -1,5 +1,4 @@
-//components/wisetrainer/InteractiveGuideModal.jsx
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import {
@@ -35,6 +34,7 @@ export default function InteractiveGuideModal({
 			"Les procédures LOTO (Lockout/Tagout), ou Consignation/Déconsignation, sont des mesures de sécurité utilisées pour prévenir les accidents liés aux énergies dangereuses lors d'opérations de maintenance ou de réparation sur des équipements industriels. Voici les bases de cette procédure : 1. Définition et Objectif LOTO est une procédure qui permet d'isoler une machine ou un équipement de ses sources d'énergie afin d'empêcher tout démarrage accidentel ou libération d'énergie dangereuse. L'objectif est de protéger les travailleurs contre les risques électriques, mécaniques, hydrauliques, pneumatiques, thermiques, etc. Ne pas suivre la procédure LOTO peut entraîner : Des accidents graves (électrocution, écrasement, brûlure…). Des amendes et sanctions réglementaires. Une mise en danger des autres travailleurs. Bonnes Pratiques : Toujours utiliser un cadenas personnel. Ne jamais retirer le cadenas d'un collègue sans autorisation. Former tous les travailleurs aux procédures LOTO.",
 		imageUrl: "/images/png/placeholder.png",
 	};
+
 	useEffect(() => {
 		console.log("Guide actuel:", guide);
 		console.log("Étapes du guide:", guide.steps);
@@ -43,61 +43,10 @@ export default function InteractiveGuideModal({
 		console.log("Mapping d'objets:", guide.objectMapping);
 	}, [guide, currentStep, currentStepIndex]);
 
-	// Effet pour écouter les événements de validation provenant d'Unity
-	//components/wisetrainer/InteractiveGuideModal.jsx
-	useEffect(() => {
-		const handleValidationEvent = (event) => {
-			// Extraire le nom de l'événement et sa valeur
-			let eventData;
-			try {
-				eventData =
-					typeof event.detail === "string"
-						? JSON.parse(event.detail)
-						: event.detail;
-			} catch (e) {
-				eventData = event.detail;
-			}
+	// Fonction pour valider l'étape actuelle - définie avant d'être utilisée dans l'useEffect
+	const validateCurrentStep = useCallback(() => {
+		if (!currentStep) return;
 
-			console.log("Événement de validation reçu:", eventData);
-
-			// Si le tutoriel est démarré, vérifier si l'événement correspond à l'étape actuelle
-			if (tutorialStarted && currentStep) {
-				const buttonName = eventData.name || eventData.buttonName;
-				const stepValidation = currentStep.validationEvent;
-
-				console.log(
-					`Comparaison: bouton=${buttonName}, validation attendue=${stepValidation}`
-				);
-
-				// Vérifier si l'événement correspond à l'étape actuelle
-				if (
-					buttonName &&
-					(buttonName === stepValidation ||
-						eventData.eventName === stepValidation ||
-						(Array.isArray(guide.sequenceButtons) &&
-							guide.sequenceButtons[currentStepIndex] ===
-								buttonName))
-				) {
-					console.log("Validation d'étape: OK");
-					validateCurrentStep();
-				} else {
-					console.log("Validation d'étape: Non correspondante");
-				}
-			}
-		};
-
-		window.addEventListener("GuideValidationEvent", handleValidationEvent);
-
-		return () => {
-			window.removeEventListener(
-				"GuideValidationEvent",
-				handleValidationEvent
-			);
-		};
-	}, [currentStep, tutorialStarted, currentStepIndex, guide.sequenceButtons]);
-
-	// Fonction pour valider l'étape actuelle
-	const validateCurrentStep = () => {
 		if (!completedSteps.includes(currentStep.id)) {
 			const newCompletedSteps = [...completedSteps, currentStep.id];
 			setCompletedSteps(newCompletedSteps);
@@ -117,7 +66,110 @@ export default function InteractiveGuideModal({
 				}, 1000);
 			}
 		}
-	};
+	}, [
+		currentStep,
+		completedSteps,
+		currentStepIndex,
+		guide.steps,
+		onComplete,
+	]);
+
+	// Effet pour écouter les événements de validation provenant d'Unity
+	useEffect(() => {
+		const handleValidationEvent = (event) => {
+			// Extraire le nom de l'événement et sa valeur
+			let eventData;
+			try {
+				eventData =
+					typeof event.detail === "string"
+						? JSON.parse(event.detail)
+						: event.detail;
+			} catch (e) {
+				eventData = event.detail;
+			}
+
+			console.log("🎯 Événement de validation reçu:", eventData);
+
+			// Si le tutoriel est démarré, vérifier si l'événement correspond à l'étape actuelle
+			if (tutorialStarted && currentStep) {
+				const buttonName = eventData.name || eventData.buttonName;
+				const stepValidation = currentStep.validationEvent;
+
+				console.log(
+					`🔍 Comparaison: bouton=${buttonName}, validation attendue=${stepValidation}`
+				);
+
+				// Vérifier si l'événement correspond à l'étape actuelle
+				if (
+					buttonName &&
+					(buttonName === stepValidation ||
+						eventData.eventName === stepValidation ||
+						(Array.isArray(guide.sequenceButtons) &&
+							guide.sequenceButtons[currentStepIndex] ===
+								buttonName))
+				) {
+					console.log("✅ Validation d'étape: OK");
+					validateCurrentStep();
+				} else {
+					console.log("❌ Validation d'étape: Non correspondante");
+				}
+			}
+		};
+
+		// Écouter spécifiquement les événements GuideValidationEvent
+		window.addEventListener("GuideValidationEvent", handleValidationEvent);
+
+		// Écouter aussi les événements GameObjectSelected pour les convertir en validations
+		const handleGameObjectSelected = (event) => {
+			let data;
+			try {
+				data =
+					typeof event.detail === "string"
+						? JSON.parse(event.detail)
+						: event.detail;
+			} catch (e) {
+				data = event.detail;
+			}
+
+			if (data && data.name && tutorialStarted) {
+				console.log(
+					`🔍 GameObject sélectionné dans le guide: ${data.name}`
+				);
+
+				// Créer et dispatcher un événement de validation
+				const validationEvent = new CustomEvent(
+					"GuideValidationEvent",
+					{
+						detail: {
+							name: data.name,
+							buttonName: data.name,
+							eventName: data.name,
+						},
+					}
+				);
+				window.dispatchEvent(validationEvent);
+			}
+		};
+
+		window.addEventListener("GameObjectSelected", handleGameObjectSelected);
+
+		return () => {
+			window.removeEventListener(
+				"GuideValidationEvent",
+				handleValidationEvent
+			);
+			window.removeEventListener(
+				"GameObjectSelected",
+				handleGameObjectSelected
+			);
+		};
+	}, [
+		currentStep,
+		tutorialStarted,
+		currentStepIndex,
+		guide.sequenceButtons,
+		validateCurrentStep,
+	]);
 
 	// Pour le développement, ajoutons une fonction qui permet de simuler la validation
 	const simulateValidation = () => {
