@@ -190,13 +190,42 @@
         "title": "Procédure d'accès à la zone robot",
         "description": "Suivez la procédure de sécurité pour accéder à la zone robot en toute sécurité",
         "type": "guide",
-        "sequenceButtons": ["DemandAccess", "TurnKey", "SwitchManual", "TakeKeys", "SwitchSettingMode", "PressBlueButton", "IDCard", "TakeKeyTwo"],
+        "educational": {
+          "title": "Comprendre les procédures LOTO",
+          "content": {
+            "intro": "Les procédures LOTO (Lockout/Tagout), ou Consignation/Déconsignation, sont des mesures de sécurité utilisées pour prévenir les accidents liés aux énergies dangereuses lors d'opérations de maintenance ou de réparation sur des équipements industriels.",
+            "sections": [
+              {
+                "title": "Définition et Objectif",
+                "text": "LOTO est une procédure qui permet d'isoler une machine ou un équipement de ses sources d'énergie afin d'empêcher tout démarrage accidentel ou libération d'énergie dangereuse. L'objectif est de protéger les travailleurs contre les risques électriques, mécaniques, hydrauliques, pneumatiques, thermiques, etc."
+              },
+              {
+                "title": "Risques en cas de non-respect",
+                "items": [
+                  "Des accidents graves (électrocution, écrasement, brûlure…)",
+                  "Des amendes et sanctions réglementaires",
+                  "Une mise en danger des autres travailleurs"
+                ]
+              },
+              {
+                "title": "Bonnes Pratiques",
+                "items": [
+                  "Toujours utiliser un cadenas personnsel",
+                  "Ne jamais retirer le cadenas d'un collègue sans autorisation",
+                  "Former tous les travailleurs aux procédures LOTO"
+                ]
+              }
+            ]
+          },
+          "imageUrl": "/images/wisetrainer/loto-procedure.png"
+        },
+        "sequenceButtons": ["Cylinder", "TurnKey", "SwitchManual", "TakeKeys", "SwitchSettingMode", "PressBlueButton", "IDCard", "TakeKeyTwo"],
         "steps": [
           {
             "id": "step-1",
             "title": "Demande d'accès",
             "instruction": "Appuyez sur le bouton vert DEMANDE D'ACCES pour commencer la procédure",
-            "validationEvent": "DemandAccess",
+            "validationEvent": "Cylinder",
             "hint": "Recherchez un grand bouton vert sur le panneau de contrôle"
           },
           {

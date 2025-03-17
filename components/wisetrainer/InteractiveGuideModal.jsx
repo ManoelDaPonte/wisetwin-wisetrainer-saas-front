@@ -29,7 +29,22 @@ export default function InteractiveGuideModal({
 		? Math.round((completedSteps.length / guide.steps.length) * 100)
 		: 0;
 
+	const educationalContent = guide.educational || {
+		title: "Comprendre les procédures LOTO",
+		content:
+			"Les procédures LOTO (Lockout/Tagout), ou Consignation/Déconsignation, sont des mesures de sécurité utilisées pour prévenir les accidents liés aux énergies dangereuses lors d'opérations de maintenance ou de réparation sur des équipements industriels. Voici les bases de cette procédure : 1. Définition et Objectif LOTO est une procédure qui permet d'isoler une machine ou un équipement de ses sources d'énergie afin d'empêcher tout démarrage accidentel ou libération d'énergie dangereuse. L'objectif est de protéger les travailleurs contre les risques électriques, mécaniques, hydrauliques, pneumatiques, thermiques, etc. Ne pas suivre la procédure LOTO peut entraîner : Des accidents graves (électrocution, écrasement, brûlure…). Des amendes et sanctions réglementaires. Une mise en danger des autres travailleurs. Bonnes Pratiques : Toujours utiliser un cadenas personnel. Ne jamais retirer le cadenas d'un collègue sans autorisation. Former tous les travailleurs aux procédures LOTO.",
+		imageUrl: "/images/png/placeholder.png",
+	};
+	useEffect(() => {
+		console.log("Guide actuel:", guide);
+		console.log("Étapes du guide:", guide.steps);
+		console.log("Étape actuelle:", currentStepIndex, currentStep);
+		console.log("Validation attendue:", currentStep?.validationEvent);
+		console.log("Mapping d'objets:", guide.objectMapping);
+	}, [guide, currentStep, currentStepIndex]);
+
 	// Effet pour écouter les événements de validation provenant d'Unity
+	//components/wisetrainer/InteractiveGuideModal.jsx
 	useEffect(() => {
 		const handleValidationEvent = (event) => {
 			// Extraire le nom de l'événement et sa valeur
@@ -45,93 +60,38 @@ export default function InteractiveGuideModal({
 
 			console.log("Événement de validation reçu:", eventData);
 
-			// Démarrer le tutoriel si l'événement le demande
-			if (
-				eventData.action === "startTutorial" ||
-				eventData.eventName === "startTutorial"
-			) {
-				setTutorialStarted(true);
-				return;
-			}
+			// Si le tutoriel est démarré, vérifier si l'événement correspond à l'étape actuelle
+			if (tutorialStarted && currentStep) {
+				const buttonName = eventData.name || eventData.buttonName;
+				const stepValidation = currentStep.validationEvent;
 
-			// Si le tutoriel n'est pas démarré, ignorer les événements
-			if (!tutorialStarted) return;
+				console.log(
+					`Comparaison: bouton=${buttonName}, validation attendue=${stepValidation}`
+				);
 
-			// Vérifier si l'événement correspond à l'étape actuelle
-			const buttonName = eventData.name || eventData.buttonName;
-			const stepValidation = currentStep?.validationEvent;
-
-			// Vérifier si l'événement correspond à l'étape actuelle
-			if (
-				buttonName &&
-				currentStep &&
-				(buttonName === stepValidation ||
-					eventData.eventName === stepValidation ||
-					(Array.isArray(guide.sequenceButtons) &&
-						guide.sequenceButtons[currentStepIndex] === buttonName))
-			) {
-				validateCurrentStep();
+				// Vérifier si l'événement correspond à l'étape actuelle
+				if (
+					buttonName &&
+					(buttonName === stepValidation ||
+						eventData.eventName === stepValidation ||
+						(Array.isArray(guide.sequenceButtons) &&
+							guide.sequenceButtons[currentStepIndex] ===
+								buttonName))
+				) {
+					console.log("Validation d'étape: OK");
+					validateCurrentStep();
+				} else {
+					console.log("Validation d'étape: Non correspondante");
+				}
 			}
 		};
 
-		// Ajouter l'écouteur d'événement pour les événements de validation
 		window.addEventListener("GuideValidationEvent", handleValidationEvent);
 
-		// Ajouter aussi l'écouteur pour les événements GameObjectSelected
-		const handleGameObjectSelected = (event) => {
-			let data;
-			try {
-				data =
-					typeof event.detail === "string"
-						? JSON.parse(event.detail)
-						: event.detail;
-			} catch (e) {
-				data = event.detail;
-			}
-
-			console.log("GameObject sélectionné dans le guide:", data);
-
-			// Si c'est le contrôleur, démarrer le tutoriel
-			if (data.name && data.name.includes("Controller")) {
-				console.log(
-					"Démarrage du tutoriel depuis la sélection d'objet"
-				);
-				setTutorialStarted(true);
-
-				// Appeler la fonction de rappel
-				if (onStartTutorial) {
-					onStartTutorial();
-				}
-				return;
-			}
-
-			// Si le tutoriel est démarré, vérifier si l'objet sélectionné correspond à l'étape actuelle
-			if (tutorialStarted && currentStep && data.name) {
-				// Cas 1: La validation se fait via le nom de l'objet directement
-				if (data.name === currentStep.validationEvent) {
-					validateCurrentStep();
-				}
-				// Cas 2: La validation se fait via le nom de l'objet correspondant à la séquence de boutons
-				else if (
-					Array.isArray(guide.sequenceButtons) &&
-					guide.sequenceButtons[currentStepIndex] === data.name
-				) {
-					validateCurrentStep();
-				}
-			}
-		};
-
-		window.addEventListener("GameObjectSelected", handleGameObjectSelected);
-
-		// Nettoyer l'écouteur à la destruction du composant
 		return () => {
 			window.removeEventListener(
 				"GuideValidationEvent",
 				handleValidationEvent
-			);
-			window.removeEventListener(
-				"GameObjectSelected",
-				handleGameObjectSelected
 			);
 		};
 	}, [currentStep, tutorialStarted, currentStepIndex, guide.sequenceButtons]);
@@ -227,9 +187,75 @@ export default function InteractiveGuideModal({
 					</Button>
 				</div>
 
-				{/* Contenu principal */}
-				<div className="p-6 flex-1 overflow-y-auto flex flex-col items-center justify-center">
-					<div className="text-center max-w-md">
+				{/* Contenu principal avec informations éducatives */}
+				<div className="p-6 flex-1 overflow-y-auto">
+					<div className="mb-6 pb-6 border-b border-gray-200 dark:border-gray-700">
+						<h3 className="text-xl font-bold mb-4 text-wisetwin-darkblue dark:text-wisetwin-blue">
+							{educationalContent.title}
+						</h3>
+
+						{educationalContent.imageUrl && (
+							<div className="relative w-full h-48 rounded-lg overflow-hidden mb-4">
+								<Image
+									src={educationalContent.imageUrl}
+									alt="Procédure LOTO"
+									fill
+									className="object-cover"
+									onError={(e) => {
+										e.target.src =
+											"/images/png/placeholder.png";
+									}}
+								/>
+							</div>
+						)}
+
+						<div className="prose prose-sm dark:prose-invert max-w-none">
+							{/* Version formatée du contenu éducatif */}
+							<h4 className="font-bold text-lg mb-2">
+								Définition et Objectif
+							</h4>
+							<p className="mb-3">
+								LOTO est une procédure qui permet d'isoler une
+								machine ou un équipement de ses sources
+								d'énergie afin d'empêcher tout démarrage
+								accidentel ou libération d'énergie dangereuse.
+								L'objectif est de protéger les travailleurs
+								contre les risques électriques, mécaniques,
+								hydrauliques, pneumatiques, thermiques, etc.
+							</p>
+
+							<h4 className="font-bold text-lg mb-2">
+								Risques en cas de non-respect
+							</h4>
+							<ul className="list-disc pl-5 mb-3">
+								<li>
+									Des accidents graves (électrocution,
+									écrasement, brûlure…)
+								</li>
+								<li>Des amendes et sanctions réglementaires</li>
+								<li>
+									Une mise en danger des autres travailleurs
+								</li>
+							</ul>
+
+							<h4 className="font-bold text-lg mb-2">
+								Bonnes Pratiques
+							</h4>
+							<ul className="list-disc pl-5">
+								<li>Toujours utiliser un cadenas personnel</li>
+								<li>
+									Ne jamais retirer le cadenas d'un collègue
+									sans autorisation
+								</li>
+								<li>
+									Former tous les travailleurs aux procédures
+									LOTO
+								</li>
+							</ul>
+						</div>
+					</div>
+
+					<div className="text-center">
 						<h3 className="text-xl font-bold mb-4">
 							Tutoriel interactif
 						</h3>
@@ -237,9 +263,9 @@ export default function InteractiveGuideModal({
 							Cliquez sur le contrôleur dans l'environnement 3D
 							pour démarrer la séquence d'apprentissage guidée.
 						</p>
-						{/* Bouton optionnel pour démarrer le tutoriel directement */}
+						{/* Bouton pour démarrer le tutoriel */}
 						<Button
-							className="bg-blue-600 hover:bg-blue-700 text-white"
+							className="bg-wisetwin-blue hover:bg-wisetwin-blue-light text-white"
 							onClick={simulateValidation}
 						>
 							Démarrer le tutoriel
@@ -334,11 +360,11 @@ export default function InteractiveGuideModal({
 							{guide.steps?.map((step, index) => (
 								<div
 									key={step.id}
-									className={`flex items-center p-2 rounded-md ${
+									className={`flex items-center p-2 rounded-md transition-all duration-300 ${
 										completedSteps.includes(step.id)
 											? "bg-green-50 dark:bg-green-900/20"
 											: index === currentStepIndex
-											? "bg-blue-50 dark:bg-blue-900/20"
+											? "bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500 dark:border-blue-400"
 											: "bg-gray-50 dark:bg-gray-700"
 									}`}
 								>
@@ -347,7 +373,7 @@ export default function InteractiveGuideModal({
 											completedSteps.includes(step.id)
 												? "bg-green-500 text-white"
 												: index === currentStepIndex
-												? "bg-blue-500 text-white"
+												? "bg-blue-500 text-white pulse-animation"
 												: "bg-gray-300 dark:bg-gray-600"
 										}`}
 									>

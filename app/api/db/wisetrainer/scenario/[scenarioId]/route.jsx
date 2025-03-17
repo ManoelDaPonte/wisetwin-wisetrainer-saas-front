@@ -74,6 +74,7 @@ export async function GET(request, { params }) {
 				title: foundModule.title,
 				description: foundModule.description,
 				type: "guide",
+				educational: foundModule.educational || null,
 				sequenceButtons: foundModule.sequenceButtons || [],
 				steps: foundModule.steps || [],
 			});
