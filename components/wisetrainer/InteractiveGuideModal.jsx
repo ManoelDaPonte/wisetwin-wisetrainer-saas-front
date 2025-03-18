@@ -1,3 +1,4 @@
+//components/wisetrainer/InteractiveGuideModal.jsx
 import React, { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -8,6 +9,10 @@ import {
 	Minimize2,
 	Maximize2,
 	HelpCircle,
+	Square,
+	CheckSquare,
+	ChevronDown,
+	ChevronUp,
 } from "lucide-react";
 import Image from "next/image";
 
@@ -22,16 +27,24 @@ export default function InteractiveGuideModal({
 	const [showHint, setShowHint] = useState(false);
 	const [isMinimized, setIsMinimized] = useState(false);
 	const [tutorialStarted, setTutorialStarted] = useState(false);
+	const [isStepListExpanded, setIsStepListExpanded] = useState(true);
 
 	const currentStep = guide.steps ? guide.steps[currentStepIndex] : null;
 	const progress = guide.steps
 		? Math.round((completedSteps.length / guide.steps.length) * 100)
 		: 0;
 
+	// Déterminer si l'étape courante utilise une checkbox pour validation
+	const isCheckboxStep =
+		currentStep && currentStep.validationType === "checkbox";
+
+	// Utiliser les contenus éducatifs du guide, avec une valeur par défaut vide
 	const educationalContent = guide.educational || {
-		title: "Comprendre les procédures LOTO",
-		content:
-			"Les procédures LOTO (Lockout/Tagout), ou Consignation/Déconsignation, sont des mesures de sécurité utilisées pour prévenir les accidents liés aux énergies dangereuses lors d'opérations de maintenance ou de réparation sur des équipements industriels. Voici les bases de cette procédure : 1. Définition et Objectif LOTO est une procédure qui permet d'isoler une machine ou un équipement de ses sources d'énergie afin d'empêcher tout démarrage accidentel ou libération d'énergie dangereuse. L'objectif est de protéger les travailleurs contre les risques électriques, mécaniques, hydrauliques, pneumatiques, thermiques, etc. Ne pas suivre la procédure LOTO peut entraîner : Des accidents graves (électrocution, écrasement, brûlure…). Des amendes et sanctions réglementaires. Une mise en danger des autres travailleurs. Bonnes Pratiques : Toujours utiliser un cadenas personnel. Ne jamais retirer le cadenas d'un collègue sans autorisation. Former tous les travailleurs aux procédures LOTO.",
+		title: "Informations sur la procédure",
+		content: {
+			intro: "Aucune information disponible pour cette procédure.",
+			sections: [],
+		},
 		imageUrl: "/images/png/placeholder.png",
 	};
 
@@ -40,10 +53,11 @@ export default function InteractiveGuideModal({
 		console.log("Étapes du guide:", guide.steps);
 		console.log("Étape actuelle:", currentStepIndex, currentStep);
 		console.log("Validation attendue:", currentStep?.validationEvent);
+		console.log("Type de validation:", currentStep?.validationType);
 		console.log("Mapping d'objets:", guide.objectMapping);
 	}, [guide, currentStep, currentStepIndex]);
 
-	// Fonction pour valider l'étape actuelle - définie avant d'être utilisée dans l'useEffect
+	// Fonction pour valider l'étape actuelle
 	const validateCurrentStep = useCallback(() => {
 		if (!currentStep) return;
 
@@ -74,6 +88,11 @@ export default function InteractiveGuideModal({
 		onComplete,
 	]);
 
+	// Gérer la validation manuelle par checkbox
+	const handleCheckboxValidation = () => {
+		validateCurrentStep();
+	};
+
 	// Effet pour écouter les événements de validation provenant d'Unity
 	useEffect(() => {
 		const handleValidationEvent = (event) => {
@@ -92,6 +111,14 @@ export default function InteractiveGuideModal({
 
 			// Si le tutoriel est démarré, vérifier si l'événement correspond à l'étape actuelle
 			if (tutorialStarted && currentStep) {
+				// Ne pas traiter les événements Unity pour les étapes de type checkbox
+				if (currentStep.validationType === "checkbox") {
+					console.log(
+						"⏭️ Étape de type checkbox, ignorer événement Unity"
+					);
+					return;
+				}
+
 				const buttonName = eventData.name || eventData.buttonName;
 				const stepValidation = currentStep.validationEvent;
 
@@ -132,6 +159,11 @@ export default function InteractiveGuideModal({
 			}
 
 			if (data && data.name && tutorialStarted) {
+				// Ne pas traiter pour les étapes de type checkbox
+				if (currentStep?.validationType === "checkbox") {
+					return;
+				}
+
 				console.log(
 					`🔍 GameObject sélectionné dans le guide: ${data.name}`
 				);
@@ -196,6 +228,10 @@ export default function InteractiveGuideModal({
 		setIsMinimized(!isMinimized);
 	};
 
+	const toggleStepList = () => {
+		setIsStepListExpanded(!isStepListExpanded);
+	};
+
 	// Affichage minimisé
 	if (isMinimized) {
 		return (
@@ -250,7 +286,7 @@ export default function InteractiveGuideModal({
 							<div className="relative w-full h-48 rounded-lg overflow-hidden mb-4">
 								<Image
 									src={educationalContent.imageUrl}
-									alt="Procédure LOTO"
+									alt={educationalContent.title}
 									fill
 									className="object-cover"
 									onError={(e) => {
@@ -262,48 +298,52 @@ export default function InteractiveGuideModal({
 						)}
 
 						<div className="prose prose-sm dark:prose-invert max-w-none">
-							{/* Version formatée du contenu éducatif */}
-							<h4 className="font-bold text-lg mb-2">
-								Définition et Objectif
-							</h4>
-							<p className="mb-3">
-								LOTO est une procédure qui permet d'isoler une
-								machine ou un équipement de ses sources
-								d'énergie afin d'empêcher tout démarrage
-								accidentel ou libération d'énergie dangereuse.
-								L'objectif est de protéger les travailleurs
-								contre les risques électriques, mécaniques,
-								hydrauliques, pneumatiques, thermiques, etc.
-							</p>
+							{/* Affichage du contenu structuré depuis la configuration */}
+							{educationalContent.content.intro && (
+								<p className="mb-3">
+									{educationalContent.content.intro}
+								</p>
+							)}
 
-							<h4 className="font-bold text-lg mb-2">
-								Risques en cas de non-respect
-							</h4>
-							<ul className="list-disc pl-5 mb-3">
-								<li>
-									Des accidents graves (électrocution,
-									écrasement, brûlure…)
-								</li>
-								<li>Des amendes et sanctions réglementaires</li>
-								<li>
-									Une mise en danger des autres travailleurs
-								</li>
-							</ul>
+							{/* Affichage des sections */}
+							{educationalContent.content.sections &&
+								educationalContent.content.sections.map(
+									(section, index) => (
+										<div key={index} className="mb-4">
+											{section.title && (
+												<h4 className="font-bold text-lg mb-2">
+													{section.title}
+												</h4>
+											)}
 
-							<h4 className="font-bold text-lg mb-2">
-								Bonnes Pratiques
-							</h4>
-							<ul className="list-disc pl-5">
-								<li>Toujours utiliser un cadenas personnel</li>
-								<li>
-									Ne jamais retirer le cadenas d'un collègue
-									sans autorisation
-								</li>
-								<li>
-									Former tous les travailleurs aux procédures
-									LOTO
-								</li>
-							</ul>
+											{section.text && (
+												<p className="mb-3">
+													{section.text}
+												</p>
+											)}
+
+											{section.items &&
+												section.items.length > 0 && (
+													<ul className="list-disc pl-5 mb-3">
+														{section.items.map(
+															(
+																item,
+																itemIndex
+															) => (
+																<li
+																	key={
+																		itemIndex
+																	}
+																>
+																	{item}
+																</li>
+															)
+														)}
+													</ul>
+												)}
+										</div>
+									)
+								)}
 						</div>
 					</div>
 
@@ -312,15 +352,15 @@ export default function InteractiveGuideModal({
 							Tutoriel interactif
 						</h3>
 						<p className="mb-6">
-							Cliquez sur le contrôleur dans l'environnement 3D
-							pour démarrer la séquence d'apprentissage guidée.
+							{guide.startMessage ||
+								"Cliquez sur le contrôleur dans l'environnement 3D pour démarrer la séquence d'apprentissage guidée."}
 						</p>
 						{/* Bouton pour démarrer le tutoriel */}
 						<Button
 							className="bg-wisetwin-blue hover:bg-wisetwin-blue-light text-white"
 							onClick={simulateValidation}
 						>
-							Démarrer le tutoriel
+							{guide.startButtonText || "Démarrer le tutoriel"}
 						</Button>
 					</div>
 				</div>
@@ -378,13 +418,13 @@ export default function InteractiveGuideModal({
 					<div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg mb-4">
 						<p className="text-gray-800 dark:text-gray-200">
 							{currentStep?.instruction ||
-								"Suivez les boutons mis en évidence dans l'environnement 3D."}
+								"Suivez les instructions indiquées dans l'environnement 3D."}
 						</p>
 					</div>
 
 					{/* Astuce/Indice */}
 					{currentStep?.hint && (
-						<div>
+						<div className="mt-4">
 							<button
 								className="text-sm flex items-center text-blue-600 dark:text-blue-400 hover:underline"
 								onClick={() => setShowHint(!showHint)}
@@ -403,12 +443,43 @@ export default function InteractiveGuideModal({
 						</div>
 					)}
 
-					{/* Liste des étapes */}
-					<div className="mt-8">
-						<h4 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">
+					{/* Validation manuelle pour étape de type checkbox (hors liste) */}
+					{isCheckboxStep &&
+						!completedSteps.includes(currentStep.id) && (
+							<div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg text-sm border border-blue-200 dark:border-blue-700">
+								<button
+									onClick={handleCheckboxValidation}
+									className="flex items-center space-x-2 text-blue-700 dark:text-blue-300 hover:text-blue-800 dark:hover:text-blue-200"
+								>
+									<Square className="w-5 h-5" />
+									<span className="ml-2">
+										{currentStep.checkboxLabel ||
+											"Valider manuellement cette étape"}
+									</span>
+								</button>
+							</div>
+						)}
+
+					{/* Titre de la liste des étapes avec bouton pour réduire/développer */}
+					<div className="mt-8 flex justify-between items-center">
+						<h4 className="text-sm font-medium text-gray-600 dark:text-gray-400">
 							Progression des étapes
 						</h4>
-						<div className="space-y-2">
+						<button
+							onClick={toggleStepList}
+							className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+						>
+							{isStepListExpanded ? (
+								<ChevronUp className="w-4 h-4" />
+							) : (
+								<ChevronDown className="w-4 h-4" />
+							)}
+						</button>
+					</div>
+
+					{/* Liste des étapes (condensée ou développée) */}
+					{isStepListExpanded ? (
+						<div className="space-y-2 mt-2">
 							{guide.steps?.map((step, index) => (
 								<div
 									key={step.id}
@@ -437,21 +508,50 @@ export default function InteractiveGuideModal({
 											</span>
 										)}
 									</div>
-									<span
-										className={`text-sm ${
-											completedSteps.includes(step.id)
-												? "text-green-800 dark:text-green-200"
-												: index === currentStepIndex
-												? "text-blue-800 dark:text-blue-200 font-medium"
-												: "text-gray-600 dark:text-gray-400"
-										}`}
-									>
-										{step.title || `Étape ${index + 1}`}
-									</span>
+
+									<div className="flex-grow">
+										<span
+											className={`text-sm ${
+												completedSteps.includes(step.id)
+													? "text-green-800 dark:text-green-200"
+													: index === currentStepIndex
+													? "text-blue-800 dark:text-blue-200 font-medium"
+													: "text-gray-600 dark:text-gray-400"
+											}`}
+										>
+											{step.title || `Étape ${index + 1}`}
+											{step.validationType ===
+												"checkbox" &&
+												index === currentStepIndex && (
+													<span className="ml-2 text-xs text-gray-500 dark:text-gray-400">
+														(validation manuelle)
+													</span>
+												)}
+										</span>
+									</div>
 								</div>
 							))}
 						</div>
-					</div>
+					) : (
+						<div className="mt-2 bg-gray-50 dark:bg-gray-700 p-2 rounded-md">
+							{/* Afficher uniquement l'étape actuelle dans le mode condensé */}
+							<div className="flex items-center">
+								<div className="bg-blue-500 text-white w-6 h-6 flex items-center justify-center rounded-full mr-2 pulse-animation">
+									<span className="text-xs">
+										{currentStepIndex + 1}
+									</span>
+								</div>
+								<span className="text-sm text-blue-800 dark:text-blue-200 font-medium">
+									{currentStep?.title ||
+										`Étape ${currentStepIndex + 1}`}
+								</span>
+							</div>
+							<div className="text-xs text-gray-500 dark:text-gray-400 mt-1 ml-8">
+								{completedSteps.length} sur{" "}
+								{guide.steps?.length} étapes complétées
+							</div>
+						</div>
+					)}
 				</div>
 			</div>
 
@@ -462,10 +562,10 @@ export default function InteractiveGuideModal({
 				</Button>
 
 				{/* Ce bouton est uniquement pour le développement/test */}
-				<Button variant="default" onClick={simulateValidation}>
+				{/* <Button variant="default" onClick={simulateValidation}>
 					Simuler l'action
 					<ArrowRight className="ml-2 h-4 w-4" />
-				</Button>
+				</Button> */}
 			</div>
 		</div>
 	);

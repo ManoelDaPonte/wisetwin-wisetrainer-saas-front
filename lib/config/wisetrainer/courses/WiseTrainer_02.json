@@ -210,7 +210,7 @@
               {
                 "title": "Bonnes Pratiques",
                 "items": [
-                  "Toujours utiliser un cadenas personnsel",
+                  "Toujours utiliser un cadenas personnel",
                   "Ne jamais retirer le cadenas d'un collègue sans autorisation",
                   "Former tous les travailleurs aux procédures LOTO"
                 ]
@@ -219,56 +219,47 @@
           },
           "imageUrl": "/images/wisetrainer/loto-procedure.png"
         },
-        "sequenceButtons": ["Cylinder", "Cylinder.002", "Cube.003", "Cylinder.003", "Cylinder.001", "PressBlueButton", "IDCard", "TakeKeyTwo"],
+        "sequenceButtons": ["commutateur", "demande-d-acces", "operateur-cle-acces-1", "cle-1", "poignee", "checking", "lock-loto", "operateur-cle-acces-1", "operateur-cle-acces-1", "commutateur", "rearmement"],
         "steps": [
           {
             "id": "step-1",
-            "title": "Demande d'accès",
-            "instruction": "Appuyez sur le bouton vert DEMANDE D'ACCES pour commencer la procédure",
-            "validationEvent": "Cylinder",
-            "hint": "Recherchez un grand bouton vert sur le panneau de contrôle"
+            "title": "Commutateur en manuel",
+            "instruction": "Je mets le commutateur en manuel",
+            "validationEvent": "commutateur",
+            "validationType": "3d",
+            "hint": "Touner le button en haut a gauche du panneau de contrôle"
           },
           {
             "id": "step-2",
-            "title": "Tourner la clé opérateur",
-            "instruction": "Tournez la clé opérateur et mettez-la dans votre poche",
-            "validationEvent": "Cylinder.002",
-            "hint": "La clé se trouve sur le côté gauche du panneau principal"
+            "title": "Demande d'accès",
+            "instruction": "Je fais une demande d'accès et j'active le mode réglage",
+            "validationEvent": "demande-d-acces",
+            "validationType": "3d",
+            "hint": "Recherchez un grand bouton vert sur le panneau de contrôle"
           },
           {
             "id": "step-3",
-            "title": "Commutateur en manuel",
-            "instruction": "Mettez le commutateur de la baie robot en position 'manuel'",
-            "validationEvent": "Cube.003",
-            "hint": "Le robot ne peut être manipulé qu'en mode manuel, s'il est laissé en auto il ne fonctionnera pas"
+            "title": "Tourner la clé opérateur",
+            "instruction": "Je tourne la clé opérateur et la mettre en position 0",
+            "validationEvent": "operateur-cle-acces-1",
+            "validationType": "3d",
+            "hint": "La clé se trouve sur le côté gauche du panneau principal"
           },
           {
             "id": "step-4",
-            "title": "Prendre le trousseau de clés et activez le mode réglage",
-            "instruction": "Prenez le trousseau 'clé de la baie robot et clé de dérogation 458A' sur la baie robot puis mettez la clé de dérogation 458A sur le commutateur 'mode réglage' en position '1'",
-            "validationEvent": "Cylinder.003",
-            "hint": "Le trousseau de clés est accroché sur le côté de la baie robot, Le commutateur 'mode réglage' se trouve sur le panneau à droite"
+            "title": "Retirer la clé et la garder sur soi",
+            "instruction": "J'enlève la clé et la garde avec moi",
+            "validationEvent": "cle-1",
+            "validationType": "3d",
+            "hint": "Le robot ne peut être manipulé qu'en mode manuel, s'il est laissé en auto il ne fonctionnera pas"
           },
           {
             "id": "step-5",
-            "title": "Réarmer la zone",
-            "instruction": "Appuyez sur le bouton bleu pour réarmer la zone",
-            "validationEvent": "Cylinder.001",
-            "hint": "L'énergie est ainsi de nouveau disponible pour les réglages"
-          },
-          {
-            "id": "step-6",
-            "title": "Badge d'identification",
-            "instruction": "Mettez le badge d'identification LOTO et appuyez sur le bouton bleu REARMEMENT ACCES. Ouvrez la porte et entrez dans la zone",
-            "validationEvent": "IDCard",
-            "hint": "Le badge LOTO doit être placé dans le lecteur avant d'appuyer sur le bouton"
-          },
-          {
-            "id": "step-7",
-            "title": "Seconde personne",
-            "instruction": "La 2ème personne habilitée entrant dans la zone prend la clé n°2",
-            "validationEvent": "TakeKeyTwo",
-            "hint": "La clé n°2 est nécessaire pour la procédure à deux personnes"
+            "title": "Ouvrir la porte et mettre le cadenas pour indiquer l'intervention",
+            "instruction": "J'ouvre la porte et je mets le cadenas pour identifier que je suis dans la zone.",
+            "validationEvent": "poignee",
+            "validationType": "3d",
+            "hint": "Le trousseau de clés est accroché sur le côté de la baie robot, Le commutateur 'mode réglage' se trouve sur le panneau à droite"
           }
         ]
       }
