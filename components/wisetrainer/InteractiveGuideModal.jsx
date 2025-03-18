@@ -13,6 +13,7 @@ import {
 	CheckSquare,
 	ChevronDown,
 	ChevronUp,
+	XCircle,
 } from "lucide-react";
 import Image from "next/image";
 
@@ -28,6 +29,8 @@ export default function InteractiveGuideModal({
 	const [isMinimized, setIsMinimized] = useState(false);
 	const [tutorialStarted, setTutorialStarted] = useState(false);
 	const [isStepListExpanded, setIsStepListExpanded] = useState(true);
+	const [errorFeedback, setErrorFeedback] = useState(false);
+	const [lastErrorMessage, setLastErrorMessage] = useState("");
 
 	const currentStep = guide.steps ? guide.steps[currentStepIndex] : null;
 	const progress = guide.steps
@@ -57,6 +60,12 @@ export default function InteractiveGuideModal({
 		console.log("Mapping d'objets:", guide.objectMapping);
 	}, [guide, currentStep, currentStepIndex]);
 
+	// Réinitialiser l'état d'erreur lorsqu'on change d'étape
+	useEffect(() => {
+		setErrorFeedback(false);
+		setLastErrorMessage("");
+	}, [currentStepIndex]);
+
 	// Fonction pour valider l'étape actuelle
 	const validateCurrentStep = useCallback(() => {
 		if (!currentStep) return;
@@ -64,6 +73,10 @@ export default function InteractiveGuideModal({
 		if (!completedSteps.includes(currentStep.id)) {
 			const newCompletedSteps = [...completedSteps, currentStep.id];
 			setCompletedSteps(newCompletedSteps);
+
+			// Réinitialiser l'état d'erreur
+			setErrorFeedback(false);
+			setLastErrorMessage("");
 
 			// Si ce n'est pas la dernière étape, passer à la suivante
 			if (currentStepIndex < guide.steps.length - 1) {
@@ -139,6 +152,18 @@ export default function InteractiveGuideModal({
 					validateCurrentStep();
 				} else {
 					console.log("❌ Validation d'étape: Non correspondante");
+					// Afficher un feedback d'erreur
+					setErrorFeedback(true);
+					setLastErrorMessage(
+						`Vous avez cliqué sur "${buttonName}" au lieu de "${
+							stepValidation || "l'élément demandé"
+						}"`
+					);
+
+					// Réinitialiser l'erreur après 3 secondes
+					setTimeout(() => {
+						setErrorFeedback(false);
+					}, 10000);
 				}
 			}
 		};
@@ -222,6 +247,17 @@ export default function InteractiveGuideModal({
 			// Simuler la validation de l'étape courante
 			validateCurrentStep();
 		}
+	};
+
+	// Simuler une erreur pour tester
+	const simulateError = () => {
+		setErrorFeedback(true);
+		setLastErrorMessage("Vous avez cliqué sur le mauvais bouton");
+
+		// Réinitialiser l'erreur après 3 secondes
+		setTimeout(() => {
+			setErrorFeedback(false);
+		}, 3000);
 	};
 
 	const toggleMinimize = () => {
@@ -415,11 +451,37 @@ export default function InteractiveGuideModal({
 						</span>
 					</div>
 
-					<div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg mb-4">
-						<p className="text-gray-800 dark:text-gray-200">
-							{currentStep?.instruction ||
-								"Suivez les instructions indiquées dans l'environnement 3D."}
-						</p>
+					{/* Message d'instruction avec feedback d'erreur */}
+					<div
+						className={`p-4 rounded-lg mb-4 transition-all duration-300 ${
+							errorFeedback
+								? "bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500"
+								: "bg-gray-50 dark:bg-gray-700"
+						}`}
+					>
+						{errorFeedback ? (
+							<div className="flex items-start">
+								<XCircle className="w-5 h-5 mr-2 text-red-500 flex-shrink-0 mt-0.5" />
+								<div>
+									<p className="text-red-700 dark:text-red-300 font-medium mb-2">
+										Action incorrecte
+									</p>
+									<p className="text-gray-800 dark:text-gray-200">
+										{lastErrorMessage ||
+											"Veuillez essayer à nouveau."}
+									</p>
+									<p className="text-gray-700 dark:text-gray-300 mt-2">
+										{currentStep?.instruction ||
+											"Suivez les instructions indiquées."}
+									</p>
+								</div>
+							</div>
+						) : (
+							<p className="text-gray-800 dark:text-gray-200">
+								{currentStep?.instruction ||
+									"Suivez les instructions indiquées dans l'environnement 3D."}
+							</p>
+						)}
 					</div>
 
 					{/* Astuce/Indice */}
@@ -561,11 +623,15 @@ export default function InteractiveGuideModal({
 					Annuler
 				</Button>
 
-				{/* Ce bouton est uniquement pour le développement/test */}
-				{/* <Button variant="default" onClick={simulateValidation}>
-					Simuler l'action
-					<ArrowRight className="ml-2 h-4 w-4" />
-				</Button> */}
+				{/* Boutons de test - à commenter en production */}
+				{/* <div className="flex space-x-2">
+					<Button variant="outline" onClick={simulateError}>
+						Simuler erreur
+					</Button>
+					<Button variant="default" onClick={simulateValidation}>
+						Simuler validation
+					</Button>
+				</div> */}
 			</div>
 		</div>
 	);
