@@ -119,15 +119,35 @@ export async function POST(request) {
 
 		if (!userTraining) {
 			// Si l'entraînement n'existe pas encore pour cet utilisateur, le créer
-			userTraining = await prisma.userCourse.create({
-				data: {
-					userId: user.id,
-					courseId: course.id,
-					progress: progress,
-					startedAt: new Date(),
-					lastAccessed: new Date(),
-				},
-			});
+			try {
+				userTraining = await prisma.userCourse.create({
+					data: {
+						userId: user.id,
+						courseId: course.id,
+						progress: progress || 0,
+						startedAt: new Date(),
+						lastAccessed: new Date(),
+					},
+				});
+			} catch (error) {
+				// Si une erreur de contrainte unique se produit, récupérer l'enregistrement existant
+				if (error.code === "P2002") {
+					console.log(
+						"Enregistrement UserCourse déjà existant, récupération..."
+					);
+					userTraining = await prisma.userCourse.findFirst({
+						where: {
+							userId: user.id,
+							courseId: course.id,
+						},
+						include: {
+							userModules: true,
+						},
+					});
+				} else {
+					throw error; // Si c'est une autre erreur, la propager
+				}
+			}
 		} else {
 			// Calculer le nombre total de modules du cours
 			let totalModules = 3; // Valeur par défaut

@@ -466,7 +466,7 @@ export default function CourseDetail({ params }) {
 					/>
 				</TabsContent>
 
-				<TabsContent value="training">
+				<TabsContent value="training" disableFocusStyles={true}>
 					<CourseTrainingTab
 						unityBuildRef={unityBuildRef}
 						courseId={courseId}

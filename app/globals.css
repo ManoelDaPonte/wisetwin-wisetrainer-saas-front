@@ -252,3 +252,20 @@
 		@apply bg-background text-foreground;
 	}
 }
+
+[role="tabpanel"] {
+	outline: none !important;
+	box-shadow: none !important;
+	border-color: transparent !important;
+}
+
+[role="tabpanel"]:focus,
+[role="tabpanel"]:focus-visible {
+	outline: none !important;
+	box-shadow: none !important;
+	border-color: transparent !important;
+	ring-width: 0 !important;
+	--ring-offset-width: 0 !important;
+	--ring-offset-shadow: none !important;
+	--ring-shadow: none !important;
+}
