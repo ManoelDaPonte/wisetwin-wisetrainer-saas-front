@@ -1,5 +1,4 @@
-//app/api/db/wisetrainer/update-progress/route.jsx
-
+// app/api/db/wisetrainer/update-progress/route.jsx
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 import fs from "fs";
@@ -48,22 +47,15 @@ export async function POST(request) {
 			},
 		});
 
-		// Si l'utilisateur n'existe pas, le créer
+		// Si l'utilisateur n'existe pas, retourner une erreur
 		if (!user) {
-			console.log(
-				`Utilisateur avec container ${userId} non trouvé, création d'un utilisateur temporaire`
-			);
-
-			user = await prisma.user.create({
-				data: {
-					auth0Id: `temp-${userId}`,
-					email: `temp-${userId}@example.com`,
-					name: "Utilisateur Temporaire",
-					azureContainer: userId,
+			return NextResponse.json(
+				{
+					error: "Utilisateur non trouvé. Veuillez vous connecter pour enregistrer votre progression.",
+					requireAuth: true,
 				},
-			});
-
-			console.log(`Utilisateur temporaire créé avec ID: ${user.id}`);
+				{ status: 401 }
+			);
 		}
 
 		// Vérifier si le cours existe

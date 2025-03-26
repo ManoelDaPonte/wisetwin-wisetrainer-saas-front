@@ -486,6 +486,7 @@ export default function CourseDetail({ params }) {
 					scenario={currentScenario}
 					onComplete={handleScenarioComplete}
 					onClose={() => setShowQuestionnaire(false)}
+					trainingId={courseId} // Ajouter cette prop
 				/>
 			)}
 

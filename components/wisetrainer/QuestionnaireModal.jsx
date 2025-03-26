@@ -5,8 +5,13 @@ import { CheckCircle2, XCircle, Minimize2, Maximize2 } from "lucide-react";
 import Image from "next/image";
 import axios from "axios";
 import WISETRAINER_CONFIG from "@/lib/config/wisetrainer/wisetrainer";
-
-export default function QuestionnaireModal({ scenario, onComplete, onClose }) {
+import { useAzureContainer } from "@/lib/hooks/useAzureContainer";
+export default function QuestionnaireModal({
+	scenario,
+	onComplete,
+	onClose,
+	trainingId,
+}) {
 	const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
 	const [selectedAnswers, setSelectedAnswers] = useState({});
 	const [showResults, setShowResults] = useState(false);
@@ -16,6 +21,7 @@ export default function QuestionnaireModal({ scenario, onComplete, onClose }) {
 	const questions = scenario.questions;
 	const currentQuestion = questions[currentQuestionIndex];
 	const placeholderImage = "/images/png/placeholder.png";
+	const { containerName } = useAzureContainer();
 
 	useEffect(() => {
 		console.log("Scénario reçu:", scenario);
@@ -69,9 +75,10 @@ export default function QuestionnaireModal({ scenario, onComplete, onClose }) {
 			const response = await axios.post(
 				WISETRAINER_CONFIG.API_ROUTES.SAVE_QUESTIONNAIRE,
 				{
-					userId: "temp-user", // À remplacer par l'ID réel si disponible
+					userId: containerName, // Ici on utilise containerName
 					questionnaireId: scenario.id,
 					responses,
+					trainingId, // Cette variable n'est pas définie dans ton code affiché
 				}
 			);
 

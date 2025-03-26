@@ -48,6 +48,21 @@ export function useAzureContainer() {
 					}
 				}
 
+				// Initialiser l'utilisateur dans la base de données
+				if (user) {
+					try {
+						await axios.post("/api/auth/initialize-user", {
+							containerName: generatedContainerName,
+						});
+					} catch (initError) {
+						console.error(
+							"Erreur d'initialisation de l'utilisateur:",
+							initError
+						);
+						// Ne pas bloquer si cela échoue
+					}
+				}
+
 				setIsLoading(false);
 			} catch (err) {
 				console.error(

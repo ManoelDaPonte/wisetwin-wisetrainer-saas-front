@@ -1,3 +1,4 @@
+// app/api/db/wisetrainer/user-trainings/[userId]/route.jsx
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 
@@ -15,23 +16,14 @@ export async function GET(request, { params }) {
 			},
 		});
 
-		// Si l'utilisateur n'existe pas, créer un nouvel utilisateur
+		// Si l'utilisateur n'existe pas, retourner un tableau vide plutôt que de créer un utilisateur temporaire
 		if (!user) {
 			console.log(
-				`Utilisateur avec container ${userId} non trouvé, création d'un utilisateur temporaire`
+				`Utilisateur avec container ${userId} non trouvé, retour d'un tableau vide`
 			);
-
-			// Créer un utilisateur temporaire avec des informations minimales
-			user = await prisma.user.create({
-				data: {
-					auth0Id: `temp-${userId}`, // ID temporaire
-					email: `temp-${userId}@example.com`, // Email temporaire
-					name: "Utilisateur Temporaire",
-					azureContainer: userId,
-				},
+			return NextResponse.json({
+				trainings: [],
 			});
-
-			console.log(`Utilisateur temporaire créé avec ID: ${user.id}`);
 		}
 
 		// Récupérer tous les entraînements de l'utilisateur
@@ -68,7 +60,6 @@ export async function GET(request, { params }) {
 			})),
 		}));
 
-		// Si aucun entraînement trouvé, retourner un tableau vide
 		return NextResponse.json({
 			trainings: trainings.length > 0 ? trainings : [],
 		});
