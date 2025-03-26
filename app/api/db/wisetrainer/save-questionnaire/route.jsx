@@ -1,5 +1,4 @@
-//app/api/db/wisetrainer/save-questionnaire/route.jsx
-
+// app/api/db/wisetrainer/save-questionnaire/route.jsx
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 import fs from "fs";
@@ -43,8 +42,6 @@ export async function POST(request) {
 		};
 
 		// Déterminer le cours auquel appartient ce module
-		// Si trainingId est fourni, l'utiliser
-		// Sinon, chercher dans tous les fichiers disponibles
 		let foundModule = null;
 		let courseConfig = null;
 		let courseId = trainingId;
@@ -88,29 +85,21 @@ export async function POST(request) {
 			);
 		}
 
-		// Récupérer ou créer l'utilisateur
+		// Récupérer l'utilisateur, mais ne pas en créer un nouveau s'il n'existe pas
 		let user = await prisma.user.findFirst({
 			where: {
 				azureContainer: userId,
 			},
 		});
 
-		// Si l'utilisateur n'existe pas, le créer
+		// Si l'utilisateur n'existe pas, retourner une erreur
 		if (!user) {
-			console.log(
-				`Utilisateur avec container ${userId} non trouvé, création d'un utilisateur temporaire`
-			);
-
-			user = await prisma.user.create({
-				data: {
-					auth0Id: `temp-${userId}`,
-					email: `temp-${userId}@example.com`,
-					name: "Utilisateur Temporaire",
-					azureContainer: userId,
+			return NextResponse.json(
+				{
+					error: "Utilisateur non trouvé. Veuillez vous connecter à votre compte.",
 				},
-			});
-
-			console.log(`Utilisateur temporaire créé avec ID: ${user.id}`);
+				{ status: 404 }
+			);
 		}
 
 		// Vérifier les réponses et calculer le score
