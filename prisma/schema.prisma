@@ -11,35 +11,37 @@ generator client {
 
 // Modèle utilisateur
 model User {
-    id               String            @id @default(uuid())
-    auth0Id          String            @unique // Identifiant Auth0 de l'utilisateur
-    email            String            @unique
+    id               String               @id @default(uuid())
+    auth0Id          String               @unique // Identifiant Auth0 de l'utilisateur
+    email            String               @unique
     name             String?
     azureContainer   String? // Nom du container Azure de l'utilisateur
-    createdAt        DateTime          @default(now())
-    updatedAt        DateTime          @updatedAt
+    createdAt        DateTime             @default(now())
+    updatedAt        DateTime             @updatedAt
     userCourses      UserCourse[] // Relation avec les cours suivis
     userResponses    UserResponse[] // Réponses aux questionnaires
     userAchievements UserAchievement[] // Accomplissements débloqués
     userStats        UserStats? // Statistiques de l'utilisateur
     UserSession      UserSession[]
+    organizations    OrganizationMember[]
 }
 
 // Modèle de cours de formation
 model Course {
-    id           String        @id @default(uuid())
-    courseId     String        @unique // Identifiant externe (ex: "wisetrainer-template")
-    name         String // Nom du cours
-    description  String // Description du cours
-    imageUrl     String? // URL de l'image du cours
-    category     String // Catégorie (ex: "Sécurité")
-    difficulty   String // Niveau de difficulté (ex: "Intermédiaire")
-    duration     String // Durée estimée (ex: "30 min")
-    createdAt    DateTime      @default(now())
-    updatedAt    DateTime      @updatedAt
-    modules      Module[] // Modules du cours
-    userCourses  UserCourse[] // Utilisateurs inscrits à ce cours
-    userSessions UserSession[] // Sessions des utilisateurs liées à ce cours
+    id                   String                 @id @default(uuid())
+    courseId             String                 @unique // Identifiant externe (ex: "wisetrainer-template")
+    name                 String // Nom du cours
+    description          String // Description du cours
+    imageUrl             String? // URL de l'image du cours
+    category             String // Catégorie (ex: "Sécurité")
+    difficulty           String // Niveau de difficulté (ex: "Intermédiaire")
+    duration             String // Durée estimée (ex: "30 min")
+    createdAt            DateTime               @default(now())
+    updatedAt            DateTime               @updatedAt
+    modules              Module[] // Modules du cours
+    userCourses          UserCourse[] // Utilisateurs inscrits à ce cours
+    userSessions         UserSession[] // Sessions des utilisateurs liées à ce cours
+    OrganizationTraining OrganizationTraining[]
 }
 
 // Modèle de module (partie d'un cours)
@@ -207,4 +209,44 @@ model UserSession {
     modulesViewed String? // Liste des modules vus durant la session (JSON)
     createdAt     DateTime  @default(now())
     updatedAt     DateTime  @updatedAt
+}
+
+model Organization {
+    id          String   @id @default(uuid())
+    name        String
+    description String?
+    logoUrl     String?
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
+
+    // Relations
+    members   OrganizationMember[]
+    trainings OrganizationTraining[]
+}
+
+// Modèle pour gérer les membres d'une organisation
+model OrganizationMember {
+    id             String       @id @default(uuid())
+    organizationId String
+    organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+    userId         String
+    user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+    role           String // "OWNER", "ADMIN", "MEMBER"
+    joinedAt       DateTime     @default(now())
+    updatedAt      DateTime     @updatedAt
+
+    @@unique([organizationId, userId])
+}
+
+// Modèle pour gérer les formations associées à une organisation
+model OrganizationTraining {
+    id             String       @id @default(uuid())
+    organizationId String
+    organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+    courseId       String
+    course         Course       @relation(fields: [courseId], references: [id], onDelete: Cascade)
+    assignedAt     DateTime     @default(now())
+    updatedAt      DateTime     @updatedAt
+
+    @@unique([organizationId, courseId])
 }
