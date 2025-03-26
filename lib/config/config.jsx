@@ -91,10 +91,10 @@ export const navigationItems = {
 		// 	external: true,
 		// },
 		{
-			id: "collaborate",
+			id: "organization",
 			label: "Collaborate",
 			icon: Users,
-			disabled: true,
+			disabled: false,
 		},
 	],
 };
