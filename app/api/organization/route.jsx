@@ -5,6 +5,36 @@ import { getSession } from "@auth0/nextjs-auth0";
 
 const prisma = new PrismaClient();
 
+// Fonction pour créer un container Azure
+async function createAzureContainer(containerName) {
+	try {
+		// Connexion au service Azure Blob Storage
+		const blobServiceClient = BlobServiceClient.fromConnectionString(
+			process.env.AZURE_STORAGE_CONNECTION_STRING
+		);
+
+		// Récupération du client du container
+		const containerClient =
+			blobServiceClient.getContainerClient(containerName);
+
+		// Créer le container s'il n'existe pas
+		const createContainerResponse = await containerClient.createIfNotExists(
+			{
+				access: "blob", // Accès en lecture publique pour les blobs
+			}
+		);
+
+		return {
+			success: true,
+			created: createContainerResponse.succeeded,
+			containerName,
+		};
+	} catch (error) {
+		console.error("Erreur lors de la création du container:", error);
+		throw error;
+	}
+}
+
 // GET pour récupérer toutes les organisations d'un utilisateur
 export async function GET(request) {
 	try {
@@ -118,12 +148,29 @@ export async function POST(request) {
 			);
 		}
 
-		// Créer l'organisation
+		// Générer un nom de container unique pour l'organisation
+		// Utiliser un préfixe 'org-' suivi d'un timestamp et d'un ID aléatoire
+		const timestamp = Date.now();
+		const randomId = Math.random().toString(36).substring(2, 10);
+		const containerName = `org-${timestamp}-${randomId}`;
+
+		// Créer le container Azure
+		const containerResult = await createAzureContainer(containerName);
+
+		if (!containerResult.success) {
+			return NextResponse.json(
+				{ error: "Échec de la création du container Azure" },
+				{ status: 500 }
+			);
+		}
+
+		// Créer l'organisation avec le nom du container Azure
 		const organization = await prisma.organization.create({
 			data: {
 				name,
 				description,
 				logoUrl,
+				azureContainer: containerName,
 			},
 		});
 
@@ -138,7 +185,10 @@ export async function POST(request) {
 
 		return NextResponse.json({
 			success: true,
-			organization,
+			organization: {
+				...organization,
+				azureContainer: containerName,
+			},
 		});
 	} catch (error) {
 		console.error("Erreur lors de la création de l'organisation:", error);
