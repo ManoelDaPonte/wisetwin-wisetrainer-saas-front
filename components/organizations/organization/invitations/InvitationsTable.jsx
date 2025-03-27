@@ -47,25 +47,37 @@ export default function InvitationsTable({
 		switch (status) {
 			case "PENDING":
 				return (
-					<Badge className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-200">
+					<Badge
+						variant="noHover"
+						className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-200"
+					>
 						En attente
 					</Badge>
 				);
 			case "ACCEPTED":
 				return (
-					<Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-200">
+					<Badge
+						variant="noHover"
+						className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-200"
+					>
 						Acceptée
 					</Badge>
 				);
 			case "REJECTED":
 				return (
-					<Badge className="bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-200">
+					<Badge
+						variant="noHover"
+						className="bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-200"
+					>
 						Refusée
 					</Badge>
 				);
 			case "EXPIRED":
 				return (
-					<Badge className="bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-200">
+					<Badge
+						variant="noHover"
+						className="bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-200"
+					>
 						Expirée
 					</Badge>
 				);

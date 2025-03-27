@@ -121,15 +121,55 @@ export async function POST(request, { params }) {
 				where: {
 					email: email,
 					organizationId: organizationId,
-					status: "PENDING",
 				},
 			});
 
 		if (existingInvitation) {
-			return NextResponse.json(
-				{ error: "Une invitation est déjà en attente pour cet email" },
-				{ status: 400 }
+			// Si l'invitation est toujours en attente, informer l'utilisateur
+			if (existingInvitation.status === "PENDING") {
+				return NextResponse.json(
+					{
+						error: "Une invitation est déjà en attente pour cet email",
+					},
+					{ status: 400 }
+				);
+			}
+
+			// Si l'invitation a un statut autre que PENDING (comme ACCEPTED, REJECTED, EXPIRED),
+			// mettre à jour l'invitation existante plutôt que d'en créer une nouvelle
+			const expirationDate = new Date();
+			expirationDate.setDate(expirationDate.getDate() + 7);
+
+			const updatedInvitation =
+				await prisma.organizationInvitation.update({
+					where: {
+						id: existingInvitation.id,
+					},
+					data: {
+						status: "PENDING", // Remettre le statut à PENDING
+						invitedBy: currentUser.id,
+						expiresAt: expirationDate,
+					},
+				});
+
+			// Envoyer un nouvel email d'invitation
+			await sendInvitationEmail(
+				email,
+				organization.name,
+				existingInvitation.inviteCode
 			);
+
+			return NextResponse.json({
+				success: true,
+				message: `Invitation renvoyée à ${email}`,
+				invitation: {
+					id: updatedInvitation.id,
+					email: updatedInvitation.email,
+					role: updatedInvitation.role,
+					status: updatedInvitation.status,
+					expiresAt: updatedInvitation.expiresAt,
+				},
+			});
 		}
 
 		// Créer l'invitation
