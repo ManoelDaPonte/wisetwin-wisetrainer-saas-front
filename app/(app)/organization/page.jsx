@@ -13,8 +13,8 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
-import OrganizationsTable from "@/components/organization/OrganizationsTable";
-import CreateOrganizationModal from "@/components/organization/CreateOrganizationModal";
+import OrganizationsTable from "@/components/organizations/OrganizationsTable";
+import CreateOrganizationModal from "@/components/organizations/CreateOrganizationModal";
 import { useToast } from "@/lib/hooks/useToast";
 
 export default function OrganizationPage() {
