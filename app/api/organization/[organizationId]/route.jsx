@@ -202,3 +202,83 @@ export async function DELETE(request, { params }) {
 		);
 	}
 }
+
+export async function PATCH(request, { params }) {
+	try {
+		const session = await getSession();
+		const resolvedParams = await params;
+		const { organizationId } = resolvedParams;
+		const { name, description, logoUrl } = await request.json();
+
+		// Vérifier si l'utilisateur est authentifié
+		if (!session || !session.user) {
+			return NextResponse.json(
+				{ error: "Non autorisé" },
+				{ status: 401 }
+			);
+		}
+
+		// Récupérer l'utilisateur depuis la base de données
+		const user = await prisma.user.findUnique({
+			where: {
+				auth0Id: session.user.sub,
+			},
+		});
+
+		if (!user) {
+			return NextResponse.json(
+				{ error: "Utilisateur non trouvé" },
+				{ status: 404 }
+			);
+		}
+
+		// Vérifier que l'utilisateur est admin ou propriétaire de l'organisation
+		const membership = await prisma.organizationMember.findFirst({
+			where: {
+				organizationId: organizationId,
+				userId: user.id,
+				role: {
+					in: ["OWNER", "ADMIN"],
+				},
+			},
+		});
+
+		if (!membership) {
+			return NextResponse.json(
+				{
+					error: "Vous n'avez pas les droits pour modifier cette organisation",
+				},
+				{ status: 403 }
+			);
+		}
+
+		// Mettre à jour l'organisation
+		const updatedOrganization = await prisma.organization.update({
+			where: {
+				id: organizationId,
+			},
+			data: {
+				name: name,
+				description: description,
+				logoUrl: logoUrl,
+			},
+		});
+
+		return NextResponse.json({
+			success: true,
+			organization: updatedOrganization,
+		});
+	} catch (error) {
+		console.error(
+			"Erreur lors de la mise à jour de l'organisation:",
+			error
+		);
+		return NextResponse.json(
+			{
+				error: "Échec de la mise à jour de l'organisation",
+				details: error.message,
+			},
+			{ status: 500 }
+		);
+	}
+}

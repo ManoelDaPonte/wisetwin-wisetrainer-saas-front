@@ -2,6 +2,7 @@
 import {
 	Home,
 	LayoutDashboard,
+	ChartNoAxesCombined,
 	Box,
 	GraduationCap,
 	FolderKanban,
@@ -45,23 +46,23 @@ export const HomePageCards = [
 
 export const navigationItems = {
 	topItems: [
-		{ id: "", label: "Get Started", icon: Home },
+		{ id: "", label: "Premier Pas", icon: Home },
 		{
 			id: "overview",
-			label: "Overview",
-			icon: LayoutDashboard,
+			label: "Statistiques",
+			icon: ChartNoAxesCombined,
 		},
 	],
 	coreItems: [
 		{
 			id: "digital-twin",
-			label: "Digital Twin",
+			label: "Wise Twin",
 			icon: Box,
 			disabled: true,
 		},
 		{
 			id: "wisetrainer",
-			label: "WiseTrainer™",
+			label: "Wise Trainer",
 			icon: GraduationCap,
 		},
 	],
@@ -92,7 +93,7 @@ export const navigationItems = {
 		// },
 		{
 			id: "organization",
-			label: "Collaborate",
+			label: "Organisation",
 			icon: Users,
 			disabled: false,
 		},
