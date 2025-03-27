@@ -1,5 +1,4 @@
 // components/wisetrainer/courses/CourseCard.jsx
-
 import React from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
@@ -14,7 +13,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { Clock, BookOpen, Calendar } from "lucide-react";
+import { Clock, BookOpen, Calendar, Building, Sparkles } from "lucide-react";
 import WISETRAINER_CONFIG from "@/lib/config/wisetrainer/wisetrainer";
 
 const CourseCard = ({ course, onSelect, onUnenroll, itemVariants }) => {
@@ -32,6 +31,10 @@ const CourseCard = ({ course, onSelect, onUnenroll, itemVariants }) => {
 	const handleCardClick = () => {
 		onSelect(course);
 	};
+
+	// Déterminer la source de la formation (WiseTwin par défaut ou organisation)
+	const source = course.source || { type: "wisetwin", name: "WiseTwin" };
+	const isOrganizationCourse = source.type === "organization";
 
 	return (
 		<motion.div variants={itemVariants}>
@@ -62,6 +65,30 @@ const CourseCard = ({ course, onSelect, onUnenroll, itemVariants }) => {
 							{course.difficulty || "Intermédiaire"}
 						</Badge>
 					</div>
+
+					{/* Badge de provenance sur l'image */}
+					<div className="absolute top-3 left-3">
+						<Badge
+							className={
+								isOrganizationCourse
+									? "bg-gray-700 text-white"
+									: "bg-wisetwin-blue text-white"
+							}
+						>
+							{isOrganizationCourse ? (
+								<>
+									<Building className="w-3 h-3 mr-1" />
+									{source.name}
+								</>
+							) : (
+								<>
+									<Sparkles className="w-3 h-3 mr-1" />
+									WiseTwin
+								</>
+							)}
+						</Badge>
+					</div>
+
 					<div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-4">
 						<Badge
 							className={
@@ -90,7 +117,7 @@ const CourseCard = ({ course, onSelect, onUnenroll, itemVariants }) => {
 				</CardHeader>
 
 				<CardContent className="flex-grow">
-					<p className="text-gray-600 dark:text-gray-300 mb-4 line-clamp-2">
+					<p className="text-sm text-gray-600 dark:text-gray-300 mb-4 line-clamp-2">
 						{course.description}
 					</p>
 
@@ -114,14 +141,6 @@ const CourseCard = ({ course, onSelect, onUnenroll, itemVariants }) => {
 								{course.totalModules || 3})
 							</h4>
 							<ul className="space-y-1">
-								{/* Ajoutons un log pour vérifier les modules */}
-								{console.log(
-									"CourseCard - modules pour",
-									course.id,
-									":",
-									course.modules
-								)}
-
 								{course.modules?.slice(0, 3).map((module) => (
 									<li
 										key={module.id}

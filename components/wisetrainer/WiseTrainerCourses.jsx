@@ -80,7 +80,8 @@ export default function WiseTrainerCourses() {
 			// Transformation des noms de fichiers en objets de formation
 			const builds = processBuildNames(
 				buildsResponse.data.blobs || [],
-				WISETRAINER_CONFIG
+				WISETRAINER_CONFIG,
+				"wisetwin" // Spécifier explicitement la source comme WiseTwin
 			);
 			setAvailableCourses(builds);
 
@@ -137,6 +138,31 @@ export default function WiseTrainerCourses() {
 						// Assurons-nous que modules contient les informations correctes
 						const moduleData = progressData?.modules || [];
 
+						// Déterminer la source (WiseTwin ou organisation)
+						// Par défaut, les formations sont considérées comme venant de WiseTwin
+						let courseSource = {
+							type: "wisetwin",
+							name: "WiseTwin",
+						};
+
+						// Si le cours a un attribut d'organisation, l'utiliser comme source
+						if (build.organizationId || courseInfo.organizationId) {
+							// Chercher l'organisation correspondante
+							const orgId =
+								build.organizationId ||
+								courseInfo.organizationId;
+							const organization = userOrganizations.find(
+								(org) => org.id === orgId
+							);
+
+							if (organization) {
+								courseSource = {
+									type: "organization",
+									name: organization.name,
+								};
+							}
+						}
+
 						// Créons une structure de modules combinant les informations du cours et de progression
 						const combinedModules = courseInfo.modules
 							? courseInfo.modules.map((moduleTemplate) => {
@@ -179,6 +205,7 @@ export default function WiseTrainerCourses() {
 								combinedModules.length > 0
 									? combinedModules
 									: moduleData,
+							source: courseSource,
 						};
 					});
 
@@ -231,11 +258,34 @@ export default function WiseTrainerCourses() {
 			const response = await axios.get(
 				`/api/organization/${organizationId}/builds`
 			);
+
+			// Récupérer l'organisation sélectionnée
+			const selectedOrganization = userOrganizations.find(
+				(org) => org.id === organizationId
+			);
+
 			if (response.data.builds) {
 				console.log(
 					`${response.data.builds.length} formations trouvées dans l'organisation`
 				);
-				setOrganizationCourses(response.data.builds);
+
+				// Ajouter l'ID et le nom de l'organisation, ainsi que la source, à chaque formation
+				const organizationCourses = response.data.builds.map(
+					(build) => ({
+						...build,
+						organizationId: organizationId,
+						containerName: response.data.containerName, // Stocker également le nom du container
+						source: {
+							type: "organization",
+							organizationId: organizationId,
+							name: selectedOrganization
+								? selectedOrganization.name
+								: "Organisation",
+						},
+					})
+				);
+
+				setOrganizationCourses(organizationCourses);
 			} else {
 				console.log("Aucune formation trouvée dans l'organisation");
 				setOrganizationCourses([]);
@@ -316,8 +366,7 @@ export default function WiseTrainerCourses() {
 		setIsImporting(course.id);
 
 		try {
-			// Importer le cours depuis le container de l'organisation vers le container de l'utilisateur
-			// On pourrait créer une API dédiée, mais pour l'instant on utilise la même
+			// Récupérer l'organisation sélectionnée
 			const selectedOrg = userOrganizations.find(
 				(org) => org.id === selectedOrgId
 			);
@@ -326,9 +375,22 @@ export default function WiseTrainerCourses() {
 				throw new Error("Organisation non trouvée");
 			}
 
-			// Appeler l'API pour importer le cours depuis le container de l'organisation
+			// Utiliser l'API d'inscription standard, en ajoutant les métadonnées d'organisation
 			await axios.post(
-				`/api/organization/${selectedOrgId}/import-training/${containerName}/${course.id}`
+				`${WISETRAINER_CONFIG.API_ROUTES.IMPORT_BUILD}/${containerName}/${course.id}`,
+				{
+					// Ajouter les métadonnées d'organisation
+					metadata: {
+						source: {
+							type: "organization",
+							organizationId: selectedOrgId,
+							name: selectedOrg.name,
+						},
+					},
+					// Indiquer le container source (celui de l'organisation)
+					sourceContainer:
+						selectedOrg.azureContainer || course.containerName,
+				}
 			);
 
 			// Rafraîchir les données
@@ -465,16 +527,15 @@ export default function WiseTrainerCourses() {
 						selectedOrganizationId={selectedOrgId}
 						onSelectOrganization={handleSelectOrganization}
 						trainings={organizationCourses}
-						groups={[]} // À implémenter si nécessaire
 						isLoading={isLoadingOrg}
 						onCourseSelect={handleCourseSelect}
-						containerVariants={containerVariants}
-						itemVariants={itemVariants}
-						personalCourses={personalCourses}
-						isImporting={isImporting}
 						onEnroll={handleEnrollOrgCourse}
 						onToggleInfo={toggleCardFlip}
 						flippedCardId={flippedCardId}
+						personalCourses={personalCourses}
+						isImporting={isImporting}
+						containerVariants={containerVariants}
+						itemVariants={itemVariants}
 					/>
 				</TabsContent>
 			</Tabs>

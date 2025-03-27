@@ -8,6 +8,17 @@ export async function POST(request, { params }) {
 		const resolvedParams = await params;
 		const { userId, trainingId } = resolvedParams;
 
+		// Récupérer les données supplémentaires du corps de la requête
+		let requestData = { metadata: null, sourceContainer: null };
+		try {
+			requestData = await request.json();
+		} catch (e) {
+			// Pas de corps de requête, utiliser les valeurs par défaut
+			console.log(
+				"Pas de corps de requête, utilisation des valeurs par défaut"
+			);
+		}
+
 		if (!userId || !trainingId) {
 			return NextResponse.json(
 				{ error: "Les paramètres userId et trainingId sont requis" },
@@ -16,10 +27,11 @@ export async function POST(request, { params }) {
 		}
 
 		// Paramètres de configuration
-		const sourceContainer = WISETRAINER_CONFIG.CONTAINER_NAMES.SOURCE;
+		const sourceContainer =
+			requestData.sourceContainer ||
+			WISETRAINER_CONFIG.CONTAINER_NAMES.SOURCE;
 		const destContainer = userId;
 		const destPrefix = WISETRAINER_CONFIG.BLOB_PREFIXES.WISETRAINER;
-
 		console.log(
 			`Importation de ${trainingId} depuis ${sourceContainer} vers ${destContainer}/${destPrefix}`
 		);

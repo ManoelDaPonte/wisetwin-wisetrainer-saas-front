@@ -3,6 +3,7 @@ import React from "react";
 import { motion } from "framer-motion";
 import CatalogCourseCard from "@/components/wisetrainer/courses/CatalogCourseCard";
 import CoursesLoading from "@/components/wisetrainer/courses/CoursesLoading";
+
 const CatalogCoursesTab = ({
 	isLoading,
 	courses,
@@ -32,16 +33,23 @@ const CatalogCoursesTab = ({
 					variants={containerVariants}
 					initial="hidden"
 					animate="visible"
-					className="grid grid-cols-1 md:grid-cols-2 gap-8" // Augmenter l'espace entre les cartes
+					className="grid grid-cols-1 md:grid-cols-2 gap-8"
 				>
 					{courses.map((course) => (
 						<CatalogCourseCard
 							key={course.id}
-							course={course}
+							course={{
+								...course,
+								// Ajouter WiseTwin comme source
+								source: {
+									type: "wisetwin",
+									name: "WiseTwin",
+								},
+							}}
 							onEnroll={onEnroll}
 							onToggleInfo={onToggleInfo}
 							flippedCardId={flippedCardId}
-							isImporting={isImporting}
+							isImporting={isImporting === course.id}
 							isEnrolled={personalCourses.some(
 								(c) => c.id === course.id
 							)}
@@ -53,4 +61,5 @@ const CatalogCoursesTab = ({
 		</>
 	);
 };
+
 export default CatalogCoursesTab;
