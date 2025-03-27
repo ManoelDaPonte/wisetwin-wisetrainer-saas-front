@@ -9,7 +9,8 @@ const prisma = new PrismaClient();
 export async function GET(request, { params }) {
 	try {
 		const session = await getSession();
-		const { organizationId } = params;
+		const resolvedParams = await params;
+		const { organizationId } = resolvedParams;
 
 		// Vérifier si l'utilisateur est authentifié
 		if (!session || !session.user) {
@@ -110,6 +111,91 @@ export async function GET(request, { params }) {
 		return NextResponse.json(
 			{
 				error: "Échec de la récupération de l'organisation",
+				details: error.message,
+			},
+			{ status: 500 }
+		);
+	}
+}
+
+// DELETE pour supprimer une organisation
+export async function DELETE(request, { params }) {
+	try {
+		const session = await getSession();
+		const resolvedParams = await params;
+		const { organizationId } = resolvedParams;
+
+		// Vérifier si l'utilisateur est authentifié
+		if (!session || !session.user) {
+			return NextResponse.json(
+				{ error: "Non autorisé" },
+				{ status: 401 }
+			);
+		}
+
+		// Récupérer l'utilisateur depuis la base de données
+		const user = await prisma.user.findUnique({
+			where: {
+				auth0Id: session.user.sub,
+			},
+		});
+
+		if (!user) {
+			return NextResponse.json(
+				{ error: "Utilisateur non trouvé" },
+				{ status: 404 }
+			);
+		}
+
+		// Vérifier que l'utilisateur est propriétaire de l'organisation
+		const membership = await prisma.organizationMember.findFirst({
+			where: {
+				organizationId: organizationId,
+				userId: user.id,
+				role: "OWNER",
+			},
+		});
+
+		if (!membership) {
+			return NextResponse.json(
+				{ error: "Seul le propriétaire peut supprimer l'organisation" },
+				{ status: 403 }
+			);
+		}
+
+		// Récupérer l'organisation pour vérifier qu'elle existe
+		const organization = await prisma.organization.findUnique({
+			where: {
+				id: organizationId,
+			},
+		});
+
+		if (!organization) {
+			return NextResponse.json(
+				{ error: "Organisation non trouvée" },
+				{ status: 404 }
+			);
+		}
+
+		// Supprimer l'organisation (les relations seront supprimées automatiquement grâce à onDelete: Cascade)
+		await prisma.organization.delete({
+			where: {
+				id: organizationId,
+			},
+		});
+
+		return NextResponse.json({
+			success: true,
+			message: "L'organisation a été supprimée avec succès",
+		});
+	} catch (error) {
+		console.error(
+			"Erreur lors de la suppression de l'organisation:",
+			error
+		);
+		return NextResponse.json(
+			{
+				error: "Échec de la suppression de l'organisation",
 				details: error.message,
 			},
 			{ status: 500 }

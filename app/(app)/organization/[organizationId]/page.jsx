@@ -1,7 +1,7 @@
 // app/(app)/organization/[organizationId]/page.jsx
 "use client";
 import React, { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import axios from "axios";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -13,17 +13,27 @@ import {
 	CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, UserPlus, Settings, Users, PlusCircle } from "lucide-react";
+import {
+	ArrowLeft,
+	UserPlus,
+	Settings,
+	Users,
+	PlusCircle,
+	Mail,
+} from "lucide-react";
 import Image from "next/image";
 import { useToast } from "@/lib/hooks/useToast";
 import MembersTable from "@/components/organization/MembersTable";
 import AddMemberModal from "@/components/organization/AddMemberModal";
 import OrganizationSettingsForm from "@/components/organization/OrganizationSettingsForm";
+import InvitationsTable from "@/components/organization/InvitationsTable";
 
-export default function OrganizationManagementPage({ params }) {
+export default function OrganizationManagementPage() {
 	const router = useRouter();
+	const params = useParams();
 	const { toast } = useToast();
 	const [organization, setOrganization] = useState(null);
+	const [invitations, setInvitations] = useState([]);
 	const [isLoading, setIsLoading] = useState(true);
 	const [activeTab, setActiveTab] = useState("members");
 	const [showAddMemberModal, setShowAddMemberModal] = useState(false);
@@ -44,6 +54,7 @@ export default function OrganizationManagementPage({ params }) {
 
 			if (response.data.organization) {
 				setOrganization(response.data.organization);
+				await fetchInvitations(); // Charger les invitations
 			} else {
 				toast({
 					title: "Erreur",
@@ -69,6 +80,24 @@ export default function OrganizationManagementPage({ params }) {
 		}
 	};
 
+	const fetchInvitations = async () => {
+		try {
+			const response = await axios.get(
+				`/api/organization/${organizationId}/invitations`
+			);
+			if (response.data.invitations) {
+				setInvitations(response.data.invitations);
+			}
+		} catch (error) {
+			console.error("Erreur lors du chargement des invitations:", error);
+			toast({
+				title: "Erreur",
+				description: "Impossible de charger les invitations",
+				variant: "destructive",
+			});
+		}
+	};
+
 	const handleBack = () => {
 		router.push("/organization");
 	};
@@ -76,7 +105,7 @@ export default function OrganizationManagementPage({ params }) {
 	const handleAddMember = async (memberData) => {
 		try {
 			const response = await axios.post(
-				`/api/organization/${organizationId}/members`,
+				`/api/organization/${organizationId}/invite`,
 				{
 					email: memberData.email,
 					role: memberData.role,
@@ -85,25 +114,25 @@ export default function OrganizationManagementPage({ params }) {
 
 			if (response.data.success) {
 				toast({
-					title: "Membre ajouté",
+					title: "Invitation envoyée",
 					description: `Invitation envoyée à ${memberData.email}`,
 					variant: "success",
 				});
 
 				setShowAddMemberModal(false);
-				await fetchOrganizationDetails(); // Rafraîchir les données
+				await fetchInvitations(); // Rafraîchir les invitations
 			} else {
 				throw new Error(
-					response.data.error || "Échec de l'ajout du membre"
+					response.data.error || "Échec de l'envoi de l'invitation"
 				);
 			}
 		} catch (error) {
-			console.error("Erreur lors de l'ajout du membre:", error);
+			console.error("Erreur lors de l'envoi de l'invitation:", error);
 			toast({
 				title: "Erreur",
 				description:
 					error.response?.data?.error ||
-					"Impossible d'ajouter le membre",
+					"Impossible d'envoyer l'invitation",
 				variant: "destructive",
 			});
 		}
@@ -169,6 +198,72 @@ export default function OrganizationManagementPage({ params }) {
 				description:
 					error.response?.data?.error ||
 					"Impossible de retirer le membre",
+				variant: "destructive",
+			});
+		}
+	};
+
+	const handleCancelInvitation = async (invitationId) => {
+		try {
+			const response = await axios.delete(
+				`/api/organization/${organizationId}/invitations/${invitationId}`
+			);
+
+			if (response.data.success) {
+				toast({
+					title: "Invitation annulée",
+					description: "L'invitation a été annulée avec succès",
+					variant: "success",
+				});
+
+				await fetchInvitations(); // Rafraîchir les invitations
+			} else {
+				throw new Error(
+					response.data.error ||
+						"Échec de l'annulation de l'invitation"
+				);
+			}
+		} catch (error) {
+			console.error(
+				"Erreur lors de l'annulation de l'invitation:",
+				error
+			);
+			toast({
+				title: "Erreur",
+				description:
+					error.response?.data?.error ||
+					"Impossible d'annuler l'invitation",
+				variant: "destructive",
+			});
+		}
+	};
+
+	const handleResendInvitation = async (invitationId) => {
+		try {
+			const response = await axios.post(
+				`/api/organization/${organizationId}/invitations/${invitationId}/resend`
+			);
+
+			if (response.data.success) {
+				toast({
+					title: "Invitation renvoyée",
+					description: "L'invitation a été renvoyée avec succès",
+					variant: "success",
+				});
+
+				await fetchInvitations(); // Rafraîchir les invitations
+			} else {
+				throw new Error(
+					response.data.error || "Échec du renvoi de l'invitation"
+				);
+			}
+		} catch (error) {
+			console.error("Erreur lors du renvoi de l'invitation:", error);
+			toast({
+				title: "Erreur",
+				description:
+					error.response?.data?.error ||
+					"Impossible de renvoyer l'invitation",
 				variant: "destructive",
 			});
 		}
@@ -341,12 +436,19 @@ export default function OrganizationManagementPage({ params }) {
 						<Users className="w-4 h-4 mr-2" />
 						Membres
 					</TabsTrigger>
+
 					{(organization.userRole === "OWNER" ||
 						organization.userRole === "ADMIN") && (
-						<TabsTrigger value="settings" className="px-6">
-							<Settings className="w-4 h-4 mr-2" />
-							Paramètres
-						</TabsTrigger>
+						<>
+							<TabsTrigger value="invitations" className="px-6">
+								<Mail className="w-4 h-4 mr-2" />
+								Invitations
+							</TabsTrigger>
+							<TabsTrigger value="settings" className="px-6">
+								<Settings className="w-4 h-4 mr-2" />
+								Paramètres
+							</TabsTrigger>
+						</>
 					)}
 				</TabsList>
 
@@ -367,7 +469,7 @@ export default function OrganizationManagementPage({ params }) {
 									className="bg-wisetwin-blue hover:bg-wisetwin-blue-light text-white"
 								>
 									<UserPlus className="w-4 h-4 mr-2" />
-									Ajouter un membre
+									Inviter un membre
 								</Button>
 							)}
 						</CardHeader>
@@ -377,6 +479,34 @@ export default function OrganizationManagementPage({ params }) {
 								currentUserRole={organization.userRole}
 								onChangeRole={handleChangeRole}
 								onRemoveMember={handleRemoveMember}
+							/>
+						</CardContent>
+					</Card>
+				</TabsContent>
+
+				<TabsContent value="invitations">
+					<Card>
+						<CardHeader className="flex flex-row items-center justify-between">
+							<div>
+								<CardTitle>Invitations en attente</CardTitle>
+								<CardDescription>
+									Suivez les invitations envoyées aux nouveaux
+									membres potentiels
+								</CardDescription>
+							</div>
+							<Button
+								onClick={() => setShowAddMemberModal(true)}
+								className="bg-wisetwin-blue hover:bg-wisetwin-blue-light text-white"
+							>
+								<UserPlus className="w-4 h-4 mr-2" />
+								Inviter un membre
+							</Button>
+						</CardHeader>
+						<CardContent>
+							<InvitationsTable
+								invitations={invitations}
+								onCancel={handleCancelInvitation}
+								onResend={handleResendInvitation}
 							/>
 						</CardContent>
 					</Card>
