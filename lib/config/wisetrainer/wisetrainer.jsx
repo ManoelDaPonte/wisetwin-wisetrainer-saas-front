@@ -16,6 +16,8 @@ const WISETRAINER_CONFIG = {
 		USER_TRAININGS: "/api/db/wisetrainer/user-trainings",
 		COURSE_DETAILS: "/api/db/wisetrainer/course-details",
 		STATS_USER: "/api/db/stats/user",
+		ORGANIZATION_BUILDS: "/api/organization",
+		IMPORT_ORG_BUILD: "/api/organization",
 	},
 	DEFAULT_IMAGE: "/images/png/placeholder.png",
 };

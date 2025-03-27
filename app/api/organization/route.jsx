@@ -2,6 +2,7 @@
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 import { getSession } from "@auth0/nextjs-auth0";
+import { BlobServiceClient } from "@azure/storage-blob";
 
 const prisma = new PrismaClient();
 

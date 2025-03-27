@@ -2,17 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import Image from "next/image";
-import {
-	Building,
-	Users,
-	Tag,
-	Clock,
-	BarChart,
-	Filter,
-	Search,
-	Info,
-	Layers,
-} from "lucide-react";
+import { Building, Info, Layers, Search } from "lucide-react";
 import {
 	Card,
 	CardContent,
@@ -38,16 +28,18 @@ export default function CatalogOrganizationTab({
 	selectedOrganizationId,
 	onSelectOrganization,
 	trainings = [],
-	groups = [],
 	isLoading = false,
 	onCourseSelect,
+	onEnroll,
+	onToggleInfo,
+	flippedCardId,
+	personalCourses = [],
+	isImporting,
 	containerVariants,
 	itemVariants,
 }) {
-	// États locaux pour les filtres et la recherche
+	// États locaux pour la recherche
 	const [searchQuery, setSearchQuery] = useState("");
-	const [categoryFilter, setCategoryFilter] = useState("all");
-	const [groupFilter, setGroupFilter] = useState("all");
 	const [filteredTrainings, setFilteredTrainings] = useState([]);
 
 	// Organisation sélectionnée
@@ -70,41 +62,17 @@ export default function CatalogOrganizationTab({
 			filtered = filtered.filter(
 				(training) =>
 					training.name.toLowerCase().includes(query) ||
-					training.description.toLowerCase().includes(query)
-			);
-		}
-
-		// Appliquer le filtre de catégorie
-		if (categoryFilter !== "all") {
-			filtered = filtered.filter(
-				(training) => training.category === categoryFilter
-			);
-		}
-
-		// Appliquer le filtre de groupe
-		if (groupFilter !== "all") {
-			filtered = filtered.filter((training) =>
-				training.assignedGroups.some(
-					(group) => group.id === groupFilter
-				)
+					(training.description &&
+						training.description.toLowerCase().includes(query))
 			);
 		}
 
 		setFilteredTrainings(filtered);
-	}, [trainings, searchQuery, categoryFilter, groupFilter]);
-
-	// Récupérer toutes les catégories disponibles
-	const categories =
-		trainings && trainings.length > 0
-			? [...new Set(trainings.map((t) => t.category))]
-			: [];
+	}, [trainings, searchQuery]);
 
 	// États d'affichage
 	const isEmptySearch =
 		filteredTrainings.length === 0 && searchQuery.length > 0;
-	const isEmptyFilters =
-		filteredTrainings.length === 0 &&
-		(categoryFilter !== "all" || groupFilter !== "all");
 	const isEmptyCatalog = trainings.length === 0;
 	const showNoOrganizations = organizations.length === 0;
 
@@ -157,30 +125,6 @@ export default function CatalogOrganizationTab({
 			);
 		}
 
-		if (isEmptyFilters) {
-			return (
-				<div className="flex flex-col items-center justify-center py-12 bg-gray-50 dark:bg-gray-800 rounded-lg">
-					<Filter className="w-16 h-16 text-gray-300 dark:text-gray-600 mb-4" />
-					<h3 className="text-lg font-medium mb-2">
-						Aucun résultat avec ces filtres
-					</h3>
-					<p className="text-gray-500 dark:text-gray-400 text-center mb-4">
-						Essayez de modifier vos filtres pour voir plus de
-						formations.
-					</p>
-					<Button
-						variant="outline"
-						onClick={() => {
-							setCategoryFilter("all");
-							setGroupFilter("all");
-						}}
-					>
-						Réinitialiser les filtres
-					</Button>
-				</div>
-			);
-		}
-
 		if (isEmptyCatalog) {
 			return (
 				<div className="flex flex-col items-center justify-center py-12 bg-gray-50 dark:bg-gray-800 rounded-lg">
@@ -204,14 +148,27 @@ export default function CatalogOrganizationTab({
 	const handleOrganizationChange = (orgId) => {
 		// Réinitialiser les filtres
 		setSearchQuery("");
-		setCategoryFilter("all");
-		setGroupFilter("all");
 		// Changer l'organisation
 		onSelectOrganization(orgId);
 	};
 
+	// Vérifier si un cours est déjà inscrit
+	const isEnrolled = (courseId) => {
+		return personalCourses.some((course) => course.id === courseId);
+	};
+
 	return (
 		<div className="space-y-6">
+			{/* En-tête avec titre et description */}
+			<div className="mb-6">
+				<h2 className="text-xl font-semibold text-wisetwin-darkblue dark:text-white">
+					Formations de vos organisations
+				</h2>
+				<p className="text-gray-600 dark:text-gray-300">
+					Accédez aux formations proposées par vos organisations
+				</p>
+			</div>
+
 			{/* Sélection d'organisation si plusieurs sont disponibles */}
 			{organizations.length > 1 && (
 				<div className="mb-6">
@@ -236,75 +193,14 @@ export default function CatalogOrganizationTab({
 				</div>
 			)}
 
-			{/* En-tête avec informations sur l'organisation sélectionnée */}
-			{selectedOrganization && (
-				<div className="bg-gray-50 dark:bg-gray-800 p-6 rounded-lg mb-6">
-					<div className="flex items-center gap-4 mb-4">
-						<div className="relative w-14 h-14 bg-wisetwin-blue/10 dark:bg-wisetwin-blue/20 rounded-full flex items-center justify-center flex-shrink-0">
-							<Building className="w-8 h-8 text-wisetwin-blue" />
-						</div>
-						<div>
-							<h2 className="text-xl font-bold">
-								{selectedOrganization.name}
-							</h2>
-							<p className="text-sm text-gray-600 dark:text-gray-300">
-								{selectedOrganization.description ||
-									"Catalogue de formations de l'organisation"}
-							</p>
-							{selectedOrganization.userRole && (
-								<Badge className="mt-1">
-									{selectedOrganization.userRole === "OWNER"
-										? "Propriétaire"
-										: selectedOrganization.userRole ===
-										  "ADMIN"
-										? "Administrateur"
-										: "Membre"}
-								</Badge>
-							)}
-						</div>
-					</div>
-
-					{trainings.length > 0 && (
-						<div className="flex flex-wrap gap-4 mt-4">
-							<div className="bg-white dark:bg-gray-700 p-3 rounded-md flex items-center gap-2">
-								<Tag className="w-5 h-5 text-wisetwin-blue" />
-								<div>
-									<p className="text-xs text-gray-500 dark:text-gray-400">
-										Formations
-									</p>
-									<p className="font-medium">
-										{trainings.length}
-									</p>
-								</div>
-							</div>
-
-							{groups && groups.length > 0 && (
-								<div className="bg-white dark:bg-gray-700 p-3 rounded-md flex items-center gap-2">
-									<Users className="w-5 h-5 text-wisetwin-blue" />
-									<div>
-										<p className="text-xs text-gray-500 dark:text-gray-400">
-											Groupes
-										</p>
-										<p className="font-medium">
-											{groups.length}
-										</p>
-									</div>
-								</div>
-							)}
-						</div>
-					)}
-				</div>
-			)}
-
 			{showNoOrganizations ||
 			isEmptyCatalog ||
 			isEmptySearch ||
-			isEmptyFilters ||
 			isLoading ? (
 				renderEmptyState()
 			) : (
 				<>
-					{/* Barre de recherche et filtres */}
+					{/* Barre de recherche */}
 					<div className="flex flex-col sm:flex-row gap-4 mb-6">
 						<div className="relative flex-grow">
 							<Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
@@ -315,169 +211,226 @@ export default function CatalogOrganizationTab({
 								className="pl-10"
 							/>
 						</div>
-
-						<div className="flex gap-2">
-							{categories.length > 0 && (
-								<Select
-									value={categoryFilter}
-									onValueChange={setCategoryFilter}
-								>
-									<SelectTrigger className="w-[180px]">
-										<SelectValue placeholder="Catégorie" />
-									</SelectTrigger>
-									<SelectContent>
-										<SelectItem value="all">
-											Toutes les catégories
-										</SelectItem>
-										{categories.map((category) => (
-											<SelectItem
-												key={category}
-												value={category}
-											>
-												{category}
-											</SelectItem>
-										))}
-									</SelectContent>
-								</Select>
-							)}
-
-							{groups && groups.length > 0 && (
-								<Select
-									value={groupFilter}
-									onValueChange={setGroupFilter}
-								>
-									<SelectTrigger className="w-[180px]">
-										<SelectValue placeholder="Groupe" />
-									</SelectTrigger>
-									<SelectContent>
-										<SelectItem value="all">
-											Tous les groupes
-										</SelectItem>
-										{groups.map((group) => (
-											<SelectItem
-												key={group.id}
-												value={group.id}
-											>
-												{group.name}
-											</SelectItem>
-										))}
-									</SelectContent>
-								</Select>
-							)}
-						</div>
 					</div>
 
 					{/* Liste des formations */}
 					<motion.div
-						className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
 						variants={containerVariants}
 						initial="hidden"
 						animate="visible"
+						className="grid grid-cols-1 md:grid-cols-2 gap-8" // Augmenter l'espace entre les cartes
 					>
-						{filteredTrainings.map((training) => (
-							<motion.div
-								key={training.id}
-								variants={itemVariants}
-								className="h-full"
-							>
-								<Card
-									className="h-full flex flex-col hover:shadow-md hover:border-wisetwin-blue transition-all cursor-pointer"
-									onClick={() => onCourseSelect(training)}
+						{filteredTrainings.map((course) => {
+							const isAlreadyEnrolled = isEnrolled(course.id);
+							const isFlipped = flippedCardId === course.id;
+
+							return (
+								<motion.div
+									key={course.id}
+									variants={itemVariants}
 								>
-									<div className="relative h-48 bg-gray-100 dark:bg-gray-800">
-										<Image
-											src={
-												training.imageUrl ||
-												WISETRAINER_CONFIG.DEFAULT_IMAGE
-											}
-											alt={training.name}
-											fill
-											className="object-cover rounded-t-lg"
-											onError={(e) => {
-												e.target.src =
-													WISETRAINER_CONFIG.DEFAULT_IMAGE;
-											}}
-										/>
-										{training.isCustomBuild && (
-											<Badge className="absolute top-2 right-2 bg-wisetwin-blue text-white">
-												Personnalisée
-											</Badge>
-										)}
-									</div>
-
-									<CardHeader className="pb-2">
-										<CardTitle className="line-clamp-1">
-											{training.name}
-										</CardTitle>
-										<CardDescription>
-											{training.category}
-										</CardDescription>
-									</CardHeader>
-
-									<CardContent className="flex-grow">
-										<p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-2 mb-4">
-											{training.description}
-										</p>
-
-										<div className="grid grid-cols-2 gap-2 text-sm">
-											<div className="flex items-center">
-												<BarChart className="w-4 h-4 mr-2 text-gray-400" />
-												<span>
-													{training.difficulty}
-												</span>
-											</div>
-											<div className="flex items-center">
-												<Clock className="w-4 h-4 mr-2 text-gray-400" />
-												<span>{training.duration}</span>
-											</div>
-										</div>
-
-										{training.assignedGroups &&
-											training.assignedGroups.length >
-												0 && (
-												<div className="mt-4">
-													<p className="text-xs text-gray-500 mb-1">
-														Groupes assignés:
-													</p>
-													<div className="flex flex-wrap gap-1">
-														{training.assignedGroups
-															.slice(0, 2)
-															.map((group) => (
-																<Badge
-																	key={
-																		group.id
-																	}
-																	variant="outline"
-																	className="text-xs"
-																>
-																	{group.name}
-																</Badge>
-															))}
-														{training.assignedGroups
-															.length > 2 && (
-															<Badge
-																variant="outline"
-																className="text-xs"
-															>
-																+
-																{training
-																	.assignedGroups
-																	.length - 2}
-															</Badge>
-														)}
-													</div>
+									<Card
+										className="flex flex-col h-full hover:shadow-lg transition-shadow duration-300"
+										noPaddingTop
+									>
+										{/* Image du cours couvrant toute la largeur */}
+										{!isFlipped && (
+											<div className="relative w-full h-52 overflow-hidden rounded-t-lg">
+												<Image
+													src={
+														course.imageUrl ||
+														WISETRAINER_CONFIG.DEFAULT_IMAGE
+													}
+													alt={course.name}
+													fill
+													className="object-cover"
+													onError={(e) => {
+														e.target.src =
+															WISETRAINER_CONFIG.DEFAULT_IMAGE;
+													}}
+												/>
+												{/* Badge de difficulté superposé sur l'image */}
+												<div className="absolute top-3 right-3">
+													<Badge
+														variant="outline"
+														className="bg-white/90 dark:bg-black/70 text-blue-700 dark:text-blue-200 font-medium"
+													>
+														{course.difficulty ||
+															"Intermédiaire"}
+													</Badge>
 												</div>
-											)}
-									</CardContent>
 
-									<CardFooter>
-										<Button className="w-full">
-											Accéder à la formation
-										</Button>
-									</CardFooter>
-								</Card>
-							</motion.div>
-						))}
+												{/* Badge de l'organisation */}
+												<div className="absolute top-3 left-3">
+													<Badge className="bg-wisetwin-blue text-white">
+														<Building className="w-3 h-3 mr-1" />
+														{selectedOrganization
+															? selectedOrganization.name
+															: "Organisation"}
+													</Badge>
+												</div>
+											</div>
+										)}
+
+										{isFlipped ? (
+											<div className="flex-grow pt-6">
+												<CardHeader>
+													<div className="flex items-center justify-between">
+														<CardTitle className="text-xl">
+															{course.name}
+														</CardTitle>
+														<Badge
+															variant="outline"
+															className="bg-blue-50 text-blue-700 dark:bg-blue-900 dark:text-blue-200"
+														>
+															{course.difficulty ||
+																"Intermédiaire"}
+														</Badge>
+													</div>
+													<CardDescription className="flex items-center gap-1">
+														<Building className="w-4 h-4" />
+														{selectedOrganization
+															? selectedOrganization.name
+															: "Organisation"}
+													</CardDescription>
+												</CardHeader>
+
+												<CardContent className="flex-grow">
+													<div className="space-y-4">
+														<div>
+															<h4 className="font-semibold text-md mb-2 flex items-center gap-1">
+																À propos de
+																cette formation
+															</h4>
+															<p className="text-sm text-gray-600 dark:text-gray-300">
+																{course.description ||
+																	`Formation interactive sur ${course.name.toLowerCase()}`}
+															</p>
+														</div>
+
+														<div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-800">
+															<h4 className="font-semibold text-md mb-2">
+																Informations
+																complémentaires:
+															</h4>
+															<ul className="space-y-2 text-sm">
+																<li className="flex items-center">
+																	<span className="text-gray-600 dark:text-gray-400 w-32">
+																		Organisation:
+																	</span>
+																	<span className="font-medium">
+																		{selectedOrganization
+																			? selectedOrganization.name
+																			: "Organisation"}
+																	</span>
+																</li>
+																<li className="flex items-center">
+																	<span className="text-gray-600 dark:text-gray-400 w-32">
+																		Difficulté:
+																	</span>
+																	<span className="font-medium">
+																		{course.difficulty ||
+																			"Intermédiaire"}
+																	</span>
+																</li>
+																<li className="flex items-center">
+																	<span className="text-gray-600 dark:text-gray-400 w-32">
+																		Durée:
+																	</span>
+																	<span className="font-medium">
+																		{course.duration ||
+																			"30 min"}
+																	</span>
+																</li>
+																<li className="flex items-center">
+																	<span className="text-gray-600 dark:text-gray-400 w-32">
+																		Catégorie:
+																	</span>
+																	<span className="font-medium">
+																		{course.category ||
+																			"Formation spécifique"}
+																	</span>
+																</li>
+															</ul>
+														</div>
+													</div>
+												</CardContent>
+											</div>
+										) : (
+											<>
+												<CardHeader>
+													<CardTitle className="text-xl">
+														{course.name}
+													</CardTitle>
+													<CardDescription className="flex items-center gap-1">
+														<Building className="w-4 h-4" />
+														{selectedOrganization
+															? selectedOrganization.name
+															: "Organisation"}
+													</CardDescription>
+												</CardHeader>
+
+												<CardContent className="flex-grow">
+													<p className="text-sm text-gray-600 dark:text-gray-300 mb-4 line-clamp-3">
+														{course.description ||
+															`Formation interactive sur ${course.name.toLowerCase()}`}
+													</p>
+
+													<div className="flex items-center gap-2 mt-4 text-sm text-gray-600 dark:text-gray-400">
+														<span className="font-medium">
+															{course.duration ||
+																"30 min"}
+														</span>
+														<span>•</span>
+														<span>
+															{course.category ||
+																"Formation spécifique"}
+														</span>
+													</div>
+												</CardContent>
+											</>
+										)}
+
+										<CardFooter className="flex gap-2 mt-auto pt-2">
+											<Button
+												className={`flex-1 ${
+													isFlipped
+														? "bg-wisetwin-blue hover:bg-wisetwin-blue-light"
+														: "bg-wisetwin-blue hover:bg-wisetwin-blue-light"
+												}`}
+												onClick={() =>
+													isAlreadyEnrolled
+														? onCourseSelect(course)
+														: onEnroll(course)
+												}
+												disabled={
+													isImporting === course.id
+												}
+											>
+												{isImporting === course.id
+													? "Inscription..."
+													: isAlreadyEnrolled
+													? "Accéder"
+													: "S'inscrire"}
+											</Button>
+											<Button
+												className="flex-1"
+												variant="outline"
+												onClick={(e) => {
+													e.preventDefault();
+													onToggleInfo(course.id);
+												}}
+											>
+												<Info className="h-4 w-4 mr-1" />
+												{isFlipped
+													? "Moins d'infos"
+													: "Plus d'infos"}
+											</Button>
+										</CardFooter>
+									</Card>
+								</motion.div>
+							);
+						})}
 					</motion.div>
 				</>
 			)}
