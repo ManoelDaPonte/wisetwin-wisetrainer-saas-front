@@ -27,6 +27,8 @@ import MembersTable from "@/components/organization/MembersTable";
 import AddMemberModal from "@/components/organization/AddMemberModal";
 import OrganizationSettingsForm from "@/components/organization/OrganizationSettingsForm";
 import InvitationsTable from "@/components/organization/InvitationsTable";
+import TrainingsTab from "@/components/organization/TrainingsTab";
+import { GraduationCap } from "lucide-react";
 
 export default function OrganizationManagementPage() {
 	const router = useRouter();
@@ -444,6 +446,10 @@ export default function OrganizationManagementPage() {
 								<Mail className="w-4 h-4 mr-2" />
 								Invitations
 							</TabsTrigger>
+							<TabsTrigger value="trainings" className="px-6">
+								<GraduationCap className="w-4 h-4 mr-2" />
+								Formations
+							</TabsTrigger>
 							<TabsTrigger value="settings" className="px-6">
 								<Settings className="w-4 h-4 mr-2" />
 								Paramètres
@@ -510,6 +516,10 @@ export default function OrganizationManagementPage() {
 							/>
 						</CardContent>
 					</Card>
+				</TabsContent>
+
+				<TabsContent value="trainings">
+					<TrainingsTab organization={organization} />
 				</TabsContent>
 
 				<TabsContent value="settings">

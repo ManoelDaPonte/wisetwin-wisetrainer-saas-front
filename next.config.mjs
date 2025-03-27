@@ -21,7 +21,17 @@ const nextConfig = {
           protocol: 'https',
           hostname: 'webglbuilds.blob.core.windows.net',
           pathname: '/**',
-        }
+        },
+        {
+          protocol: 'https',
+          hostname: 'asset.cloudinary.com',
+          pathname: '/**',
+        },
+        {
+          protocol: 'https',
+          hostname: 'res.cloudinary.com',
+          pathname: '/**',
+        },
       ],
     },
   };

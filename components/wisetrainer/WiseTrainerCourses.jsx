@@ -4,21 +4,34 @@ import { useRouter } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import axios from "axios";
 import { useAzureContainer } from "@/lib/hooks/useAzureContainer";
+import { useOrganization } from "@/lib/hooks/useOrganization";
 import WISETRAINER_CONFIG from "@/lib/config/wisetrainer/wisetrainer";
 import PersonalCoursesTab from "@/components/wisetrainer/courses/PersonalCoursesTab";
 import CatalogCoursesTab from "@/components/wisetrainer/courses/CatalogCoursesTab";
+import CatalogOrganizationTab from "@/components/wisetrainer/courses/CatalogOrganizationTab";
 import { processBuildNames } from "@/components/wisetrainer/courses/helper";
 import { useToast } from "@/lib/hooks/useToast";
+import { Building } from "lucide-react";
 
 export default function WiseTrainerCourses() {
 	const router = useRouter();
 	const { containerName, isLoading: containerLoading } = useAzureContainer();
+	const {
+		userOrganizations,
+		loadUserOrganizations,
+		trainings: orgTrainings,
+		groups,
+		loadUserTrainings,
+		isLoading: orgLoading,
+		hasOrganizations,
+	} = useOrganization();
 	const [activeTab, setActiveTab] = useState("personal");
 	const [personalCourses, setPersonalCourses] = useState([]);
 	const [availableCourses, setAvailableCourses] = useState([]);
 	const [isLoading, setIsLoading] = useState(true);
 	const [flippedCardId, setFlippedCardId] = useState(null);
 	const [isImporting, setIsImporting] = useState(false);
+	const [selectedOrgId, setSelectedOrgId] = useState(null);
 	const { toast } = useToast();
 
 	const containerVariants = {
@@ -38,11 +51,33 @@ export default function WiseTrainerCourses() {
 		},
 	};
 
+	// Effet pour charger les organisations
+	useEffect(() => {
+		if (
+			userOrganizations &&
+			userOrganizations.length > 0 &&
+			!selectedOrgId
+		) {
+			setSelectedOrgId(userOrganizations[0].id);
+		}
+	}, [userOrganizations, selectedOrgId]);
+
+	// Effet pour charger les formations de l'organisation sélectionnée
+	useEffect(() => {
+		if (selectedOrgId) {
+			loadUserTrainings(selectedOrgId);
+		}
+	}, [selectedOrgId, loadUserTrainings]);
+
+	// Effet pour charger les formations personnelles et du catalogue
 	useEffect(() => {
 		if (containerName) {
 			fetchData();
 		}
-	}, [containerName]);
+
+		// Charger les organisations de l'utilisateur
+		loadUserOrganizations();
+	}, [containerName, loadUserOrganizations]);
 
 	const fetchData = async () => {
 		setIsLoading(true);
@@ -303,6 +338,9 @@ export default function WiseTrainerCourses() {
 					<TabsTrigger value="catalog" className="px-6">
 						Catalogue
 					</TabsTrigger>
+					<TabsTrigger value="organization" className="px-6">
+						Organisations
+					</TabsTrigger>
 				</TabsList>
 
 				<TabsContent value="personal">
@@ -326,6 +364,20 @@ export default function WiseTrainerCourses() {
 						onToggleInfo={toggleCardFlip}
 						flippedCardId={flippedCardId}
 						isImporting={isImporting}
+						containerVariants={containerVariants}
+						itemVariants={itemVariants}
+					/>
+				</TabsContent>
+
+				<TabsContent value="organization">
+					<CatalogOrganizationTab
+						isLoading={orgLoading}
+						organizations={userOrganizations}
+						selectedOrgId={selectedOrgId}
+						onOrgSelect={setSelectedOrgId}
+						trainings={orgTrainings}
+						groups={groups}
+						hasOrganizations={hasOrganizations}
 						containerVariants={containerVariants}
 						itemVariants={itemVariants}
 					/>

@@ -68,7 +68,7 @@ export default function OrganizationsTable({
 					className="flex items-center justify-between p-4 border rounded-lg hover:border-wisetwin-blue transition-colors"
 				>
 					<div className="flex items-center space-x-4">
-						{/* <div className="relative w-12 h-12 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+						<div className="relative w-12 h-12 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
 							{org.logoUrl ? (
 								<Image
 									src={org.logoUrl}
@@ -87,7 +87,7 @@ export default function OrganizationsTable({
 									</span>
 								</div>
 							)}
-						</div> */}
+						</div>
 						<div>
 							<h3 className="font-semibold">{org.name}</h3>
 							<div className="flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-400">
