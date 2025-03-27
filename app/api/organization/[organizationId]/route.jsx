@@ -2,8 +2,50 @@
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 import { getSession } from "@auth0/nextjs-auth0";
+import { BlobServiceClient } from "@azure/storage-blob";
 
 const prisma = new PrismaClient();
+
+// Fonction pour supprimer un container Azure
+async function deleteAzureContainer(containerName) {
+	try {
+		if (!containerName) {
+			console.warn("Pas de nom de container à supprimer");
+			return { success: false, message: "Nom de container non fourni" };
+		}
+
+		// Connexion au service Azure Blob Storage
+		const blobServiceClient = BlobServiceClient.fromConnectionString(
+			process.env.AZURE_STORAGE_CONNECTION_STRING
+		);
+
+		// Récupération du client du container
+		const containerClient =
+			blobServiceClient.getContainerClient(containerName);
+
+		// Vérifier que le container existe
+		const containerExists = await containerClient.exists();
+		if (!containerExists) {
+			console.warn(`Le container ${containerName} n'existe pas`);
+			return { success: false, message: "Container inexistant" };
+		}
+
+		// Supprimer le container
+		await containerClient.delete();
+
+		return {
+			success: true,
+			message: `Container ${containerName} supprimé avec succès`,
+		};
+	} catch (error) {
+		console.error("Erreur lors de la suppression du container:", error);
+		return {
+			success: false,
+			message: error.message,
+			error,
+		};
+	}
+}
 
 // GET pour récupérer les détails d'une organisation spécifique
 export async function GET(request, { params }) {
@@ -163,7 +205,7 @@ export async function DELETE(request, { params }) {
 			);
 		}
 
-		// Récupérer l'organisation pour vérifier qu'elle existe
+		// Récupérer l'organisation pour vérifier qu'elle existe et obtenir le nom du container Azure
 		const organization = await prisma.organization.findUnique({
 			where: {
 				id: organizationId,
@@ -177,6 +219,21 @@ export async function DELETE(request, { params }) {
 			);
 		}
 
+		// Supprimer le container Azure associé à l'organisation
+		let containerDeleteResult = {
+			success: true,
+			message: "Aucun container à supprimer",
+		};
+		if (organization.azureContainer) {
+			containerDeleteResult = await deleteAzureContainer(
+				organization.azureContainer
+			);
+			console.log(
+				"Résultat de la suppression du container:",
+				containerDeleteResult
+			);
+		}
+
 		// Supprimer l'organisation (les relations seront supprimées automatiquement grâce à onDelete: Cascade)
 		await prisma.organization.delete({
 			where: {
@@ -187,6 +244,7 @@ export async function DELETE(request, { params }) {
 		return NextResponse.json({
 			success: true,
 			message: "L'organisation a été supprimée avec succès",
+			containerDeleteResult,
 		});
 	} catch (error) {
 		console.error(
