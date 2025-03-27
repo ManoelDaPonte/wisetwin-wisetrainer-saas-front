@@ -39,33 +39,12 @@ export default function WiseTrainerCourses() {
 		},
 	};
 
-	// Effet pour charger les organisations
-	useEffect(() => {
-		if (
-			userOrganizations &&
-			userOrganizations.length > 0 &&
-			!selectedOrgId
-		) {
-			setSelectedOrgId(userOrganizations[0].id);
-		}
-	}, [userOrganizations, selectedOrgId]);
-
-	// Effet pour charger les formations de l'organisation sélectionnée
-	useEffect(() => {
-		if (selectedOrgId) {
-			loadUserTrainings(selectedOrgId);
-		}
-	}, [selectedOrgId, loadUserTrainings]);
-
 	// Effet pour charger les formations personnelles et du catalogue
 	useEffect(() => {
 		if (containerName) {
 			fetchData();
 		}
-
-		// Charger les organisations de l'utilisateur
-		loadUserOrganizations();
-	}, [containerName, loadUserOrganizations]);
+	}, [containerName]);
 
 	const fetchData = async () => {
 		setIsLoading(true);
@@ -325,9 +304,6 @@ export default function WiseTrainerCourses() {
 					</TabsTrigger>
 					<TabsTrigger value="catalog" className="px-6">
 						Catalogue
-					</TabsTrigger>
-					<TabsTrigger value="organization" className="px-6">
-						Organisations
 					</TabsTrigger>
 				</TabsList>
 
