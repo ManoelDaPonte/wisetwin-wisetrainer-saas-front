@@ -32,27 +32,6 @@ export default function InvitationsTable({
 		});
 	};
 
-	const getRoleBadge = (role) => {
-		switch (role) {
-			case "ADMIN":
-				return (
-					<div className="flex items-center gap-1 bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-200 px-2 py-1 rounded text-xs font-medium">
-						<Shield className="w-3 h-3" />
-						Administrateur
-					</div>
-				);
-			case "MEMBER":
-				return (
-					<div className="flex items-center gap-1 bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200 px-2 py-1 rounded text-xs font-medium">
-						<User className="w-3 h-3" />
-						Membre
-					</div>
-				);
-			default:
-				return <Badge color="gray">Inconnu</Badge>;
-		}
-	};
-
 	const getStatusBadge = (status, expiresAt) => {
 		// Vérifier si l'invitation a expiré
 		const isExpired = new Date() > new Date(expiresAt);
@@ -142,7 +121,7 @@ export default function InvitationsTable({
 				<TableHeader>
 					<TableRow>
 						<TableHead>Email</TableHead>
-						<TableHead>Rôle</TableHead>
+						{/* <TableHead>Rôle</TableHead> */}
 						<TableHead>Statut</TableHead>
 						<TableHead>Date d'invitation</TableHead>
 						<TableHead>Expire le</TableHead>
@@ -155,9 +134,9 @@ export default function InvitationsTable({
 							<TableCell className="font-medium">
 								{invitation.email}
 							</TableCell>
-							<TableCell>
+							{/* <TableCell>
 								{getRoleBadge(invitation.role)}
-							</TableCell>
+							</TableCell> */}
 							<TableCell>
 								{getStatusBadge(
 									invitation.status,
