@@ -56,13 +56,13 @@ export const navigationItems = {
 	coreItems: [
 		{
 			id: "digital-twin",
-			label: "Wise Twin",
+			label: "WiseTwin",
 			icon: Box,
 			disabled: true,
 		},
 		{
 			id: "wisetrainer",
-			label: "Wise Trainer",
+			label: "WiseTrainer",
 			icon: GraduationCap,
 		},
 	],
