@@ -1,4 +1,4 @@
-//components/wisetrainer/WiseTrainerCourses.jsx
+// components/wisetrainer/WiseTrainerCourses.jsx
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -7,6 +7,7 @@ import { useAzureContainer } from "@/lib/hooks/useAzureContainer";
 import WISETRAINER_CONFIG from "@/lib/config/wisetrainer/wisetrainer";
 import PersonalCoursesTab from "@/components/wisetrainer/courses/PersonalCoursesTab";
 import CatalogCoursesTab from "@/components/wisetrainer/courses/CatalogCoursesTab";
+import CatalogOrganizationTab from "@/components/wisetrainer/courses/CatalogOrganizationTab";
 import { processBuildNames } from "@/components/wisetrainer/courses/helper";
 import { useToast } from "@/lib/hooks/useToast";
 
@@ -16,10 +17,13 @@ export default function WiseTrainerCourses() {
 	const [activeTab, setActiveTab] = useState("personal");
 	const [personalCourses, setPersonalCourses] = useState([]);
 	const [availableCourses, setAvailableCourses] = useState([]);
+	const [organizationCourses, setOrganizationCourses] = useState([]);
+	const [userOrganizations, setUserOrganizations] = useState([]);
+	const [selectedOrgId, setSelectedOrgId] = useState(null);
 	const [isLoading, setIsLoading] = useState(true);
+	const [isLoadingOrg, setIsLoadingOrg] = useState(true);
 	const [flippedCardId, setFlippedCardId] = useState(null);
 	const [isImporting, setIsImporting] = useState(false);
-	const [selectedOrgId, setSelectedOrgId] = useState(null);
 	const { toast } = useToast();
 
 	const containerVariants = {
@@ -43,8 +47,16 @@ export default function WiseTrainerCourses() {
 	useEffect(() => {
 		if (containerName) {
 			fetchData();
+			fetchUserOrganizations();
 		}
 	}, [containerName]);
+
+	// Effet pour charger les formations de l'organisation sélectionnée
+	useEffect(() => {
+		if (selectedOrgId) {
+			fetchOrganizationCourses(selectedOrgId);
+		}
+	}, [selectedOrgId]);
 
 	const fetchData = async () => {
 		setIsLoading(true);
@@ -189,6 +201,66 @@ export default function WiseTrainerCourses() {
 		}
 	};
 
+	// Récupérer la liste des organisations dont l'utilisateur est membre
+	const fetchUserOrganizations = async () => {
+		try {
+			const response = await axios.get("/api/organization");
+			if (response.data.organizations) {
+				setUserOrganizations(response.data.organizations);
+				// Si l'utilisateur appartient à au moins une organisation, sélectionner la première par défaut
+				if (response.data.organizations.length > 0) {
+					setSelectedOrgId(response.data.organizations[0].id);
+				}
+			}
+		} catch (error) {
+			console.error(
+				"Erreur lors de la récupération des organisations:",
+				error
+			);
+			setUserOrganizations([]);
+		}
+	};
+
+	// Récupérer les formations spécifiques à une organisation
+	const fetchOrganizationCourses = async (organizationId) => {
+		setIsLoadingOrg(true);
+		try {
+			console.log(
+				`Récupération des formations pour l'organisation ${organizationId}`
+			);
+			const response = await axios.get(
+				`/api/organization/${organizationId}/builds`
+			);
+			if (response.data.builds) {
+				console.log(
+					`${response.data.builds.length} formations trouvées dans l'organisation`
+				);
+				setOrganizationCourses(response.data.builds);
+			} else {
+				console.log("Aucune formation trouvée dans l'organisation");
+				setOrganizationCourses([]);
+			}
+		} catch (error) {
+			console.error(
+				"Erreur lors de la récupération des formations de l'organisation:",
+				error
+			);
+			toast({
+				title: "Erreur",
+				description:
+					"Impossible de récupérer les formations de l'organisation",
+				variant: "destructive",
+			});
+			setOrganizationCourses([]);
+		} finally {
+			setIsLoadingOrg(false);
+		}
+	};
+
+	const handleSelectOrganization = (orgId) => {
+		setSelectedOrgId(orgId);
+	};
+
 	const handleEnrollCourse = async (course) => {
 		if (!containerName) {
 			toast({
@@ -206,6 +278,57 @@ export default function WiseTrainerCourses() {
 			// Importer le cours depuis le container source vers le container de l'utilisateur
 			await axios.post(
 				`${WISETRAINER_CONFIG.API_ROUTES.IMPORT_BUILD}/${containerName}/${course.id}`
+			);
+
+			// Rafraîchir les données
+			await fetchData();
+			setActiveTab("personal");
+
+			toast({
+				title: "Inscription réussie",
+				description: `Vous êtes maintenant inscrit à la formation "${course.name}"`,
+				variant: "success",
+			});
+		} catch (error) {
+			console.error("Erreur lors de l'inscription au cours:", error);
+			toast({
+				title: "Échec de l'inscription",
+				description: "Une erreur est survenue. Veuillez réessayer.",
+				variant: "destructive",
+			});
+		} finally {
+			setIsImporting(null);
+		}
+	};
+
+	// Fonction pour s'inscrire à un cours d'organisation
+	const handleEnrollOrgCourse = async (course) => {
+		if (!containerName) {
+			toast({
+				title: "Erreur d'inscription",
+				description:
+					"Container non disponible. Veuillez vous reconnecter.",
+				variant: "destructive",
+			});
+			return;
+		}
+
+		setIsImporting(course.id);
+
+		try {
+			// Importer le cours depuis le container de l'organisation vers le container de l'utilisateur
+			// On pourrait créer une API dédiée, mais pour l'instant on utilise la même
+			const selectedOrg = userOrganizations.find(
+				(org) => org.id === selectedOrgId
+			);
+
+			if (!selectedOrg) {
+				throw new Error("Organisation non trouvée");
+			}
+
+			// Appeler l'API pour importer le cours depuis le container de l'organisation
+			await axios.post(
+				`/api/organization/${selectedOrgId}/import-training/${containerName}/${course.id}`
 			);
 
 			// Rafraîchir les données
@@ -305,6 +428,9 @@ export default function WiseTrainerCourses() {
 					<TabsTrigger value="catalog" className="px-6">
 						Catalogue
 					</TabsTrigger>
+					<TabsTrigger value="organization" className="px-6">
+						Organisation
+					</TabsTrigger>
 				</TabsList>
 
 				<TabsContent value="personal">
@@ -330,6 +456,25 @@ export default function WiseTrainerCourses() {
 						isImporting={isImporting}
 						containerVariants={containerVariants}
 						itemVariants={itemVariants}
+					/>
+				</TabsContent>
+
+				<TabsContent value="organization">
+					<CatalogOrganizationTab
+						organizations={userOrganizations}
+						selectedOrganizationId={selectedOrgId}
+						onSelectOrganization={handleSelectOrganization}
+						trainings={organizationCourses}
+						groups={[]} // À implémenter si nécessaire
+						isLoading={isLoadingOrg}
+						onCourseSelect={handleCourseSelect}
+						containerVariants={containerVariants}
+						itemVariants={itemVariants}
+						personalCourses={personalCourses}
+						isImporting={isImporting}
+						onEnroll={handleEnrollOrgCourse}
+						onToggleInfo={toggleCardFlip}
+						flippedCardId={flippedCardId}
 					/>
 				</TabsContent>
 			</Tabs>
