@@ -12,7 +12,7 @@
   "dependencies": {
     "@auth0/nextjs-auth0": "^3.5.0",
     "@azure/storage-blob": "^12.26.0",
-    "@prisma/client": "^6.4.1",
+    "@prisma/client": "^6.5.0",
     "@radix-ui/react-dialog": "^1.1.6",
     "@radix-ui/react-dropdown-menu": "^2.1.6",
     "@radix-ui/react-label": "^2.1.2",
@@ -27,13 +27,14 @@
     "clsx": "^2.1.1",
     "framer-motion": "^12.4.7",
     "lucide-react": "^0.477.0",
-    "next": "15.2.0",
-    "prisma": "^6.4.1",
+    "next": "^15.2.4",
+    "nodemailer": "^6.10.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-unity-webgl": "^9.8.0",
     "tailwind-merge": "^2.3.0",
-    "tailwindcss-animate": "^1.0.7"
+    "tailwindcss-animate": "^1.0.7",
+    "uuid": "^11.1.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
@@ -43,6 +44,7 @@
     "eslint": "^9",
     "eslint-config-next": "15.2.0",
     "postcss": "^8.5.3",
+    "prisma": "^6.5.0",
     "tailwindcss": "^3.4.1",
     "typescript": "5.7.3"
   }
