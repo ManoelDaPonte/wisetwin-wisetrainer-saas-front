@@ -2,13 +2,14 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Users, Mail, Settings } from "lucide-react";
+import { Users, Mail, Settings, BarChart } from "lucide-react";
 import { useToast } from "@/lib/hooks/useToast";
 
 // Importation des composants d'onglets
 import MembersTab from "./members/MembersTab";
 import InvitationsTab from "./invitations/InvitationsTab";
 import SettingsTab from "./settings/SettingsTab";
+import DashboardTab from "./dashboard/DashboardTab";
 
 export default function OrganizationTabs({ organization, onDataChange }) {
 	const [activeTab, setActiveTab] = useState("members");
@@ -255,7 +256,7 @@ export default function OrganizationTabs({ organization, onDataChange }) {
 
 	return (
 		<Tabs
-			defaultValue="members"
+			defaultValue="dashboard"
 			className="w-full"
 			onValueChange={setActiveTab}
 			value={activeTab}
@@ -274,6 +275,11 @@ export default function OrganizationTabs({ organization, onDataChange }) {
 							Invitations
 						</TabsTrigger>
 
+						<TabsTrigger value="dashboard" className="px-6">
+							<BarChart className="w-4 h-4 mr-2" />
+							Dashboard
+						</TabsTrigger>
+
 						<TabsTrigger value="settings" className="px-6">
 							<Settings className="w-4 h-4 mr-2" />
 							Paramètres
@@ -281,6 +287,13 @@ export default function OrganizationTabs({ organization, onDataChange }) {
 					</>
 				)}
 			</TabsList>
+
+			{(organization.userRole === "OWNER" ||
+				organization.userRole === "ADMIN") && (
+				<TabsContent value="dashboard">
+					<DashboardTab organization={organization} />
+				</TabsContent>
+			)}
 
 			<TabsContent value="members">
 				<MembersTab

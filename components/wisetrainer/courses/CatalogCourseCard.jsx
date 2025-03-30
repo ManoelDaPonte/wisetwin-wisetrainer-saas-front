@@ -1,5 +1,4 @@
 //components/wisetrainer/courses/CatalogCourseCard.jsx
-
 import React from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
@@ -13,7 +12,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Clock, BookOpen, Info } from "lucide-react";
+import { Clock, BookOpen, Info, Building, Sparkles } from "lucide-react";
 import WISETRAINER_CONFIG from "@/lib/config/wisetrainer/wisetrainer";
 
 const CatalogCourseCard = ({
@@ -26,6 +25,14 @@ const CatalogCourseCard = ({
 	itemVariants,
 }) => {
 	const isFlipped = flippedCardId === course.id;
+
+	// Déterminer la source de la formation (WiseTwin par défaut ou organisation)
+	const source = course.source || { type: "wisetwin", name: "WiseTwin" };
+	const isOrganizationCourse = source.type === "organization";
+
+	// Préparer les modules pour l'affichage
+	const modules = course.modules || [];
+	const hasModules = modules.length > 0;
 
 	return (
 		<motion.div variants={itemVariants}>
@@ -57,6 +64,29 @@ const CatalogCourseCard = ({
 								{course.difficulty || "Intermédiaire"}
 							</Badge>
 						</div>
+
+						{/* Badge de provenance sur l'image */}
+						<div className="absolute top-3 left-3">
+							<Badge
+								className={
+									isOrganizationCourse
+										? "bg-gray-700 text-white"
+										: "bg-wisetwin-blue text-white"
+								}
+							>
+								{isOrganizationCourse ? (
+									<>
+										<Building className="w-3 h-3 mr-1" />
+										{source.name}
+									</>
+								) : (
+									<>
+										<Sparkles className="w-3 h-3 mr-1" />
+										WiseTwin
+									</>
+								)}
+							</Badge>
+						</div>
 					</div>
 				)}
 
@@ -75,8 +105,12 @@ const CatalogCourseCard = ({
 								</Badge>
 							</div>
 							<CardDescription className="flex items-center gap-1">
-								<Clock className="h-4 w-4" />
-								Durée: {course.duration}
+								{isOrganizationCourse ? (
+									<Building className="h-4 w-4" />
+								) : (
+									<Sparkles className="h-4 w-4" />
+								)}
+								{source.name}
 							</CardDescription>
 						</CardHeader>
 
@@ -88,23 +122,24 @@ const CatalogCourseCard = ({
 										Contenu de la formation:
 									</h4>
 									<ul className="space-y-2">
-										{course.modules?.map((module) => (
-											<li
-												key={module.id}
-												className="flex items-start gap-2"
-											>
-												<div className="w-2 h-2 rounded-full bg-blue-500 mt-1.5 flex-shrink-0"></div>
-												<div>
-													<div className="font-medium">
-														{module.title}
+										{hasModules ? (
+											modules.map((module) => (
+												<li
+													key={module.id}
+													className="flex items-start gap-2"
+												>
+													<div className="w-2 h-2 rounded-full bg-blue-500 mt-1.5 flex-shrink-0"></div>
+													<div>
+														<div className="font-medium">
+															{module.title}
+														</div>
+														<p className="text-sm text-gray-600 dark:text-gray-400">
+															{module.description}
+														</p>
 													</div>
-													<p className="text-sm text-gray-600 dark:text-gray-400">
-														{module.description}
-													</p>
-												</div>
-											</li>
-										))}
-										{!course.modules && (
+												</li>
+											))
+										) : (
 											<>
 												<li className="flex items-start gap-2">
 													<div className="w-2 h-2 rounded-full bg-blue-500 mt-1.5"></div>
@@ -172,8 +207,13 @@ const CatalogCourseCard = ({
 								{course.name}
 							</CardTitle>
 							<CardDescription className="flex items-center gap-1">
-								<Clock className="h-4 w-4" />
-								Durée: {course.duration}
+								{isOrganizationCourse ? (
+									<Building className="h-4 w-4" />
+								) : (
+									<Sparkles className="h-4 w-4" />
+								)}
+								{source.name} • <Clock className="h-4 w-4" />
+								{course.duration}
 							</CardDescription>
 						</CardHeader>
 
@@ -184,9 +224,7 @@ const CatalogCourseCard = ({
 
 							<div className="flex items-center gap-2 mt-4 text-sm text-gray-600 dark:text-gray-400">
 								<BookOpen className="h-4 w-4" />
-								<span>
-									{course.modules?.length || 3} modules
-								</span>
+								<span>{modules.length || 3} modules</span>
 							</div>
 						</CardContent>
 					</>
@@ -200,9 +238,9 @@ const CatalogCourseCard = ({
 								: "bg-wisetwin-blue hover:bg-wisetwin-blue-light"
 						}`}
 						onClick={() => onEnroll(course)}
-						disabled={isImporting === course.id || isEnrolled}
+						disabled={isImporting || isEnrolled}
 					>
-						{isImporting === course.id
+						{isImporting
 							? "Inscription..."
 							: isEnrolled
 							? "Déjà inscrit"
