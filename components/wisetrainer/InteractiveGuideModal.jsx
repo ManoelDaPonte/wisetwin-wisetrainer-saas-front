@@ -160,10 +160,22 @@ export default function InteractiveGuideModal({
 						}"`
 					);
 
-					// Réinitialiser l'erreur après 3 secondes
+					// NOUVEAU : Réinitialiser à l'étape 1 après un délai
 					setTimeout(() => {
 						setErrorFeedback(false);
-					}, 10000);
+						// Revenir à la première étape
+						setCurrentStepIndex(0);
+						// Réinitialiser les étapes complétées
+						setCompletedSteps([]);
+						setShowHint(false);
+						// Message pour l'utilisateur
+						toast({
+							title: "Séquence incorrecte",
+							description:
+								"Veuillez recommencer la procédure depuis le début.",
+							variant: "destructive",
+						});
+					}, 5000); // Délai de 3 secondes pour que l'utilisateur puisse voir le message d'erreur
 				}
 			}
 		};
