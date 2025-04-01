@@ -151,7 +151,7 @@ export function useUnityEvents(courseId = null) {
 
 						// Récupérer les détails du scénario
 						const response = await axios.get(
-							`${WISETRAINER_CONFIG.API_ROUTES.FETCH_SCENARIO}/${scenarioId}`
+							`${WISETRAINER_CONFIG.API_ROUTES.FETCH_SCENARIO_BY_COURSE}/${courseId}/${scenarioId}`
 						);
 
 						if (response.data) {

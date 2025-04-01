@@ -1,4 +1,4 @@
-// app/api/db/wisetrainer/save-questionnaire/route.jsx
+//app/api/db/wisetrainer/save-questionnaire/route.jsx
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 import fs from "fs";
@@ -11,7 +11,7 @@ export async function POST(request) {
 		const { userId, questionnaireId, responses, trainingId } =
 			await request.json();
 
-		if (!userId || !questionnaireId || !responses) {
+		if (!userId || !questionnaireId || !responses || !trainingId) {
 			return NextResponse.json(
 				{
 					error: "Toutes les informations requises ne sont pas fournies",
@@ -20,72 +20,39 @@ export async function POST(request) {
 			);
 		}
 
-		// Fonction pour charger un fichier de configuration de cours
-		const loadCourseConfig = (courseId) => {
-			try {
-				const configPath = path.join(
-					process.cwd(),
-					"lib/config/wisetrainer/courses",
-					`${courseId}.json`
-				);
-				if (fs.existsSync(configPath)) {
-					return JSON.parse(fs.readFileSync(configPath, "utf-8"));
-				}
-				return null;
-			} catch (error) {
-				console.error(
-					`Erreur lors du chargement du fichier de configuration ${courseId}:`,
-					error
-				);
-				return null;
-			}
-		};
+		// Utiliser directement le trainingId fourni pour charger la configuration du cours
+		const configPath = path.join(
+			process.cwd(),
+			"lib/config/wisetrainer/courses",
+			`${trainingId}.json`
+		);
 
-		// Déterminer le cours auquel appartient ce module
-		let foundModule = null;
-		let courseConfig = null;
-		let courseId = trainingId;
-
-		if (courseId) {
-			// Charger la configuration du cours spécifié
-			courseConfig = loadCourseConfig(courseId);
-			if (courseConfig) {
-				foundModule = courseConfig.modules.find(
-					(m) => m.id === questionnaireId
-				);
-			}
-		} else {
-			// Chercher dans tous les fichiers de configuration disponibles
-			const courseFiles = [
-				"WiseTrainer_01.json",
-				"WiseTrainer_02.json",
-				"WiseTrainer_03.json",
-				"wisetrainer-template.json",
-			];
-
-			for (const courseFile of courseFiles) {
-				courseId = courseFile.replace(".json", "");
-				courseConfig = loadCourseConfig(courseId);
-
-				if (courseConfig) {
-					foundModule = courseConfig.modules.find(
-						(m) => m.id === questionnaireId
-					);
-					if (foundModule) break;
-				}
-			}
+		// Vérifier si le fichier existe
+		if (!fs.existsSync(configPath)) {
+			return NextResponse.json(
+				{ error: `Configuration du cours ${trainingId} non trouvée` },
+				{ status: 404 }
+			);
 		}
+
+		// Charger la configuration du cours
+		const courseConfig = JSON.parse(fs.readFileSync(configPath, "utf-8"));
+
+		// Trouver le module correspondant au questionnaire dans ce cours uniquement
+		const foundModule = courseConfig.modules.find(
+			(m) => m.id === questionnaireId
+		);
 
 		if (!foundModule) {
 			return NextResponse.json(
 				{
-					error: "Module non trouvé dans les configurations disponibles",
+					error: `Module ${questionnaireId} non trouvé dans le cours ${trainingId}`,
 				},
 				{ status: 404 }
 			);
 		}
 
-		// Récupérer l'utilisateur, mais ne pas en créer un nouveau s'il n'existe pas
+		// Récupérer l'utilisateur
 		let user = await prisma.user.findFirst({
 			where: {
 				azureContainer: userId,
@@ -152,7 +119,7 @@ export async function POST(request) {
 		// Vérifier si le cours existe en DB
 		let courseDb = await prisma.course.findUnique({
 			where: {
-				courseId: courseId,
+				courseId: trainingId,
 			},
 		});
 
@@ -160,7 +127,7 @@ export async function POST(request) {
 		if (!courseDb) {
 			courseDb = await prisma.course.create({
 				data: {
-					courseId: courseId,
+					courseId: trainingId,
 					name: courseConfig.name,
 					description: courseConfig.description,
 					imageUrl:
@@ -177,7 +144,7 @@ export async function POST(request) {
 			where: {
 				moduleId: questionnaireId,
 				course: {
-					courseId: courseId,
+					courseId: trainingId,
 				},
 			},
 		});
@@ -203,6 +170,12 @@ export async function POST(request) {
 		let scenario = await prisma.scenario.findFirst({
 			where: {
 				scenarioId: questionnaireId,
+				module: {
+					moduleId: questionnaireId,
+					course: {
+						courseId: trainingId,
+					},
+				},
 			},
 		});
 

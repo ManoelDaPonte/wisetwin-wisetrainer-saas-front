@@ -10,7 +10,8 @@ const WISETRAINER_CONFIG = {
 		IMPORT_BUILD: "/api/azure/wisetrainer/import",
 		UNENROLL: "/api/azure/wisetrainer/unenroll",
 		CHECK_BLOB: "/api/azure/check-blob-exists",
-		FETCH_SCENARIO: "/api/db/wisetrainer/scenario",
+		FETCH_SCENARIO: "/api/db/wisetrainer/scenario", // Ancienne route
+		FETCH_SCENARIO_BY_COURSE: "/api/db/wisetrainer/scenario",
 		SAVE_QUESTIONNAIRE: "/api/db/wisetrainer/save-questionnaire",
 		UPDATE_PROGRESS: "/api/db/wisetrainer/update-progress",
 		USER_TRAININGS: "/api/db/wisetrainer/user-trainings",
