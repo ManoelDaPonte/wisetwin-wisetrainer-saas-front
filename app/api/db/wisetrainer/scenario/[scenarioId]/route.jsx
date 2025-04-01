@@ -37,9 +37,11 @@ export async function GET(request, { params }) {
 
 		// Examiner tous les fichiers de configuration disponibles pour trouver le module
 		const courseFiles = [
+			// "LOTO_Acces_Zone_Robot.json",
+			"LOTO_Maintenance.json",
 			"wisetrainer-template.json",
 			"WiseTrainer_01.json",
-			"WiseTrainer_02.json",
+			// "WiseTrainer_02.json",
 			"WiseTrainer_03.json",
 		];
 
