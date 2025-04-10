@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Users, Mail, Settings, BarChart } from "lucide-react";
+import { Users, Mail, Settings, BarChart, Tag } from "lucide-react";
 import { useToast } from "@/lib/hooks/useToast";
 
 // Importation des composants d'onglets
@@ -10,19 +10,32 @@ import MembersTab from "./members/MembersTab";
 import InvitationsTab from "./invitations/InvitationsTab";
 import SettingsTab from "./settings/SettingsTab";
 import DashboardTab from "./dashboard/DashboardTab";
+import TagsTab from "./tags/TagsTab"; // Nouvel import
 
 export default function OrganizationTabs({ organization, onDataChange }) {
 	const [activeTab, setActiveTab] = useState("members");
 	const [invitations, setInvitations] = useState([]);
 	const [isLoadingInvitations, setIsLoadingInvitations] = useState(false);
+	const [tags, setTags] = useState([]);
+	const [isLoadingTags, setIsLoadingTags] = useState(false);
 	const { toast } = useToast();
 
-	// Charger les invitations lors du chargement initial ou du changement d'onglet
+	// Charger les invitations lorsque l'onglet change
 	useEffect(() => {
 		if (activeTab === "invitations" && organization) {
 			fetchInvitations();
+		} else if (activeTab === "tags" && organization) {
+			fetchTags();
 		}
 	}, [activeTab, organization]);
+
+	// Charger les tags dès le montage du composant
+	useEffect(() => {
+		if (organization) {
+			fetchInvitations();
+			fetchTags();
+		}
+	}, [organization]);
 
 	const fetchInvitations = async () => {
 		if (!organization?.id) return;
@@ -44,6 +57,113 @@ export default function OrganizationTabs({ organization, onDataChange }) {
 			});
 		} finally {
 			setIsLoadingInvitations(false);
+		}
+	};
+
+	// Charger les tags de l'organisation
+	const fetchTags = async () => {
+		if (!organization?.id) return;
+
+		try {
+			setIsLoadingTags(true);
+			const response = await axios.get(
+				`/api/organization/${organization.id}/tags`
+			);
+			if (response.data.tags) {
+				setTags(response.data.tags);
+			}
+		} catch (error) {
+			console.error("Erreur lors du chargement des tags:", error);
+			toast({
+				title: "Erreur",
+				description: "Impossible de charger les tags",
+				variant: "destructive",
+			});
+		} finally {
+			setIsLoadingTags(false);
+		}
+	};
+
+	// Gérer l'ajout d'un tag
+	const handleAddTag = async (tagData) => {
+		try {
+			const response = await axios.post(
+				`/api/organization/${organization.id}/tags`,
+				tagData
+			);
+
+			if (response.data.success) {
+				toast({
+					title: "Tag ajouté",
+					description: "Le tag a été ajouté avec succès",
+					variant: "success",
+				});
+				fetchTags();
+			}
+		} catch (error) {
+			console.error("Erreur lors de l'ajout du tag:", error);
+			toast({
+				title: "Erreur",
+				description:
+					error.response?.data?.error ||
+					"Impossible d'ajouter le tag",
+				variant: "destructive",
+			});
+		}
+	};
+
+	// Gérer la modification d'un tag
+	const handleEditTag = async (tagData) => {
+		try {
+			const response = await axios.put(
+				`/api/organization/${organization.id}/tags/${tagData.id}`,
+				tagData
+			);
+
+			if (response.data.success) {
+				toast({
+					title: "Tag modifié",
+					description: "Le tag a été modifié avec succès",
+					variant: "success",
+				});
+				fetchTags();
+			}
+		} catch (error) {
+			console.error("Erreur lors de la modification du tag:", error);
+			toast({
+				title: "Erreur",
+				description:
+					error.response?.data?.error ||
+					"Impossible de modifier le tag",
+				variant: "destructive",
+			});
+		}
+	};
+
+	// Gérer la suppression d'un tag
+	const handleDeleteTag = async (tagId) => {
+		try {
+			const response = await axios.delete(
+				`/api/organization/${organization.id}/tags/${tagId}`
+			);
+
+			if (response.data.success) {
+				toast({
+					title: "Tag supprimé",
+					description: "Le tag a été supprimé avec succès",
+					variant: "success",
+				});
+				fetchTags();
+			}
+		} catch (error) {
+			console.error("Erreur lors de la suppression du tag:", error);
+			toast({
+				title: "Erreur",
+				description:
+					error.response?.data?.error ||
+					"Impossible de supprimer le tag",
+				variant: "destructive",
+			});
 		}
 	};
 
@@ -275,6 +395,11 @@ export default function OrganizationTabs({ organization, onDataChange }) {
 							Invitations
 						</TabsTrigger>
 
+						<TabsTrigger value="tags" className="px-6">
+							<Tag className="w-4 h-4 mr-2" />
+							Tags
+						</TabsTrigger>
+
 						<TabsTrigger value="dashboard" className="px-6">
 							<BarChart className="w-4 h-4 mr-2" />
 							Dashboard
@@ -288,12 +413,22 @@ export default function OrganizationTabs({ organization, onDataChange }) {
 				)}
 			</TabsList>
 
-			{(organization.userRole === "OWNER" ||
-				organization.userRole === "ADMIN") && (
-				<TabsContent value="dashboard">
-					<DashboardTab organization={organization} />
-				</TabsContent>
-			)}
+			{/* Contenu de l'onglet Tags */}
+			<TabsContent value="tags">
+				<TagsTab
+					organization={organization}
+					tags={tags}
+					isLoading={isLoadingTags}
+					onAddTag={handleAddTag}
+					onEditTag={handleEditTag}
+					onDeleteTag={handleDeleteTag}
+				/>
+			</TabsContent>
+
+			{/* Autres onglets existants */}
+			<TabsContent value="dashboard">
+				<DashboardTab organization={organization} />
+			</TabsContent>
 
 			<TabsContent value="members">
 				<MembersTab

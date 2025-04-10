@@ -141,6 +141,8 @@ export async function GET(request, { params }) {
 }
 
 // Fonction pour convertir les noms de blobs en métadonnées de formations
+//app/api/organization/[organizationId]/builds/route.jsx
+// Fonction pour convertir les noms de blobs en métadonnées de formations
 async function processBuilds(blobs, organizationTrainings = []) {
 	// Extraire les noms uniques de builds (sans extension)
 	const buildIds = new Set();
@@ -155,6 +157,22 @@ async function processBuilds(blobs, organizationTrainings = []) {
 		}
 	});
 
+	// Rechercher les cours correspondants dans la base de données
+	const courseIds = Array.from(buildIds);
+	const coursesInDb = await prisma.course.findMany({
+		where: {
+			courseId: {
+				in: courseIds,
+			},
+		},
+	});
+
+	// Créer un mapping entre les IDs externes et les objets courses
+	const courseMapping = {};
+	coursesInDb.forEach((course) => {
+		courseMapping[course.courseId] = course;
+	});
+
 	// Créer des objets de formation à partir des IDs
 	const builds = Array.from(buildIds).map((id) => {
 		// Chercher si ce build correspond à une formation enregistrée
@@ -166,6 +184,7 @@ async function processBuilds(blobs, organizationTrainings = []) {
 		if (orgTraining) {
 			return {
 				id,
+				dbId: orgTraining.course.id, // ID interne de la base de données
 				name: orgTraining.course.name,
 				description: orgTraining.course.description,
 				imageUrl:
@@ -179,21 +198,35 @@ async function processBuilds(blobs, organizationTrainings = []) {
 			};
 		}
 
-		// Sinon, créer des métadonnées par défaut
-		const name = id
-			.split("-")
-			.map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-			.join(" ");
+		// Si le cours existe dans la base de données (mais pas associé à cette organisation)
+		const dbCourse = courseMapping[id];
+		if (dbCourse) {
+			return {
+				id,
+				dbId: dbCourse.id, // ID interne de la base de données
+				name: dbCourse.name,
+				description: dbCourse.description,
+				imageUrl: dbCourse.imageUrl || WISETRAINER_CONFIG.DEFAULT_IMAGE,
+				difficulty: dbCourse.difficulty,
+				duration: dbCourse.duration,
+				category: dbCourse.category,
+				isCustomBuild: true,
+				courseId: dbCourse.courseId,
+			};
+		}
 
+		// Si aucune métadonnée n'est disponible, simplement retourner l'ID
 		return {
 			id,
-			name,
-			description: `Formation interactive sur ${name.toLowerCase()}`,
+			dbId: null, // Pas d'ID en base de données
+			name: id, // Utiliser l'ID comme nom
+			description: null,
 			imageUrl: WISETRAINER_CONFIG.DEFAULT_IMAGE,
-			difficulty: "Intermédiaire",
-			duration: "30 min",
-			category: "Formation spécifique",
+			difficulty: null,
+			duration: null,
+			category: null,
 			isCustomBuild: true,
+			courseId: id,
 		};
 	});
 
