@@ -8,11 +8,12 @@ import {
 	CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Tag } from "lucide-react";
+import { Plus, Tag, Users } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import TagsTable from "./TagsTable";
 import AddTagModal from "./AddTagModal";
 import TagsTrainingAssociations from "./TagsTrainingAssociations";
+import TagsUserAssociations from "./TagsUserAssociations";
 
 export default function TagsTab({
 	organization,
@@ -79,6 +80,10 @@ export default function TagsTab({
 							<Tag className="h-4 w-4 mr-2" />
 							Associations formations
 						</TabsTrigger>
+						<TabsTrigger value="user-associations">
+							<Users className="h-4 w-4 mr-2" />
+							Associations utilisateurs
+						</TabsTrigger>
 					</TabsList>
 
 					<TabsContent value="tags">
@@ -93,6 +98,10 @@ export default function TagsTab({
 
 					<TabsContent value="associations">
 						<TagsTrainingAssociations organization={organization} />
+					</TabsContent>
+
+					<TabsContent value="user-associations">
+						<TagsUserAssociations organization={organization} />
 					</TabsContent>
 				</Tabs>
 			</CardContent>

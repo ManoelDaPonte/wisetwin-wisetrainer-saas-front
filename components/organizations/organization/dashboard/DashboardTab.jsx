@@ -1,25 +1,11 @@
-// components/organizations/organization/dashboard/DashboardTab.jsx
+//components/organizations/organization/dashboard/DashboardTab.jsx
 import React, { useState, useEffect } from "react";
-import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardFooter,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-	BarChart,
-	Calendar,
-	Clock,
-	Users,
-	BookOpen,
-	Award,
-	Layers,
-} from "lucide-react";
+import { motion } from "framer-motion";
+import { useDashboard } from "@/lib/contexts/DashboardContext";
+import axios from "axios";
+import { useToast } from "@/lib/hooks/useToast";
 
-// Sous-composants du dashboard
+// Import des sous-composants
 import StatisticsOverview from "./StatisticsOverview";
 import UserProgressTable from "./UserProgressTable";
 import TrainingAnalytics from "./TrainingAnalytics";
@@ -28,11 +14,16 @@ import ActivityTimeline from "./ActivityTimeline";
 // Data fictives pour simulation
 import { getDashboardData } from "@/lib/data/dashboardData";
 
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { BarChart, Users, BookOpen, Calendar } from "lucide-react";
+
 export default function DashboardTab({ organization }) {
 	const [dashboardData, setDashboardData] = useState(null);
 	const [isLoading, setIsLoading] = useState(true);
 	const [activeView, setActiveView] = useState("overview");
 	const [timeRange, setTimeRange] = useState("month"); // 'week', 'month', 'quarter', 'year'
+	const [organizationTags, setOrganizationTags] = useState([]);
+	const { toast } = useToast();
 
 	useEffect(() => {
 		// Simulation de chargement des données
@@ -44,12 +35,55 @@ export default function DashboardTab({ organization }) {
 
 				// Charger des données fictives basées sur l'ID d'organisation
 				const data = getDashboardData(organization.id, timeRange);
-				setDashboardData(data);
+
+				// Charger les tags de l'organisation
+				const tagsResponse = await axios.get(
+					`/api/organization/${organization.id}/tags`
+				);
+				setOrganizationTags(tagsResponse.data.tags || []);
+
+				// Charger les tags pour chaque utilisateur
+				const usersWithTags = await Promise.all(
+					data.users.map(async (user) => {
+						try {
+							// Simuler l'ajout de tags aux utilisateurs
+							// Dans un vrai environnement, cela proviendrait de l'API
+							const randomTagCount = Math.floor(
+								Math.random() * 3
+							); // 0 à 2 tags
+							const randomTags = tagsResponse.data.tags
+								.sort(() => 0.5 - Math.random())
+								.slice(0, randomTagCount);
+
+							return {
+								...user,
+								tags: randomTags,
+							};
+						} catch (error) {
+							console.error(
+								`Erreur lors du chargement des tags pour ${user.name}:`,
+								error
+							);
+							return { ...user, tags: [] };
+						}
+					})
+				);
+
+				setDashboardData({
+					...data,
+					users: usersWithTags,
+				});
 			} catch (error) {
 				console.error(
 					"Erreur lors du chargement des données du dashboard:",
 					error
 				);
+				toast({
+					title: "Erreur",
+					description:
+						"Impossible de charger les données du dashboard",
+					variant: "destructive",
+				});
 			} finally {
 				setIsLoading(false);
 			}
@@ -166,6 +200,7 @@ export default function DashboardTab({ organization }) {
 							<UserProgressTable
 								users={dashboardData.users}
 								trainings={dashboardData.trainings}
+								tags={organizationTags}
 							/>
 						)}
 					</TabsContent>
@@ -178,7 +213,6 @@ export default function DashboardTab({ organization }) {
 							/>
 						)}
 					</TabsContent>
-
 					<TabsContent value="activity">
 						{dashboardData && (
 							<ActivityTimeline

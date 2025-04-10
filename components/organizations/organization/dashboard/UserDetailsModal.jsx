@@ -104,6 +104,29 @@ export default function UserDetailsModal({ user, isOpen, onClose, trainings }) {
 								<Mail className="h-4 w-4 mr-1" />
 								<span>{user.email}</span>
 							</div>
+							<div className="flex flex-wrap gap-2 mt-2">
+								{user.tags && user.tags.length > 0 ? (
+									user.tags.map((tag) => (
+										<Badge
+											key={tag.id}
+											className="px-2 py-0.5 text-sm"
+											style={{
+												backgroundColor: tag.color,
+												color: "#fff",
+											}}
+										>
+											{tag.name}
+										</Badge>
+									))
+								) : (
+									<Badge
+										variant="outline"
+										className="text-sm"
+									>
+										Aucun tag
+									</Badge>
+								)}
+							</div>
 							<div className="flex items-center gap-4 mt-2">
 								<Badge>{user.role}</Badge>
 								<span className="text-sm flex items-center">
@@ -326,7 +349,9 @@ export default function UserDetailsModal({ user, isOpen, onClose, trainings }) {
 									</CardTitle>
 									<CardDescription>
 										{user.trainings.length} formation
-										{user.trainings.length > 1 ? "s" : ""}{" "}
+										{user.trainings.length > 1
+											? "s"
+											: ""}{" "}
 										suivie
 										{user.trainings.length > 1 ? "s" : ""}
 									</CardDescription>

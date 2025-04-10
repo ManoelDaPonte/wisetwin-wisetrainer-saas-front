@@ -1,5 +1,5 @@
-// components/organizations/organization/members/MembersTab.jsx
-import React, { useState } from "react";
+//components/organizations/organization/members/MembersTab.jsx
+import React, { useState, useEffect } from "react";
 import {
 	Card,
 	CardContent,
@@ -8,9 +8,11 @@ import {
 	CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { UserPlus } from "lucide-react";
+import { UserPlus, RefreshCw } from "lucide-react";
 import MembersTable from "./MembersTable";
 import AddMemberModal from "./AddMemberModal";
+import axios from "axios";
+import { useToast } from "@/lib/hooks/useToast";
 
 export default function MembersTab({
 	organization,
@@ -19,10 +21,58 @@ export default function MembersTab({
 	onRemoveMember,
 }) {
 	const [showAddMemberModal, setShowAddMemberModal] = useState(false);
+	const [membersWithTags, setMembersWithTags] = useState(
+		organization.members || []
+	);
+	const [isLoadingMembers, setIsLoadingMembers] = useState(false);
+	const { toast } = useToast();
+
+	// Charger les membres avec leurs tags au montage du composant
+	useEffect(() => {
+		fetchMembersWithTags();
+	}, [organization.id]);
+
+	// Récupérer les membres avec leurs tags
+	const fetchMembersWithTags = async () => {
+		try {
+			setIsLoadingMembers(true);
+			const response = await axios.get(
+				`/api/organization/${organization.id}/members-with-tags`
+			);
+
+			if (response.data.members) {
+				setMembersWithTags(response.data.members);
+			}
+		} catch (error) {
+			console.error("Erreur lors du chargement des membres:", error);
+			toast({
+				title: "Erreur",
+				description:
+					"Impossible de charger les membres avec leurs tags",
+				variant: "destructive",
+			});
+		} finally {
+			setIsLoadingMembers(false);
+		}
+	};
 
 	const handleAddMemberSubmit = async (memberData) => {
 		await onAddMember(memberData);
 		setShowAddMemberModal(false);
+		// Rafraîchir la liste des membres
+		fetchMembersWithTags();
+	};
+
+	const handleRoleChange = async (memberId, newRole) => {
+		await onChangeRole(memberId, newRole);
+		// Rafraîchir la liste des membres
+		fetchMembersWithTags();
+	};
+
+	const handleRemoveMember = async (memberId) => {
+		await onRemoveMember(memberId);
+		// Rafraîchir la liste des membres
+		fetchMembersWithTags();
 	};
 
 	return (
@@ -35,23 +85,37 @@ export default function MembersTab({
 						organisation
 					</CardDescription>
 				</div>
-				{(organization.userRole === "OWNER" ||
-					organization.userRole === "ADMIN") && (
+				<div className="flex gap-2">
 					<Button
-						onClick={() => setShowAddMemberModal(true)}
-						className="bg-wisetwin-blue hover:bg-wisetwin-blue-light text-white"
+						variant="outline"
+						onClick={fetchMembersWithTags}
+						disabled={isLoadingMembers}
 					>
-						<UserPlus className="w-4 h-4 mr-2" />
-						Inviter un membre
+						<RefreshCw
+							className={`w-4 h-4 mr-2 ${
+								isLoadingMembers ? "animate-spin" : ""
+							}`}
+						/>
+						Actualiser
 					</Button>
-				)}
+					{(organization.userRole === "OWNER" ||
+						organization.userRole === "ADMIN") && (
+						<Button
+							onClick={() => setShowAddMemberModal(true)}
+							className="bg-wisetwin-blue hover:bg-wisetwin-blue-light text-white"
+						>
+							<UserPlus className="w-4 h-4 mr-2" />
+							Inviter un membre
+						</Button>
+					)}
+				</div>
 			</CardHeader>
 			<CardContent>
 				<MembersTable
-					members={organization.members}
+					members={membersWithTags}
 					currentUserRole={organization.userRole}
-					onChangeRole={onChangeRole}
-					onRemoveMember={onRemoveMember}
+					onChangeRole={handleRoleChange}
+					onRemoveMember={handleRemoveMember}
 				/>
 			</CardContent>
 
