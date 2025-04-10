@@ -1,16 +1,13 @@
-// lib/config/config.jsx
+//lib/config/config.jsx
 import {
 	Home,
 	LayoutDashboard,
 	ChartNoAxesCombined,
 	Box,
 	GraduationCap,
-	FolderKanban,
-	AlertTriangle,
-	TrendingUp,
 	BookText,
 	Users,
-	ServerCog,
+	Compass,
 } from "lucide-react";
 
 export const HomePageCards = [
@@ -46,7 +43,7 @@ export const HomePageCards = [
 
 export const navigationItems = {
 	topItems: [
-		{ id: "", label: "Premier Pas", icon: Home },
+		{ id: "guide", label: "Guide", icon: Compass },
 		{
 			id: "overview",
 			label: "Statistiques",
@@ -66,31 +63,7 @@ export const navigationItems = {
 			icon: GraduationCap,
 		},
 	],
-	settingsItems: [
-		{
-			id: "iot-dashboard",
-			label: "Device",
-			icon: FolderKanban,
-		},
-		{
-			id: "alerts",
-			label: "Alerts",
-			icon: AlertTriangle,
-		},
-		{
-			id: "predictive",
-			label: "Predictive",
-			icon: TrendingUp,
-			disabled: true,
-		},
-	],
 	otherItems: [
-		// {
-		// 	id: "documentation",
-		// 	label: "Docs",
-		// 	icon: BookText,
-		// 	external: true,
-		// },
 		{
 			id: "organization",
 			label: "Organisation",
