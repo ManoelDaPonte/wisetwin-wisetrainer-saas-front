@@ -213,3 +213,94 @@ export async function DELETE(request, { params }) {
 		);
 	}
 }
+
+// get all trainings for a tag
+export async function GET(request, { params }) {
+	try {
+		const session = await getSession();
+		const resolvedParams = await params;
+		const { organizationId, tagId } = resolvedParams;
+
+		// Vérifier si l'utilisateur est authentifié
+		if (!session || !session.user) {
+			return NextResponse.json(
+				{ error: "Non autorisé" },
+				{ status: 401 }
+			);
+		}
+
+		// Récupérer l'utilisateur depuis la base de données
+		const user = await prisma.user.findUnique({
+			where: {
+				auth0Id: session.user.sub,
+			},
+		});
+
+		if (!user) {
+			return NextResponse.json(
+				{ error: "Utilisateur non trouvé" },
+				{ status: 404 }
+			);
+		}
+
+		// Vérifier si l'utilisateur est membre de l'organisation avec des droits d'administrateur
+		const membership = await prisma.organizationMember.findFirst({
+			where: {
+				organizationId: organizationId,
+				userId: user.id,
+				role: {
+					in: ["OWNER", "ADMIN"],
+				},
+			},
+		});
+		if (!membership) {
+			return NextResponse.json(
+				{
+					error: "Vous n'avez pas les droits nécessaires pour effectuer cette action",
+				},
+				{ status: 403 }
+			);
+		}
+		// Vérifier si le tag existe et appartient à l'organisation
+		const tag = await prisma.organizationTag.findFirst({
+			where: {
+				id: tagId,
+				organizationId: organizationId,
+			},
+		});
+		if (!tag) {
+			return NextResponse.json(
+				{ error: "Tag non trouvé" },
+				{ status: 404 }
+			);
+		}
+		// Récupérer toutes les formations associées au tag
+		const trainings = await prisma.tagTraining.findMany({
+			where: {
+				tagId: tagId,
+			},
+			include: {
+				training: true,
+			},
+		});
+		if (!trainings || trainings.length === 0) {
+			return NextResponse.json(
+				{ message: "Aucune formation trouvée pour ce tag" },
+				{ status: 404 }
+			);
+		}
+		return NextResponse.json({
+			success: true,
+			trainings: trainings.map((training) => training.training),
+		});
+	} catch (error) {
+		console.error("Erreur lors de la récupération des formations:", error);
+		return NextResponse.json(
+			{
+				error: "Échec de la récupération des formations",
+				details: error.message,
+			},
+			{ status: 500 }
+		);
+	}
+}

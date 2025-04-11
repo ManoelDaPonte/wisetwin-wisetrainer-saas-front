@@ -8,6 +8,7 @@ import { useUser } from "@auth0/nextjs-auth0/client";
 import { useAzureContainer } from "@/lib/hooks/useAzureContainer";
 import { BookOpen, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/lib/hooks/useToast";
 
 // Composants personnalisés
 import WelcomeHeader from "@/components/guide/WelcomeHeader";
@@ -15,9 +16,11 @@ import OrganizationTrainingPanel from "@/components/guide/OrganizationTrainingPa
 import NoOrganizationGuide from "@/components/guide/NoOrganizationGuide";
 import RecommendedTrainings from "@/components/guide/RecommendedTrainings";
 import NextStepsPanel from "@/components/guide/NextStepsPanel";
+import TagBasedRecommendations from "@/components/guide/TagBasedRecommendations";
 
 export default function GuidePage() {
 	const router = useRouter();
+	const { toast } = useToast();
 	const { user, isLoading: userLoading } = useUser();
 	const { containerName, isLoading: containerLoading } = useAzureContainer();
 	const [isLoading, setIsLoading] = useState(true);
@@ -25,7 +28,9 @@ export default function GuidePage() {
 	const [hasOrganizations, setHasOrganizations] = useState(false);
 	const [inProgressTrainings, setInProgressTrainings] = useState([]);
 	const [recommendedTrainings, setRecommendedTrainings] = useState([]);
+	const [userTagsWithOrgs, setUserTagsWithOrgs] = useState([]);
 	const [taggedTrainings, setTaggedTrainings] = useState([]);
+	const [debug, setDebug] = useState({});
 
 	// Charger les données utilisateur
 	useEffect(() => {
@@ -36,14 +41,20 @@ export default function GuidePage() {
 
 	const loadUserData = async () => {
 		setIsLoading(true);
+		const debugInfo = {};
+
 		try {
 			// 1. Récupérer les organisations de l'utilisateur
+			console.log("Récupération des organisations...");
 			const orgsResponse = await axios.get("/api/organization");
 			const userOrgs = orgsResponse.data.organizations || [];
 			setOrganizations(userOrgs);
 			setHasOrganizations(userOrgs.length > 0);
+			debugInfo.organizations = userOrgs;
+			console.log("Organisations récupérées:", userOrgs);
 
 			// 2. Récupérer les formations en cours
+			console.log("Récupération des formations en cours...");
 			const trainingsResponse = await axios.get(
 				`/api/db/wisetrainer/user-trainings/${containerName}`
 			);
@@ -52,74 +63,183 @@ export default function GuidePage() {
 				(t) => t.progress > 0 && t.progress < 100
 			);
 			setInProgressTrainings(inProgress);
+			debugInfo.inProgressTrainings = inProgress;
+			console.log("Formations en cours:", inProgress);
 
-			// 3. Si l'utilisateur a des organisations, récupérer les formations recommandées par tags
+			// 3. Si l'utilisateur a des organisations, récupérer ses tags et formations associées
+			let allUserTags = [];
+			let allTaggedTrainings = [];
+
 			if (userOrgs.length > 0) {
-				// Récupérer d'abord les tags de l'utilisateur
-				const userTagsPromises = userOrgs.map((org) =>
-					axios
-						.get(`/api/organization/${org.id}/members-with-tags`)
-						.then((res) => {
-							const currentUser = res.data.members.find(
-								(m) => m.email === user.email
-							);
-							return currentUser?.tags || [];
-						})
+				console.log(
+					`Récupération des tags pour ${userOrgs.length} organisation(s)...`
 				);
 
-				const orgTagsResults = await Promise.all(userTagsPromises);
-				// Fusionner tous les tags
-				const userTags = [].concat(...orgTagsResults);
+				// Récupérer les tags de l'utilisateur pour chaque organisation
+				for (const org of userOrgs) {
+					try {
+						console.log(
+							`Récupération des tags pour l'organisation ${org.id} (${org.name})...`
+						);
+						const res = await axios.get(
+							`/api/organization/${org.id}/members-with-tags`
+						);
+						console.log(`Réponse pour l'org ${org.id}:`, res.data);
 
-				// Si l'utilisateur a des tags, récupérer les formations associées à ces tags
-				if (userTags.length > 0) {
-					const taggedTrainingsPromises = userTags.map((tag) =>
-						axios
-							.get(
-								`/api/organization/${tag.organizationId}/tags/${tag.id}/trainings`
-							)
-							.then((res) => {
-								return (res.data.trainings || []).map(
-									(training) => ({
-										...training,
-										tagInfo: {
-											id: tag.id,
-											name: tag.name,
-											color: tag.color,
-											organizationId: tag.organizationId,
-										},
-										organizationName:
-											userOrgs.find(
-												(o) =>
-													o.id === tag.organizationId
-											)?.name || "Organisation",
+						// CORRECTION: Vérifier si members est un tableau et est disponible
+						if (
+							!res.data.members ||
+							!Array.isArray(res.data.members)
+						) {
+							console.warn(
+								`Pas de membre trouvé pour l'org ${org.id}`
+							);
+							continue;
+						}
+
+						// CORRECTION: Comparer à la fois par email et éventuellement par ID
+						// Note: l'objet user peut avoir auth0 email ou email selon la configuration
+						const userEmail = user.email || user.name; // Auth0 met parfois l'email dans le champ name
+
+						console.log(
+							`Recherche de l'utilisateur avec email: ${userEmail}`
+						);
+
+						// Recherche de l'utilisateur par email
+						const currentUser = res.data.members.find(
+							(m) =>
+								(m.email &&
+									m.email.toLowerCase() ===
+										userEmail.toLowerCase()) ||
+								(m.name &&
+									m.name.toLowerCase() ===
+										userEmail.toLowerCase())
+						);
+
+						if (currentUser) {
+							console.log(
+								`Utilisateur trouvé dans l'org:`,
+								currentUser
+							);
+
+							// Vérifier si l'utilisateur a des tags
+							if (
+								currentUser.tags &&
+								Array.isArray(currentUser.tags) &&
+								currentUser.tags.length > 0
+							) {
+								// Ajouter l'info de l'organisation à chaque tag
+								const userTags = currentUser.tags.map(
+									(tag) => ({
+										...tag,
+										organizationName: org.name,
+										organizationId: org.id,
 									})
 								);
-							})
-					);
 
-					const taggedTrainingsResults = await Promise.all(
-						taggedTrainingsPromises
-					);
-					// Fusionner et dédoublonner les formations
-					const allTaggedTrainings = [].concat(
-						...taggedTrainingsResults
-					);
-					const uniqueTaggedTrainings = [];
-					const trainingIds = new Set();
+								console.log(
+									`Tags trouvés pour l'utilisateur dans l'org ${org.id}:`,
+									userTags
+								);
+								allUserTags = [...allUserTags, ...userTags];
 
-					allTaggedTrainings.forEach((training) => {
-						if (!trainingIds.has(training.id)) {
-							trainingIds.add(training.id);
-							uniqueTaggedTrainings.push(training);
+								// Pour chaque tag, récupérer les formations associées
+								for (const tag of userTags) {
+									try {
+										console.log(
+											`Récupération des formations pour le tag ${tag.id} (${tag.name})...`
+										);
+										const trainingRes = await axios.get(
+											`/api/organization/${org.id}/tags/${tag.id}/training`
+										);
+
+										console.log(
+											`Formations trouvées pour le tag ${tag.id}:`,
+											trainingRes.data
+										);
+
+										if (
+											trainingRes.data.trainings &&
+											Array.isArray(
+												trainingRes.data.trainings
+											)
+										) {
+											const taggedTrainings =
+												trainingRes.data.trainings.map(
+													(training) => ({
+														...training,
+														tagInfo: {
+															id: tag.id,
+															name: tag.name,
+															color: tag.color,
+														},
+														organizationId: org.id,
+														organizationName:
+															org.name,
+													})
+												);
+
+											if (taggedTrainings.length > 0) {
+												console.log(
+													`${taggedTrainings.length} formations trouvées pour le tag ${tag.id}`
+												);
+												allTaggedTrainings = [
+													...allTaggedTrainings,
+													...taggedTrainings,
+												];
+											} else {
+												console.log(
+													`Aucune formation trouvée pour le tag ${tag.id}`
+												);
+											}
+										}
+									} catch (error) {
+										console.error(
+											`Erreur lors de la récupération des formations pour le tag ${tag.id}:`,
+											error
+										);
+									}
+								}
+							} else {
+								console.log(
+									`Aucun tag trouvé pour l'utilisateur dans l'org ${org.id}`
+								);
+							}
+						} else {
+							console.warn(
+								`Utilisateur avec email ${userEmail} non trouvé dans l'org ${org.id}`
+							);
+
+							// Afficher les emails disponibles pour aider au débogage
+							const availableEmails = res.data.members.map(
+								(m) => m.email || m.name
+							);
+							console.log(
+								`Emails disponibles dans cette organisation:`,
+								availableEmails
+							);
 						}
-					});
-
-					setTaggedTrainings(uniqueTaggedTrainings);
+					} catch (error) {
+						console.error(
+							`Erreur lors de la récupération des tags pour l'organisation ${org.id}:`,
+							error
+						);
+					}
 				}
 			}
 
-			// 4. Recommandations générales (à compléter avec une vraie logique d'IA plus tard)
+			console.log("Tous les tags de l'utilisateur:", allUserTags);
+			console.log(
+				"Toutes les formations associées aux tags:",
+				allTaggedTrainings
+			);
+
+			setUserTagsWithOrgs(allUserTags);
+			setTaggedTrainings(allTaggedTrainings);
+			debugInfo.userTags = allUserTags;
+			debugInfo.taggedTrainings = allTaggedTrainings;
+
+			// 4. Recommandations générales
 			const generalRecommendations = [
 				{
 					id: "LOTO_Maintenance",
@@ -142,15 +262,37 @@ export default function GuidePage() {
 			];
 
 			setRecommendedTrainings(generalRecommendations);
+			debugInfo.recommendedTrainings = generalRecommendations;
+
+			// Mettre à jour les informations de débogage
+			setDebug(debugInfo);
+
+			console.log("Chargement des données terminé avec succès");
+			console.log("État final:", {
+				organizations: userOrgs,
+				userTags: allUserTags,
+				taggedTrainings: allTaggedTrainings,
+				inProgressTrainings: inProgress,
+			});
 		} catch (error) {
 			console.error(
 				"Erreur lors du chargement des données utilisateur:",
 				error
 			);
+			toast({
+				title: "Erreur",
+				description:
+					"Une erreur est survenue lors du chargement des données",
+				variant: "destructive",
+			});
+			debugInfo.error = error.message;
+			setDebug(debugInfo);
 		} finally {
 			setIsLoading(false);
 		}
 	};
+
+	// Reste du code inchangé...
 
 	// Affichage pendant le chargement
 	if (userLoading || containerLoading || isLoading) {
@@ -174,6 +316,9 @@ export default function GuidePage() {
 		);
 	}
 
+	// Afficher des informations de débogage en mode développement
+	const showDebugInfo = process.env.NODE_ENV === "development";
+
 	return (
 		<div className="container mx-auto py-8">
 			<div className="mb-6">
@@ -186,6 +331,41 @@ export default function GuidePage() {
 				</p>
 			</div>
 
+			{/* Informations de débogage en mode développement */}
+			{showDebugInfo && (
+				<div className="mb-6 p-4 bg-gray-100 dark:bg-gray-800 rounded-lg text-sm">
+					<details>
+						<summary className="font-semibold cursor-pointer">
+							Informations de débogage
+						</summary>
+						<div className="mt-2 space-y-2">
+							<div>
+								<strong>User Email:</strong>{" "}
+								{user?.email || user?.name}
+							</div>
+							<div>
+								<strong>Container:</strong> {containerName}
+							</div>
+							<div>
+								<strong>Organizations:</strong>{" "}
+								{organizations.length}
+							</div>
+							<div>
+								<strong>Has Tags:</strong>{" "}
+								{userTagsWithOrgs.length > 0 ? "Oui" : "Non"}
+							</div>
+							<div>
+								<strong>Tagged Trainings:</strong>{" "}
+								{taggedTrainings.length}
+							</div>
+							<pre className="mt-2 p-2 bg-gray-800 text-white rounded overflow-auto max-h-64 text-xs">
+								{JSON.stringify(debug, null, 2)}
+							</pre>
+						</div>
+					</details>
+				</div>
+			)}
+
 			<div className="space-y-6">
 				{/* En-tête avec bienvenue et statistiques */}
 				<WelcomeHeader
@@ -195,13 +375,38 @@ export default function GuidePage() {
 					trainingsInProgressCount={inProgressTrainings.length}
 				/>
 
-				{/* Pour chaque organisation, afficher les formations taguées et en cours */}
+				{/* Recommandations basées sur les tags de l'utilisateur */}
+				{userTagsWithOrgs.length > 0 && taggedTrainings.length > 0 && (
+					<TagBasedRecommendations
+						userTags={userTagsWithOrgs}
+						taggedTrainings={taggedTrainings}
+					/>
+				)}
+
+				{userTagsWithOrgs.length > 0 &&
+					taggedTrainings.length === 0 && (
+						<Card className="bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800">
+							<CardContent className="py-4">
+								<p className="text-amber-800 dark:text-amber-200">
+									Vous avez {userTagsWithOrgs.length} tag(s)
+									attribué(s), mais aucune formation associée
+									n'a été trouvée. Demandez à votre
+									administrateur d'associer des formations à
+									vos tags.
+								</p>
+							</CardContent>
+						</Card>
+					)}
+
+				{/* Formations en cours par organisation */}
 				{hasOrganizations &&
 					organizations.map((org) => (
 						<OrganizationTrainingPanel
 							key={org.id}
 							organization={org}
-							taggedTrainings={taggedTrainings}
+							taggedTrainings={taggedTrainings.filter(
+								(t) => t.organizationId === org.id
+							)}
 							inProgressTrainings={inProgressTrainings}
 						/>
 					))}
@@ -209,7 +414,7 @@ export default function GuidePage() {
 				{/* Si pas d'organisation, afficher un guide spécifique */}
 				{!hasOrganizations && <NoOrganizationGuide />}
 
-				{/* Recommandations générales si peu de formations associées à des organisations */}
+				{/* Recommandations générales si peu de formations associées à des tags */}
 				{(!hasOrganizations || taggedTrainings.length < 2) && (
 					<RecommendedTrainings
 						recommendedTrainings={recommendedTrainings}
