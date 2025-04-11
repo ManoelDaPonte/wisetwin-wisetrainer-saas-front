@@ -47,8 +47,14 @@ export default function RootLayout({ children, pathname }) {
 
 										{/* Section de contenu principale avec défilement et fond cohérent */}
 										<main className="flex-1 overflow-y-auto bg-gray-50 dark:bg-wisetwin-darkblue/95 relative">
-											{/* Logo en arrière-plan */}
-											<div className="absolute inset-0 z-0 pointer-events-none flex items-center justify-center opacity-100 dark:opacity-5">
+											{/* Logo en arrière-plan - la position est calculée dynamiquement */}
+											<div
+												className="fixed top-0 bottom-0 right-0 z-0 pointer-events-none flex items-center justify-center opacity-100 dark:opacity-5"
+												style={{
+													width: "calc(100% - 15rem)" /* 100% - largeur de la barre latérale (w-60 = 15rem) */,
+													left: "15rem" /* Positionnement à droite de la barre latérale */,
+												}}
+											>
 												<div className="relative w-4/5 h-4/5">
 													<Image
 														src="/logos/logo_parrot_light.svg"
