@@ -1,4 +1,3 @@
-//components/guide/TagBasedRecommendations.jsx
 import React from "react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
@@ -113,9 +112,10 @@ export default function TagBasedRecommendations({ userTags, taggedTrainings }) {
 							</div>
 
 							<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-								{group.trainings.map((training) => (
+								{group.trainings.map((training, index) => (
 									<TagBasedTrainingCard
-										key={`${training.id}-${group.tag.id}`}
+										// Utiliser une clé unique combinant l'ID de la formation, l'ID du tag et l'index
+										key={`${training.id}-${group.tag.id}-${index}`}
 										training={training}
 										tag={group.tag}
 										itemVariants={itemVariants}

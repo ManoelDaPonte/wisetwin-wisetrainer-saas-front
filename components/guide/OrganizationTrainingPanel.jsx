@@ -1,4 +1,3 @@
-//components/guide/OrganizationTrainingPanel.jsx
 import React from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -9,13 +8,15 @@ import {
 	CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Building, Tag } from "lucide-react";
+import { ArrowRight, Building, Tag, BookOpen } from "lucide-react";
 import TrainingCard from "./TrainingCard";
 
 export default function OrganizationTrainingPanel({
 	organization,
 	taggedTrainings,
+	organizationTrainings = [],
 	inProgressTrainings,
+	showAllTrainings = false,
 }) {
 	const router = useRouter();
 
@@ -34,10 +35,31 @@ export default function OrganizationTrainingPanel({
 				t.source.organizationId === organization.id)
 	);
 
+	// Filtrer les formations spécifiques à l'organisation qui ne sont pas déjà incluses dans
+	// les formations taguées ou en cours pour éviter les doublons
+	const orgOtherTrainings = showAllTrainings
+		? organizationTrainings.filter((training) => {
+				// Éviter les doublons avec formations taguées
+				const isTagged = orgTaggedTrainings.some(
+					(t) =>
+						t.id === training.id || t.courseId === training.courseId
+				);
+
+				// Éviter les doublons avec formations en cours
+				const isInProgress = orgInProgressTrainings.some(
+					(t) =>
+						t.id === training.id || t.courseId === training.courseId
+				);
+
+				return !isTagged && !isInProgress;
+		  })
+		: [];
+
 	// Si aucune formation n'est associée à cette organisation, on n'affiche pas le panel
 	if (
 		orgTaggedTrainings.length === 0 &&
-		orgInProgressTrainings.length === 0
+		orgInProgressTrainings.length === 0 &&
+		orgOtherTrainings.length === 0
 	) {
 		return null;
 	}
@@ -64,7 +86,7 @@ export default function OrganizationTrainingPanel({
 				</div>
 				<CardDescription>
 					{organization.description ||
-						"Formation disponibles pour cette organisation"}
+						"Formations disponibles pour cette organisation"}
 				</CardDescription>
 			</CardHeader>
 			<CardContent>
@@ -77,10 +99,10 @@ export default function OrganizationTrainingPanel({
 								Formations recommandées pour vous
 							</h3>
 						</div>
-						<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+						<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
 							{orgTaggedTrainings.map((training) => (
 								<TrainingCard
-									key={training.id}
+									key={`tag-${training.id}-${training.tagInfo?.id}`}
 									training={training}
 									onClick={() =>
 										router.push(
@@ -96,15 +118,40 @@ export default function OrganizationTrainingPanel({
 
 				{/* Formations en cours */}
 				{orgInProgressTrainings.length > 0 && (
-					<div>
+					<div className="mb-6">
 						<div className="flex items-center gap-2 mb-3">
 							<ArrowRight className="w-4 h-4 text-wisetwin-blue" />
 							<h3 className="font-medium">Formations en cours</h3>
 						</div>
-						<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+						<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
 							{orgInProgressTrainings.map((training) => (
 								<TrainingCard
-									key={training.id}
+									key={`inprogress-${training.id}`}
+									training={training}
+									onClick={() =>
+										router.push(
+											`/wisetrainer/${training.id}`
+										)
+									}
+								/>
+							))}
+						</div>
+					</div>
+				)}
+
+				{/* Toutes les autres formations de l'organisation */}
+				{orgOtherTrainings.length > 0 && (
+					<div>
+						<div className="flex items-center gap-2 mb-3">
+							<BookOpen className="w-4 h-4 text-wisetwin-blue" />
+							<h3 className="font-medium">
+								Toutes les formations
+							</h3>
+						</div>
+						<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+							{orgOtherTrainings.map((training) => (
+								<TrainingCard
+									key={`org-${training.id}`}
 									training={training}
 									onClick={() =>
 										router.push(

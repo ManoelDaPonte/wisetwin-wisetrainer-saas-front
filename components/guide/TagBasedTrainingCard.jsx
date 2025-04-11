@@ -50,6 +50,7 @@ export default function TagBasedTrainingCard({
 			<Card
 				className="h-full flex flex-col transition-all hover:shadow-md hover:border-wisetwin-blue cursor-pointer"
 				onClick={onSelect}
+				noPaddingTop
 			>
 				{/* Image et badges */}
 				<div className="relative w-full h-36 overflow-hidden rounded-t-lg">

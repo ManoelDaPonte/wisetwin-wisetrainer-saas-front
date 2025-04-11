@@ -43,6 +43,7 @@ export default function TrainingCard({ training, onClick, isTagged = false }) {
 			<Card
 				className="hover:shadow-lg transition-shadow cursor-pointer border hover:border-wisetwin-blue dark:hover:border-wisetwin-blue-light h-full"
 				onClick={onClick}
+				noPaddingTop
 			>
 				<div className="relative w-full h-40">
 					<img
