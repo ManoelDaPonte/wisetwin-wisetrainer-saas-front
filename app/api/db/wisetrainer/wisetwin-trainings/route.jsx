@@ -9,20 +9,30 @@ export async function GET(request) {
 		const blobServiceClient = BlobServiceClient.fromConnectionString(
 			process.env.AZURE_STORAGE_CONNECTION_STRING
 		);
+		console.log(
+			"Connexion au service Azure Blob Storage réussie",
+			blobServiceClient
+		);
 
 		// Container WiseTwin
 		const containerClient = blobServiceClient.getContainerClient(
 			WISETRAINER_CONFIG.CONTAINER_NAMES.SOURCE
 		);
+		console.log(
+			"Container WiseTwin récupéré",
+			containerClient.containerName
+		);
 
 		// Vérifier que le container existe
 		const containerExists = await containerClient.exists();
+		console.log("Container WiseTwin existe:", containerExists);
 		if (!containerExists) {
 			return NextResponse.json(
 				{ error: "Container WiseTwin non trouvé", trainings: [] },
 				{ status: 404 }
 			);
 		}
+		console.log("Container WiseTwin existe");
 
 		// Récupérer tous les blobs avec le préfixe wisetrainer/
 		const blobs = [];

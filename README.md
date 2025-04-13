@@ -1,36 +1,74 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# WiseTwin - Plateforme d'apprentissage et de simulation
 
-## Getting Started
+WiseTwin est une application Next.js qui offre des solutions innovantes pour la formation en réalité augmentée et les jumeaux numériques en environnement industriel.
 
-First, run the development server:
+## Fonctionnalités
+
+-   **WiseTrainer**: Modules de formation interactifs en 3D
+-   **Organisations**: Gestion des équipes et attribution de formations spécifiques
+-   **Statistiques**: Suivi personnalisé de la progression des utilisateurs
+-   **Système de tags**: Organisation intelligente des contenus et utilisateurs
+
+## Technologie
+
+-   **Frontend**: Next.js avec App Router
+-   **CSS**: Tailwind CSS avec thème personnalisé
+-   **Authentification**: Auth0
+-   **Base de données**: PostgreSQL avec Prisma
+-   **Stockage**: Azure Blob Storage
+-   **Animations**: Framer Motion
+
+## Installation
 
 ```bash
+# Cloner le dépôt
+git clone https://github.com/votre-utilisateur/wisetwin-platform.git
+
+# Installer les dépendances
+cd wisetwin-platform
+npm install
+
+# Générer le client Prisma
+npx prisma generate
+
+# Lancer le serveur de développement
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Variables d'environnement
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+Créez un fichier `.env.local` à la racine du projet avec les variables suivantes:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```
+# Base de données
+DATABASE_URL="postgresql://username:password@localhost:5432/wisetwin?schema=public"
 
-## Learn More
+# Auth0
+AUTH0_SECRET=your_secret
+AUTH0_BASE_URL=http://localhost:3000
+AUTH0_ISSUER_BASE_URL=https://your-tenant.eu.auth0.com
+AUTH0_CLIENT_ID=your_client_id
+AUTH0_CLIENT_SECRET=your_client_secret
 
-To learn more about Next.js, take a look at the following resources:
+# Azure Storage
+AZURE_STORAGE_CONNECTION_STRING=your_connection_string
 
--   [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
--   [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+# Email (optionnel)
+EMAIL_PASSWORD=your_email_password
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Structure du projet
 
-## Deploy on Vercel
+-   `/app`: Routes et pages de l'application
+-   `/components`: Composants réutilisables
+-   `/lib`: Utilitaires, hooks et configuration
+-   `/prisma`: Schéma de base de données
+-   `/public`: Fichiers statiques
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Contribution
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. Forkez le projet
+2. Créez votre branche de fonctionnalité (`git checkout -b feature/amazing-feature`)
+3. Committez vos changements (`git commit -m 'Add some amazing feature'`)
+4. Poussez la branche (`git push origin feature/amazing-feature`)
+5. Ouvrez une Pull Request
