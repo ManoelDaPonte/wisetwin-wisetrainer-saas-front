@@ -47,12 +47,11 @@ export default function RootLayout({ children, pathname }) {
 
 										{/* Section de contenu principale avec défilement et fond cohérent */}
 										<main className="flex-1 overflow-y-auto bg-gray-50 dark:bg-wisetwin-darkblue/95 relative">
-											{/* Logo en arrière-plan - la position est calculée dynamiquement */}
 											<div
 												className="fixed top-0 bottom-0 right-0 z-0 pointer-events-none flex items-center justify-center opacity-100 dark:opacity-5"
 												style={{
-													width: "calc(100% - 15rem)" /* 100% - largeur de la barre latérale (w-60 = 15rem) */,
-													left: "15rem" /* Positionnement à droite de la barre latérale */,
+													width: "calc(100% - 15rem)",
+													left: "15rem",
 												}}
 											>
 												<div className="relative w-4/5 h-4/5">
@@ -65,7 +64,6 @@ export default function RootLayout({ children, pathname }) {
 													/>
 												</div>
 											</div>
-											{/* Conteneur principal limité à 80% de la largeur et centré, mais sans overflow propre */}
 											<div className="mx-auto w-4/5 max-w-7xl h-full">
 												<div className="page-transition h-full relative z-10 py-6">
 													{children}

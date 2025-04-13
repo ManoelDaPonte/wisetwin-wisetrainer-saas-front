@@ -9,6 +9,41 @@ import {
 	Compass,
 } from "lucide-react";
 
+export const STATS_CONFIG = {
+	MEDALS: {
+		GOLD: {
+			icon: "Trophy",
+			color: "#FFD700",
+			label: "Or",
+			minScore: 90,
+		},
+		SILVER: {
+			icon: "Award",
+			color: "#C0C0C0",
+			label: "Argent",
+			minScore: 75,
+		},
+		BRONZE: {
+			icon: "Medal",
+			color: "#CD7F32",
+			label: "Bronze",
+			minScore: 60,
+		},
+	},
+	ACTIVITY_TYPES: {
+		TRAINING_STARTED: "training_started",
+		TRAINING_COMPLETED: "training_completed",
+		MODULE_COMPLETED: "module_completed",
+		QUIZ_COMPLETED: "quiz_completed",
+		SESSION_STARTED: "session_started",
+		SESSION_ENDED: "session_ended",
+	},
+	PDF_TEMPLATES: {
+		CERTIFICATE: "certificate_template",
+		FULL_REPORT: "full_report_template",
+	},
+};
+
 export const HomePageCards = [
 	{
 		title: "WiseTrainer & WiseTwin",

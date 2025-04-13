@@ -1,3 +1,4 @@
+//app/(app)/guide/page.jsx
 "use client";
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -10,12 +11,14 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/lib/hooks/useToast";
 import { Card, CardContent } from "@/components/ui/card";
 
+// Hooks personnalisés
+import { useTrainingWiseTwin } from "@/lib/hooks/useTrainingWiseTwin";
+
 // Composants personnalisés
 import WelcomeHeader from "@/components/guide/WelcomeHeader";
 import OrganizationTrainingPanel from "@/components/guide/OrganizationTrainingPanel";
 import NoOrganizationGuide from "@/components/guide/NoOrganizationGuide";
-import NextStepsPanel from "@/components/guide/NextStepsPanel";
-import TagBasedRecommendations from "@/components/guide/TagBasedRecommendations";
+import WiseTwinRecommendations from "@/components/guide/WiseTwinRecommendations";
 
 export default function GuidePage() {
 	const router = useRouter();
@@ -26,9 +29,11 @@ export default function GuidePage() {
 	const [organizations, setOrganizations] = useState([]);
 	const [hasOrganizations, setHasOrganizations] = useState(false);
 	const [inProgressTrainings, setInProgressTrainings] = useState([]);
-	const [userTagsWithOrgs, setUserTagsWithOrgs] = useState([]);
-	const [taggedTrainings, setTaggedTrainings] = useState([]);
-	const [organizationTrainings, setOrganizationTrainings] = useState([]);
+	const [organizationsData, setOrganizationsData] = useState([]);
+
+	// Utiliser le hook pour les formations WiseTwin
+	const { trainings: wiseTwinTrainings, isLoading: wiseTwinLoading } =
+		useTrainingWiseTwin(containerName);
 
 	// Charger les données utilisateur
 	useEffect(() => {
@@ -61,51 +66,45 @@ export default function GuidePage() {
 			setInProgressTrainings(inProgress);
 			console.log("Formations en cours:", inProgress);
 
-			// 3. Si l'utilisateur a des organisations, récupérer toutes les formations et les tags
-			let allUserTags = [];
-			let allTaggedTrainings = [];
-			let allOrgTrainings = [];
-
-			if (userOrgs.length > 0) {
-				// Récupérer les tags de l'utilisateur pour chaque organisation
-				for (const org of userOrgs) {
+			// 3. Récupérer les données pour chaque organisation
+			const orgData = await Promise.all(
+				userOrgs.map(async (org) => {
 					try {
-						// a) Récupérer tous les membres de l'organisation avec leurs tags
-						const res = await axios.get(
+						// Récupérer les tags de l'utilisateur pour cette organisation
+						const membersResponse = await axios.get(
 							`/api/organization/${org.id}/members-with-tags`
 						);
 
+						let userTags = [];
+						let taggedTrainings = [];
+
 						if (
-							res.data.members &&
-							Array.isArray(res.data.members)
+							membersResponse.data.members &&
+							Array.isArray(membersResponse.data.members)
 						) {
-							// Trouver l'utilisateur actuel dans la liste des membres
+							// Trouver l'utilisateur actuel
 							const userEmail = user.email || user.name;
-							const currentUser = res.data.members.find(
-								(m) =>
-									(m.email &&
-										m.email.toLowerCase() ===
-											userEmail.toLowerCase()) ||
-									(m.name &&
-										m.name.toLowerCase() ===
-											userEmail.toLowerCase())
-							);
+							const currentUser =
+								membersResponse.data.members.find(
+									(m) =>
+										(m.email &&
+											m.email.toLowerCase() ===
+												userEmail.toLowerCase()) ||
+										(m.name &&
+											m.name.toLowerCase() ===
+												userEmail.toLowerCase())
+								);
 
 							if (
 								currentUser &&
 								currentUser.tags &&
 								currentUser.tags.length > 0
 							) {
-								// Ajouter l'info de l'organisation à chaque tag
-								const userTags = currentUser.tags.map(
-									(tag) => ({
-										...tag,
-										organizationName: org.name,
-										organizationId: org.id,
-									})
-								);
-
-								allUserTags = [...allUserTags, ...userTags];
+								userTags = currentUser.tags.map((tag) => ({
+									...tag,
+									organizationName: org.name,
+									organizationId: org.id,
+								}));
 
 								// Pour chaque tag, récupérer les formations associées
 								for (const tag of userTags) {
@@ -120,7 +119,7 @@ export default function GuidePage() {
 												trainingRes.data.trainings
 											)
 										) {
-											const taggedTrainings =
+											const tagTrainings =
 												trainingRes.data.trainings.map(
 													(training) => ({
 														...training,
@@ -135,9 +134,9 @@ export default function GuidePage() {
 													})
 												);
 
-											allTaggedTrainings = [
-												...allTaggedTrainings,
+											taggedTrainings = [
 												...taggedTrainings,
+												...tagTrainings,
 											];
 										}
 									} catch (error) {
@@ -150,16 +149,18 @@ export default function GuidePage() {
 							}
 						}
 
-						// b) Récupérer toutes les formations de l'organisation
+						// Récupérer toutes les formations de l'organisation
 						const buildsRes = await axios.get(
 							`/api/organization/${org.id}/builds`
 						);
+
+						let orgTrainings = [];
 
 						if (
 							buildsRes.data.builds &&
 							Array.isArray(buildsRes.data.builds)
 						) {
-							const orgTrainings = buildsRes.data.builds.map(
+							orgTrainings = buildsRes.data.builds.map(
 								(training) => ({
 									...training,
 									organizationId: org.id,
@@ -171,34 +172,40 @@ export default function GuidePage() {
 									},
 								})
 							);
-
-							allOrgTrainings = [
-								...allOrgTrainings,
-								...orgTrainings,
-							];
 						}
+
+						// Filtrer les formations en cours pour cette organisation
+						const orgInProgressTrainings = inProgress.filter(
+							(t) =>
+								t.organizationId === org.id ||
+								(t.source && t.source.organizationId === org.id)
+						);
+
+						return {
+							organization: org,
+							userTags,
+							taggedTrainings,
+							orgTrainings,
+							inProgressTrainings: orgInProgressTrainings,
+						};
 					} catch (error) {
 						console.error(
 							`Erreur lors de la récupération des données pour l'organisation ${org.id}:`,
 							error
 						);
+						return {
+							organization: org,
+							userTags: [],
+							taggedTrainings: [],
+							orgTrainings: [],
+							inProgressTrainings: [],
+						};
 					}
-				}
-			}
+				})
+			);
 
-			// Mettre à jour l'état avec les données récupérées
-			setUserTagsWithOrgs(allUserTags);
-			setTaggedTrainings(allTaggedTrainings);
-			setOrganizationTrainings(allOrgTrainings);
-
+			setOrganizationsData(orgData);
 			console.log("Chargement des données terminé avec succès");
-			console.log("État final:", {
-				organizations: userOrgs,
-				userTags: allUserTags,
-				taggedTrainings: allTaggedTrainings,
-				organizationTrainings: allOrgTrainings,
-				inProgressTrainings: inProgress,
-			});
 		} catch (error) {
 			console.error(
 				"Erreur lors du chargement des données utilisateur:",
@@ -216,7 +223,7 @@ export default function GuidePage() {
 	};
 
 	// Affichage pendant le chargement
-	if (userLoading || containerLoading || isLoading) {
+	if (userLoading || containerLoading || isLoading || wiseTwinLoading) {
 		return (
 			<div className="container mx-auto py-8">
 				<div className="flex justify-between items-center mb-6">
@@ -236,6 +243,15 @@ export default function GuidePage() {
 			</div>
 		);
 	}
+
+	// Vérifier si nous avons des formations à afficher
+	const hasAnyTraining =
+		organizationsData.some(
+			(org) =>
+				org.taggedTrainings.length > 0 ||
+				org.orgTrainings.length > 0 ||
+				org.inProgressTrainings.length > 0
+		) || wiseTwinTrainings.length > 0;
 
 	return (
 		<div className="container mx-auto py-8">
@@ -258,78 +274,49 @@ export default function GuidePage() {
 					trainingsInProgressCount={inProgressTrainings.length}
 				/>
 
-				{/* Recommandations basées sur les tags de l'utilisateur */}
-				{userTagsWithOrgs.length > 0 && taggedTrainings.length > 0 && (
-					<TagBasedRecommendations
-						userTags={userTagsWithOrgs}
-						taggedTrainings={taggedTrainings}
+				{/* Formations de chaque organisation avec un nouveau design */}
+				{organizationsData.map((orgData) => (
+					<OrganizationTrainingPanel
+						key={orgData.organization.id}
+						organization={orgData.organization}
+						taggedTrainings={orgData.taggedTrainings}
+						organizationTrainings={orgData.orgTrainings}
+						inProgressTrainings={orgData.inProgressTrainings}
+						showAllTrainings={true}
 					/>
+				))}
+
+				{/* Formations recommandées par WiseTwin */}
+				{wiseTwinTrainings.length > 0 && (
+					<WiseTwinRecommendations trainings={wiseTwinTrainings} />
 				)}
-
-				{userTagsWithOrgs.length > 0 &&
-					taggedTrainings.length === 0 && (
-						<Card className="bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800">
-							<CardContent className="py-4">
-								<p className="text-amber-800 dark:text-amber-200">
-									Vous avez {userTagsWithOrgs.length} tag(s)
-									attribué(s), mais aucune formation associée
-									n'a été trouvée. Demandez à votre
-									administrateur d'associer des formations à
-									vos tags.
-								</p>
-							</CardContent>
-						</Card>
-					)}
-
-				{/* Formations de chaque organisation */}
-				{hasOrganizations &&
-					organizations.map((org) => (
-						<OrganizationTrainingPanel
-							key={org.id}
-							organization={org}
-							taggedTrainings={taggedTrainings.filter(
-								(t) => t.organizationId === org.id
-							)}
-							organizationTrainings={organizationTrainings.filter(
-								(t) => t.organizationId === org.id
-							)}
-							inProgressTrainings={inProgressTrainings}
-							showAllTrainings={true}
-						/>
-					))}
 
 				{/* Si pas d'organisation, afficher un guide spécifique */}
 				{!hasOrganizations && <NoOrganizationGuide />}
 
-				{/* Panneau de prochaines étapes */}
-				<NextStepsPanel />
-
 				{/* Message si aucune formation n'est disponible */}
-				{!isLoading &&
-					inProgressTrainings.length === 0 &&
-					taggedTrainings.length === 0 &&
-					organizationTrainings.length === 0 && (
-						<div className="text-center py-12 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
-							<div className="inline-flex items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/20 p-6 mb-4">
-								<BookOpen className="w-8 h-8 text-wisetwin-blue" />
-							</div>
-							<h3 className="text-lg font-medium mb-2">
-								Aucune formation trouvée
-							</h3>
-							<p className="text-gray-500 dark:text-gray-400 mb-6 max-w-md mx-auto">
-								Aucune formation n'est disponible pour le
-								moment. Explorez notre catalogue pour découvrir
-								nos programmes.
-							</p>
-							<Button
-								onClick={() => router.push("/wisetrainer")}
-								className="bg-wisetwin-blue hover:bg-wisetwin-blue-light"
-							>
-								Explorer le catalogue
-								<ArrowRight className="ml-2 h-4 w-4" />
-							</Button>
+				{!hasAnyTraining && (
+					<div className="text-center py-12 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
+						<div className="inline-flex items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/20 p-6 mb-4">
+							<BookOpen className="w-8 h-8 text-wisetwin-blue" />
 						</div>
-					)}
+						<h3 className="text-lg font-medium mb-2">
+							Aucune formation trouvée
+						</h3>
+						<p className="text-gray-500 dark:text-gray-400 mb-6 max-w-md mx-auto">
+							Aucune formation n'est disponible pour le moment.
+							Explorez notre catalogue pour découvrir nos
+							programmes.
+						</p>
+						<Button
+							onClick={() => router.push("/wisetrainer")}
+							className="bg-wisetwin-blue hover:bg-wisetwin-blue-light"
+						>
+							Explorer le catalogue
+							<ArrowRight className="ml-2 h-4 w-4" />
+						</Button>
+					</div>
+				)}
 			</div>
 		</div>
 	);
