@@ -1,6 +1,6 @@
 // components/settings/tabs/AccountTab.jsx
 import React, { useState } from "react";
-import { useUser } from "@auth0/nextjs-auth0/client";
+import { useUser } from "@auth0/nextjs-auth0";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";

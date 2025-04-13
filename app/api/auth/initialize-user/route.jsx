@@ -1,13 +1,13 @@
 // app/api/auth/initialize-user/route.jsx
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
-import { getSession } from "@auth0/nextjs-auth0";
+import { auth0 } from "@/lib/auth0";
 
 const prisma = new PrismaClient();
 
 export async function POST(request) {
 	try {
-		const session = await getSession();
+		const session = await auth0.getSession();
 
 		// Vérifier si l'utilisateur est authentifié
 		if (!session || !session.user) {

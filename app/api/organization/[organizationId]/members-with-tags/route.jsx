@@ -1,13 +1,13 @@
 //app/api/organization/[organizationId]/members-with-tags/route.jsx
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
-import { getSession } from "@auth0/nextjs-auth0";
+import { auth0 } from "@/lib/auth0";
 
 const prisma = new PrismaClient();
 
 export async function GET(request, { params }) {
 	try {
-		const session = await getSession();
+		const session = await auth0.getSession();
 		const resolvedParams = await params;
 		const { organizationId } = resolvedParams;
 

@@ -1,10 +1,12 @@
-// middleware.js
 import { NextResponse } from "next/server";
-import { getSession } from "@auth0/nextjs-auth0/edge";
+import { auth0 } from "@/lib/auth0";
 
 export async function middleware(req) {
-	const res = NextResponse.next();
-	const session = await getSession(req, res);
+	// Utiliser le middleware Auth0 pour gérer les sessions
+	const res = await auth0.middleware(req);
+
+	// Obtenir la session à partir du middleware Auth0
+	const session = await auth0.getSession(req);
 
 	// Si l'utilisateur accède à la page de connexion et est déjà connecté
 	if (req.nextUrl.pathname === "/login" && session) {

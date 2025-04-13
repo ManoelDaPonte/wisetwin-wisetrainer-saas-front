@@ -1,14 +1,14 @@
 // app/api/organization/[organizationId]/members/[memberId]/route.jsx
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
-import { getSession } from "@auth0/nextjs-auth0";
+import { auth0 } from "@/lib/auth0";
 
 const prisma = new PrismaClient();
 
 // GET pour récupérer les détails d'un membre spécifique
 export async function GET(request, { params }) {
 	try {
-		const session = await getSession();
+		const session = await auth0.getSession();
 		const { organizationId, memberId } = params;
 
 		// Vérifier si l'utilisateur est authentifié
@@ -108,7 +108,7 @@ export async function GET(request, { params }) {
 // PATCH pour modifier le rôle d'un membre
 export async function PATCH(request, { params }) {
 	try {
-		const session = await getSession();
+		const session = await auth0.getSession();
 		const { organizationId, memberId } = params;
 		const { role } = await request.json();
 
@@ -250,7 +250,7 @@ export async function PATCH(request, { params }) {
 // DELETE pour supprimer un membre de l'organisation
 export async function DELETE(request, { params }) {
 	try {
-		const session = await getSession();
+		const session = await auth0.getSession();
 		const { organizationId, memberId } = params;
 
 		// Vérifier si l'utilisateur est authentifié

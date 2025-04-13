@@ -1,6 +1,6 @@
 // components/settings/tabs/SecurityTab.jsx
 import React, { useState } from "react";
-import { useUser } from "@auth0/nextjs-auth0/client";
+import { useUser } from "@auth0/nextjs-auth0";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";

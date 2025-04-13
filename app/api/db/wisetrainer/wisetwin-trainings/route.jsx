@@ -9,18 +9,10 @@ export async function GET(request) {
 		const blobServiceClient = BlobServiceClient.fromConnectionString(
 			process.env.AZURE_STORAGE_CONNECTION_STRING
 		);
-		console.log(
-			"Connexion au service Azure Blob Storage réussie",
-			blobServiceClient
-		);
 
 		// Container WiseTwin
 		const containerClient = blobServiceClient.getContainerClient(
 			WISETRAINER_CONFIG.CONTAINER_NAMES.SOURCE
-		);
-		console.log(
-			"Container WiseTwin récupéré",
-			containerClient.containerName
 		);
 
 		// Vérifier que le container existe
@@ -55,6 +47,8 @@ export async function GET(request) {
 				buildIds.add(match[1]);
 			}
 		});
+
+		console.log("IDs de formation extraits:", Array.from(buildIds));
 
 		// Créer des objets de formation à partir des IDs
 		const trainings = Array.from(buildIds).map((id) => {

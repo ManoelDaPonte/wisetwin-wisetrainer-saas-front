@@ -1,7 +1,7 @@
 // app/api/organization/route.jsx
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
-import { getSession } from "@auth0/nextjs-auth0";
+import { auth0 } from "@/lib/auth0";
 import { BlobServiceClient } from "@azure/storage-blob";
 
 const prisma = new PrismaClient();
@@ -39,7 +39,7 @@ async function createAzureContainer(containerName) {
 // GET pour récupérer toutes les organisations d'un utilisateur
 export async function GET(request) {
 	try {
-		const session = await getSession();
+		const session = await auth0.getSession();
 
 		// Vérifier si l'utilisateur est authentifié
 		if (!session || !session.user) {
@@ -115,7 +115,7 @@ export async function GET(request) {
 // POST pour créer une nouvelle organisation
 export async function POST(request) {
 	try {
-		const session = await getSession();
+		const session = await auth0.getSession();
 
 		// Vérifier si l'utilisateur est authentifié
 		if (!session || !session.user) {

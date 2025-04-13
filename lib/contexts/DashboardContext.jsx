@@ -2,7 +2,7 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
-import { useUser } from "@auth0/nextjs-auth0/client";
+import { useUser } from "@auth0/nextjs-auth0";
 import { useAzureContainer } from "@/lib/hooks/useAzureContainer";
 import WISETRAINER_CONFIG from "@/lib/config/wisetrainer/wisetrainer";
 

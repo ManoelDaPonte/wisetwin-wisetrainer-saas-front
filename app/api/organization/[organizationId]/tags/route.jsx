@@ -1,14 +1,14 @@
 //app/api/organization/[organizationId]/tags/route.jsx
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
-import { getSession } from "@auth0/nextjs-auth0";
+import { auth0 } from "@/lib/auth0";
 
 const prisma = new PrismaClient();
 
 // Récupérer tous les tags d'une organisation
 export async function GET(request, { params }) {
 	try {
-		const session = await getSession();
+		const session = await auth0.getSession();
 		const resolvedParams = await params;
 		const { organizationId } = resolvedParams;
 
@@ -98,7 +98,7 @@ export async function GET(request, { params }) {
 // Créer un nouveau tag dans l'organisation
 export async function POST(request, { params }) {
 	try {
-		const session = await getSession();
+		const session = await auth0.getSession();
 		const resolvedParams = await params;
 		const { organizationId } = resolvedParams;
 		const data = await request.json();

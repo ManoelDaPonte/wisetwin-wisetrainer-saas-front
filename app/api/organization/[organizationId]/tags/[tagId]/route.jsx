@@ -1,14 +1,14 @@
 //app/api/organization/[organizationId]/tags/[tagId]/route.jsx
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
-import { getSession } from "@auth0/nextjs-auth0";
+import { auth0 } from "@/lib/auth0";
 
 const prisma = new PrismaClient();
 
 // Mettre à jour un tag
 export async function PUT(request, { params }) {
 	try {
-		const session = await getSession();
+		const session = await auth0.getSession();
 		const resolvedParams = await params;
 		const { organizationId, tagId } = resolvedParams;
 		const data = await request.json();
@@ -130,7 +130,7 @@ export async function PUT(request, { params }) {
 // Supprimer un tag
 export async function DELETE(request, { params }) {
 	try {
-		const session = await getSession();
+		const session = await auth0.getSession();
 		const resolvedParams = await params;
 		const { organizationId, tagId } = resolvedParams;
 

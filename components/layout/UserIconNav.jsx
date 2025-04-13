@@ -1,7 +1,7 @@
 // components/layout/UserIconNav.jsx
 "use client";
 import React, { useState, useEffect, useRef } from "react";
-import { useUser } from "@auth0/nextjs-auth0/client";
+import { useUser } from "@auth0/nextjs-auth0";
 import NavButton from "@/components/common/NavButton";
 import Image from "next/image";
 import { LogOut, Settings } from "lucide-react";

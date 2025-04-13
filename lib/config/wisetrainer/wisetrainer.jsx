@@ -28,7 +28,7 @@
 //lib/config/wisetrainer/wisetrainer.js
 const WISETRAINER_CONFIG = {
 	CONTAINER_NAMES: {
-		SOURCE: "wisetwin-builds", // Container source pour les formations officielles WiseTwin
+		SOURCE: "wisetrainer-training-build", // Container source pour les formations officielles WiseTwin
 	},
 	BLOB_PREFIXES: {
 		WISETRAINER: "wisetrainer/", // Préfixe pour les formations dans le container

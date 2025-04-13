@@ -1,6 +1,6 @@
 // components/settings/tabs/GeneralTab.jsx
 import React, { useState } from "react";
-import { useUser } from "@auth0/nextjs-auth0/client";
+import { useUser } from "@auth0/nextjs-auth0";
 import { Moon, Sun, Globe, Bell, PanelLeft, Monitor, Mail } from "lucide-react";
 import { useTheme } from "@/lib/hooks/useTheme";
 import { Switch } from "@/components/ui/switch";

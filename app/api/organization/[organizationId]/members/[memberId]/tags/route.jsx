@@ -1,14 +1,14 @@
 //app/api/organization/[organizationId]/members/[memberId]/tags/route.jsx
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
-import { getSession } from "@auth0/nextjs-auth0";
+import { auth0 } from "@/lib/auth0";
 
 const prisma = new PrismaClient();
 
 // GET pour récupérer les tags d'un membre
 export async function GET(request, { params }) {
 	try {
-		const session = await getSession();
+		const session = await auth0.getSession();
 		const { organizationId, memberId } = params;
 
 		// Vérifier si l'utilisateur est authentifié
@@ -109,7 +109,7 @@ export async function GET(request, { params }) {
 // PUT pour mettre à jour les tags d'un membre
 export async function PUT(request, { params }) {
 	try {
-		const session = await getSession();
+		const session = await auth0.getSession();
 		const { organizationId, memberId } = params;
 		const { tagIds } = await request.json();
 
