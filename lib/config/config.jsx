@@ -1,4 +1,3 @@
-//lib/config/config.jsx
 import {
 	Home,
 	LayoutDashboard,
@@ -12,32 +11,31 @@ import {
 
 export const HomePageCards = [
 	{
-		title: "Formation en Réalité Virtuelle",
+		title: "WiseTrainer & WiseTwin",
 		description:
-			"Accédez à nos modules de formation interactifs pour maîtriser les procédures de sécurité essentielles. Pratiquez dans un environnement virtuel avant d'appliquer vos compétences sur le terrain.",
+			"Accédez à nos modules de formation interactifs en 3D ou simplement explorez les environnements virtuels. Formez-vous aux procédures de sécurité essentielles ou familiarisez-vous avec les espaces industriels avant d'y accéder.",
 		icon: GraduationCap,
 		route: "/wisetrainer",
-		primaryAction: "Commencer la formation",
-		secondaryInfo: "Plusieurs scénarios disponibles",
+		primaryAction: "Commencer l'exploration",
+		secondaryInfo: "Formation interactive et exploration 3D",
 	},
 	{
-		title: "Tableau de Bord",
+		title: "Suivez votre progression",
 		description:
-			"Visualisez vos statistiques et suivez votre progression sur l'ensemble des modules de formation. Consultez vos résultats récents et reprenez facilement vos sessions de formation.",
-		icon: LayoutDashboard,
+			"Visualisez vos statistiques et suivez votre progression sur l'ensemble des modules de formation. Consultez vos résultats récents, télécharger vos diplômes et reprenez facilement vos sessions de formation là où vous les avez laissées.",
+		icon: ChartNoAxesCombined,
 		route: "/overview",
 		primaryAction: "Voir mes statistiques",
-		secondaryInfo: "Suivi de progression en temps réel",
+		secondaryInfo: "Suivi personnalisé en temps réel",
 	},
 	{
-		title: "Jumeau Numérique",
+		title: "Gérez vos organisations",
 		description:
-			"Explorez des environnements virtuels interactifs représentant fidèlement vos installations et équipements. Cette fonctionnalité sera bientôt disponible pour enrichir votre expérience de formation.",
-		icon: Box,
-		route: "/digital-twin",
-		disabled: true,
-		primaryAction: "Explorer",
-		secondaryInfo: "Bientôt disponible",
+			"Créez ou rejoignez des organisations pour collaborer avec votre équipe. Assignez des formations spécifiques, suivez la progression des membres et analysez les performances collectives.",
+		icon: Users,
+		route: "/organization",
+		primaryAction: "Gérer les organisations",
+		secondaryInfo: "Administration des équipes et formations",
 	},
 ];
 

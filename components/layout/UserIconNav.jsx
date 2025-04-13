@@ -4,14 +4,14 @@ import React, { useState, useEffect, useRef } from "react";
 import { useUser } from "@auth0/nextjs-auth0/client";
 import NavButton from "@/components/common/NavButton";
 import Image from "next/image";
-import SettingsModal from "@/components/settings/SettingsModal";
-import { Settings, LogOut, Moon } from "lucide-react";
+import { LogOut, Settings } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 const UserIconNav = () => {
 	const { user, error, isLoading } = useUser();
 	const [isOpen, setIsOpen] = useState(false);
-	const [isModalOpen, setIsModalOpen] = useState(false);
 	const dropdownRef = useRef(null);
+	const router = useRouter();
 
 	const toggleDropdown = () => {
 		setIsOpen(!isOpen);
@@ -64,7 +64,7 @@ const UserIconNav = () => {
 									icon={<Settings size={18} />}
 									onClick={() =>
 										closeMenuAndExecute(() =>
-											setIsModalOpen(true)
+											router.push("/settings")
 										)
 									}
 								>
@@ -89,10 +89,6 @@ const UserIconNav = () => {
 					</div>
 				)
 			)}
-			<SettingsModal
-				isOpen={isModalOpen}
-				onClose={() => setIsModalOpen(false)}
-			/>
 		</div>
 	);
 };

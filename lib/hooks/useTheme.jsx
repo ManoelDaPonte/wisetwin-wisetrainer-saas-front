@@ -3,8 +3,8 @@
 import { useState, useEffect } from "react";
 
 export function useTheme() {
-	// Initialiser l'état avec une valeur par défaut
-	const [theme, setTheme] = useState("");
+	// Initialiser l'état avec "light" comme valeur par défaut
+	const [theme, setTheme] = useState("light");
 	const [mounted, setMounted] = useState(false);
 
 	// Effet pour initialiser le thème lors du montage du composant
@@ -12,20 +12,17 @@ export function useTheme() {
 		// Marquer que le composant est monté
 		setMounted(true);
 
-		// Récupérer le thème depuis localStorage ou les préférences système
+		// Récupérer le thème depuis localStorage ou utiliser "light" par défaut
 		const savedTheme = localStorage.getItem("theme");
 
 		if (savedTheme) {
 			// Si un thème est enregistré, l'utiliser
 			setTheme(savedTheme);
 		} else {
-			// Sinon, utiliser les préférences système
-			const systemPreference = window.matchMedia(
-				"(prefers-color-scheme: dark)"
-			).matches
-				? "dark"
-				: "light";
-			setTheme(systemPreference);
+			// Sinon, utiliser "light" comme valeur par défaut (au lieu des préférences système)
+			setTheme("light");
+			// Sauvegarder dans localStorage
+			localStorage.setItem("theme", "light");
 		}
 	}, []);
 
