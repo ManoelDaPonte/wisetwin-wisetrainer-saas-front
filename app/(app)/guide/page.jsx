@@ -1,4 +1,3 @@
-//app/(app)/guide/page.jsx
 "use client";
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -11,15 +10,14 @@ import { useToast } from "@/lib/hooks/useToast";
 
 // Hooks personnalisés
 import { useTrainingWiseTwin } from "@/lib/hooks/useTrainingWiseTwin";
-import { usePopularTrainings } from "@/lib/hooks/usePopularTrainings"; // Nouveau hook
-import { useCurrentTraining } from "@/lib/hooks/useCurrentTraining"; // Import du nouveau hook
+import { usePopularTrainings } from "@/lib/hooks/usePopularTrainings";
+import { useCurrentTraining } from "@/lib/hooks/useCurrentTraining";
 
 // Composants personnalisés
 import OrganizationTrainingPanel from "@/components/guide/OrganizationTrainingPanel";
 import NoOrganizationGuide from "@/components/guide/NoOrganizationGuide";
 import WiseTwinRecommendations from "@/components/guide/WiseTwinRecommendations";
-import PopularTrainings from "@/components/guide/PopularTrainings"; // Nouveau composant
-import CurrentTrainingsPanel from "@/components/guide/CurrentTrainingsPanel"; // Import du nouveau composant
+import CurrentTrainingsPanel from "@/components/guide/CurrentTrainingsPanel";
 
 export default function GuidePage() {
 	const router = useRouter();
@@ -27,7 +25,7 @@ export default function GuidePage() {
 	const { user, isLoading: userLoading } = useUser();
 	const { containerName, isLoading: containerLoading } = useAzureContainer();
 	const { currentTrainings, isLoading: currentTrainingsLoading } =
-		useCurrentTraining(); // Utilisation du hook
+		useCurrentTraining();
 
 	const [isLoading, setIsLoading] = useState(true);
 	const [organizations, setOrganizations] = useState([]);
@@ -54,14 +52,12 @@ export default function GuidePage() {
 
 		try {
 			// 1. Récupérer les organisations de l'utilisateur
-			console.log("Récupération des organisations...");
 			const orgsResponse = await axios.get("/api/organization");
 			const userOrgs = orgsResponse.data.organizations || [];
 			setOrganizations(userOrgs);
 			setHasOrganizations(userOrgs.length > 0);
-			console.log("Organisations récupérées:", userOrgs);
 
-			// 3. Récupérer les données pour chaque organisation
+			// 2. Récupérer les données pour chaque organisation
 			const orgData = await Promise.all(
 				userOrgs.map(async (org) => {
 					try {
@@ -114,9 +110,10 @@ export default function GuidePage() {
 												trainingRes.data.trainings
 											)
 										) {
+											// Filtrer pour garder uniquement les formations non complétées (progress < 100)
 											const tagTrainings =
-												trainingRes.data.trainings.map(
-													(training) => ({
+												trainingRes.data.trainings
+													.map((training) => ({
 														...training,
 														tagInfo: {
 															id: tag.id,
@@ -126,8 +123,14 @@ export default function GuidePage() {
 														organizationId: org.id,
 														organizationName:
 															org.name,
-													})
-												);
+													}))
+													.filter(
+														(training) =>
+															training.progress ===
+																undefined ||
+															training.progress <
+																100
+													);
 
 											taggedTrainings = [
 												...taggedTrainings,
@@ -191,7 +194,6 @@ export default function GuidePage() {
 			);
 
 			setOrganizationsData(orgData);
-			console.log("Chargement des données terminé avec succès");
 		} catch (error) {
 			console.error(
 				"Erreur lors du chargement des données utilisateur:",
@@ -259,29 +261,40 @@ export default function GuidePage() {
 			</div>
 
 			<div className="space-y-6">
-				{/* Formations populaires - nouveau composant */}
-				<PopularTrainings
-					trainings={popularTrainings}
-					isLoading={popularTrainingsLoading}
-				/>
-
+				{/* 1. Formations en cours */}
 				<CurrentTrainingsPanel
 					trainings={currentTrainings}
 					isLoading={currentTrainingsLoading}
 				/>
 
-				{/* Formations de chaque organisation avec un nouveau design */}
+				{/* 2. Formations de chaque organisation */}
 				{organizationsData.map((orgData) => (
 					<OrganizationTrainingPanel
 						key={orgData.organization.id}
 						organization={orgData.organization}
-						taggedTrainings={orgData.taggedTrainings}
+						taggedTrainings={[]}
 						organizationTrainings={orgData.orgTrainings}
 						showAllTrainings={true}
+						noSampleData={true}
 					/>
 				))}
 
-				{/* Formations recommandées par WiseTwin */}
+				{/* 3. Formations taguées pour l'utilisateur */}
+				{organizationsData.map(
+					(orgData) =>
+						orgData.taggedTrainings.length > 0 && (
+							<OrganizationTrainingPanel
+								key={`${orgData.organization.id}-tagged`}
+								organization={orgData.organization}
+								taggedTrainings={orgData.taggedTrainings}
+								organizationTrainings={[]}
+								showTaggedOnly={true}
+								noSampleData={true}
+							/>
+						)
+				)}
+
+				{/* 4. Formations recommandées par WiseTwin */}
 				{wiseTwinTrainings.length > 0 && (
 					<WiseTwinRecommendations trainings={wiseTwinTrainings} />
 				)}

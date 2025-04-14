@@ -10,7 +10,7 @@ import {
 	CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Sparkles } from "lucide-react";
 import Image from "next/image";
 import TrainingCard from "./TrainingCard";
 
@@ -27,7 +27,7 @@ export default function WiseTwinRecommendations({ trainings }) {
 			animate={{ opacity: 1, y: 0 }}
 			transition={{ duration: 0.5, delay: 0.3 }}
 		>
-			<Card className="mb-6">
+			<Card>
 				<CardHeader className="pb-3">
 					<div className="flex items-start">
 						{/* Logo WiseTwin */}
@@ -44,7 +44,7 @@ export default function WiseTwinRecommendations({ trainings }) {
 						<div className="flex-grow">
 							<div className="flex items-center justify-between">
 								<CardTitle>
-									Formations officielles WiseTwin
+									Formations WiseTwin recommandées
 								</CardTitle>
 								<Button
 									variant="outline"
@@ -55,41 +55,39 @@ export default function WiseTwinRecommendations({ trainings }) {
 								</Button>
 							</div>
 							<CardDescription>
-								Accédez à notre catalogue de formations
-								interactives
+								Explorez notre sélection de formations
+								interactives populaires
 							</CardDescription>
 						</div>
 					</div>
 				</CardHeader>
 
-				<CardContent className="pt-6">
-					<div className="pl-20 mb-4">
-						<h3 className="font-medium text-lg text-wisetwin-darkblue dark:text-wisetwin-blue">
-							Formations recommandées
-						</h3>
+				<CardContent className="pt-4">
+					<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+						{trainings.slice(0, 3).map((training) => (
+							<TrainingCard
+								key={training.id}
+								training={training}
+								onClick={() =>
+									router.push(`/wisetrainer/${training.id}`)
+								}
+							/>
+						))}
 					</div>
-					<div className="flex">
-						<div className="w-20 flex-shrink-0"></div>
-						<div className="flex-grow overflow-x-auto">
-							<div className="flex gap-4 pb-2">
-								{trainings.map((training) => (
-									<div
-										key={training.id}
-										className="w-72 flex-shrink-0"
-									>
-										<TrainingCard
-											training={training}
-											onClick={() =>
-												router.push(
-													`/wisetrainer/${training.id}`
-												)
-											}
-										/>
-									</div>
-								))}
-							</div>
+
+					{trainings.length > 3 && (
+						<div className="mt-4 text-center">
+							<Button
+								variant="link"
+								onClick={() => router.push("/wisetrainer")}
+								className="text-wisetwin-blue hover:text-wisetwin-blue-light group"
+							>
+								<Sparkles className="mr-2 h-4 w-4" />
+								Voir plus de formations
+								<ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+							</Button>
 						</div>
-					</div>
+					)}
 				</CardContent>
 			</Card>
 		</motion.div>

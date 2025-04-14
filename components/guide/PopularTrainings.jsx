@@ -100,18 +100,6 @@ export default function PopularTrainings({
 							/>
 						))}
 					</div>
-					{trainings.length > 3 && (
-						<div className="mt-4 text-center">
-							<Button
-								variant="link"
-								onClick={() => router.push("/wisetrainer")}
-								className="text-wisetwin-blue hover:text-wisetwin-blue-light group"
-							>
-								Voir plus de formations
-								<ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
-							</Button>
-						</div>
-					)}
 				</CardContent>
 			</Card>
 		</motion.div>

@@ -42,8 +42,6 @@ export default function CurrentTrainingsPanel({
 		);
 	}
 
-	// Même si aucune formation n'est en cours, on affiche quand même le panel
-	// mais avec un message pour encourager l'utilisateur à commencer
 	return (
 		<motion.div
 			initial={{ opacity: 0, y: 20 }}
