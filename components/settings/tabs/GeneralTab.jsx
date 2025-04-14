@@ -113,7 +113,7 @@ const GeneralTab = () => {
 								</span>
 							</Label>
 						</div>
-						<div className="flex items-center space-x-2">
+						{/* <div className="flex items-center space-x-2">
 							<RadioGroupItem value="en" id="en" />
 							<Label htmlFor="en" className="flex items-center">
 								<span className="font-medium">English</span>
@@ -121,7 +121,7 @@ const GeneralTab = () => {
 									(English)
 								</span>
 							</Label>
-						</div>
+						</div> */}
 					</RadioGroup>
 				</div>
 			</div>

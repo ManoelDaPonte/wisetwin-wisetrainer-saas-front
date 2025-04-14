@@ -7,9 +7,9 @@ import { Button } from "@/components/ui/button";
 import { RefreshCw } from "lucide-react";
 
 // Import des composants principaux
-import StatsOverviewTab from "@/components/overview/StatsOverviewTab";
-import CertificationsTab from "@/components/overview/CertificationsTab";
-import ActivityHistoryTab from "@/components/overview/ActivityHistoryTab";
+import StatsOverviewTab from "@/components/overview/stats/StatsOverviewTab";
+import CertificationsTab from "@/components/overview/certifications/CertificationsTab";
+import ActivityHistoryTab from "@/components/overview/activity/ActivityHistoryTab";
 
 import { useDashboard } from "@/lib/contexts/DashboardContext";
 

@@ -3,37 +3,44 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
-import { motion } from "framer-motion";
 import { useUser } from "@auth0/nextjs-auth0";
 import { useAzureContainer } from "@/lib/hooks/useAzureContainer";
 import { BookOpen, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/lib/hooks/useToast";
-import { Card, CardContent } from "@/components/ui/card";
 
 // Hooks personnalisés
 import { useTrainingWiseTwin } from "@/lib/hooks/useTrainingWiseTwin";
+import { usePopularTrainings } from "@/lib/hooks/usePopularTrainings"; // Nouveau hook
+import { useCurrentTraining } from "@/lib/hooks/useCurrentTraining"; // Import du nouveau hook
 
 // Composants personnalisés
-import WelcomeHeader from "@/components/guide/WelcomeHeader";
 import OrganizationTrainingPanel from "@/components/guide/OrganizationTrainingPanel";
 import NoOrganizationGuide from "@/components/guide/NoOrganizationGuide";
 import WiseTwinRecommendations from "@/components/guide/WiseTwinRecommendations";
+import PopularTrainings from "@/components/guide/PopularTrainings"; // Nouveau composant
+import CurrentTrainingsPanel from "@/components/guide/CurrentTrainingsPanel"; // Import du nouveau composant
 
 export default function GuidePage() {
 	const router = useRouter();
 	const { toast } = useToast();
 	const { user, isLoading: userLoading } = useUser();
 	const { containerName, isLoading: containerLoading } = useAzureContainer();
+	const { currentTrainings, isLoading: currentTrainingsLoading } =
+		useCurrentTraining(); // Utilisation du hook
+
 	const [isLoading, setIsLoading] = useState(true);
 	const [organizations, setOrganizations] = useState([]);
 	const [hasOrganizations, setHasOrganizations] = useState(false);
-	const [inProgressTrainings, setInProgressTrainings] = useState([]);
 	const [organizationsData, setOrganizationsData] = useState([]);
 
 	// Utiliser le hook pour les formations WiseTwin
 	const { trainings: wiseTwinTrainings, isLoading: wiseTwinLoading } =
 		useTrainingWiseTwin(containerName);
+
+	// Utiliser le hook pour les formations populaires
+	const { trainings: popularTrainings, isLoading: popularTrainingsLoading } =
+		usePopularTrainings();
 
 	// Charger les données utilisateur
 	useEffect(() => {
@@ -53,18 +60,6 @@ export default function GuidePage() {
 			setOrganizations(userOrgs);
 			setHasOrganizations(userOrgs.length > 0);
 			console.log("Organisations récupérées:", userOrgs);
-
-			// 2. Récupérer les formations en cours
-			console.log("Récupération des formations en cours...");
-			const trainingsResponse = await axios.get(
-				`/api/db/wisetrainer/user-trainings/${containerName}`
-			);
-			const userTrainings = trainingsResponse.data.trainings || [];
-			const inProgress = userTrainings.filter(
-				(t) => t.progress > 0 && t.progress < 100
-			);
-			setInProgressTrainings(inProgress);
-			console.log("Formations en cours:", inProgress);
 
 			// 3. Récupérer les données pour chaque organisation
 			const orgData = await Promise.all(
@@ -174,19 +169,11 @@ export default function GuidePage() {
 							);
 						}
 
-						// Filtrer les formations en cours pour cette organisation
-						const orgInProgressTrainings = inProgress.filter(
-							(t) =>
-								t.organizationId === org.id ||
-								(t.source && t.source.organizationId === org.id)
-						);
-
 						return {
 							organization: org,
 							userTags,
 							taggedTrainings,
 							orgTrainings,
-							inProgressTrainings: orgInProgressTrainings,
 						};
 					} catch (error) {
 						console.error(
@@ -198,7 +185,6 @@ export default function GuidePage() {
 							userTags: [],
 							taggedTrainings: [],
 							orgTrainings: [],
-							inProgressTrainings: [],
 						};
 					}
 				})
@@ -223,7 +209,13 @@ export default function GuidePage() {
 	};
 
 	// Affichage pendant le chargement
-	if (userLoading || containerLoading || isLoading || wiseTwinLoading) {
+	if (
+		userLoading ||
+		containerLoading ||
+		isLoading ||
+		wiseTwinLoading ||
+		currentTrainingsLoading
+	) {
 		return (
 			<div className="container mx-auto py-8">
 				<div className="flex justify-between items-center mb-6">
@@ -248,10 +240,11 @@ export default function GuidePage() {
 	const hasAnyTraining =
 		organizationsData.some(
 			(org) =>
-				org.taggedTrainings.length > 0 ||
-				org.orgTrainings.length > 0 ||
-				org.inProgressTrainings.length > 0
-		) || wiseTwinTrainings.length > 0;
+				org.taggedTrainings.length > 0 || org.orgTrainings.length > 0
+		) ||
+		wiseTwinTrainings.length > 0 ||
+		popularTrainings.length > 0 ||
+		currentTrainings.length > 0;
 
 	return (
 		<div className="container mx-auto py-8">
@@ -266,12 +259,15 @@ export default function GuidePage() {
 			</div>
 
 			<div className="space-y-6">
-				{/* En-tête avec bienvenue et statistiques */}
-				<WelcomeHeader
-					user={user}
-					hasOrganizations={hasOrganizations}
-					organizationsCount={organizations.length}
-					trainingsInProgressCount={inProgressTrainings.length}
+				{/* Formations populaires - nouveau composant */}
+				<PopularTrainings
+					trainings={popularTrainings}
+					isLoading={popularTrainingsLoading}
+				/>
+
+				<CurrentTrainingsPanel
+					trainings={currentTrainings}
+					isLoading={currentTrainingsLoading}
 				/>
 
 				{/* Formations de chaque organisation avec un nouveau design */}
@@ -281,7 +277,6 @@ export default function GuidePage() {
 						organization={orgData.organization}
 						taggedTrainings={orgData.taggedTrainings}
 						organizationTrainings={orgData.orgTrainings}
-						inProgressTrainings={orgData.inProgressTrainings}
 						showAllTrainings={true}
 					/>
 				))}

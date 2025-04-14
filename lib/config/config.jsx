@@ -7,6 +7,7 @@ import {
 	BookText,
 	Users,
 	Compass,
+	Settings,
 } from "lucide-react";
 
 export const STATS_CONFIG = {
@@ -101,6 +102,12 @@ export const navigationItems = {
 			id: "organization",
 			label: "Organisation",
 			icon: Users,
+			disabled: false,
+		},
+		{
+			id: "settings",
+			label: "Paramètres",
+			icon: Settings,
 			disabled: false,
 		},
 	],
