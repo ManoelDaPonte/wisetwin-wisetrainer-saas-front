@@ -1,11 +1,8 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import axios from "axios";
 import { useUser } from "@auth0/nextjs-auth0";
 import { useAzureContainer } from "@/lib/hooks/useAzureContainer";
-import { BookOpen, ArrowRight } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { useToast } from "@/lib/hooks/useToast";
 
 // Hooks personnalisés
@@ -14,13 +11,15 @@ import { usePopularTrainings } from "@/lib/hooks/usePopularTrainings";
 import { useCurrentTraining } from "@/lib/hooks/useCurrentTraining";
 
 // Composants personnalisés
-import OrganizationTrainingPanel from "@/components/guide/OrganizationTrainingPanel";
 import NoOrganizationGuide from "@/components/guide/NoOrganizationGuide";
 import WiseTwinRecommendations from "@/components/guide/WiseTwinRecommendations";
 import CurrentTrainingsPanel from "@/components/guide/CurrentTrainingsPanel";
+import PopularTrainings from "@/components/guide/PopularTrainings";
+import OrganizationsSection from "@/components/guide/OrganizationsSection";
+import NoTrainingsMessage from "@/components/guide/NoTrainingsMessage";
+import LoadingState from "@/components/guide/LoadingState";
 
 export default function GuidePage() {
-	const router = useRouter();
 	const { toast } = useToast();
 	const { user, isLoading: userLoading } = useUser();
 	const { containerName, isLoading: containerLoading } = useAzureContainer();
@@ -28,7 +27,6 @@ export default function GuidePage() {
 		useCurrentTraining();
 
 	const [isLoading, setIsLoading] = useState(true);
-	const [organizations, setOrganizations] = useState([]);
 	const [hasOrganizations, setHasOrganizations] = useState(false);
 	const [organizationsData, setOrganizationsData] = useState([]);
 
@@ -54,7 +52,6 @@ export default function GuidePage() {
 			// 1. Récupérer les organisations de l'utilisateur
 			const orgsResponse = await axios.get("/api/organization");
 			const userOrgs = orgsResponse.data.organizations || [];
-			setOrganizations(userOrgs);
 			setHasOrganizations(userOrgs.length > 0);
 
 			// 2. Récupérer les données pour chaque organisation
@@ -68,6 +65,8 @@ export default function GuidePage() {
 
 						let userTags = [];
 						let taggedTrainings = [];
+						let allTaggedTrainings = [];
+						let hasCompletedTaggedTrainings = false;
 
 						if (
 							membersResponse.data.members &&
@@ -110,10 +109,10 @@ export default function GuidePage() {
 												trainingRes.data.trainings
 											)
 										) {
-											// Filtrer pour garder uniquement les formations non complétées (progress < 100)
-											const tagTrainings =
-												trainingRes.data.trainings
-													.map((training) => ({
+											// Toutes les formations taguées (complétées ou non)
+											const allTagged =
+												trainingRes.data.trainings.map(
+													(training) => ({
 														...training,
 														tagInfo: {
 															id: tag.id,
@@ -123,18 +122,26 @@ export default function GuidePage() {
 														organizationId: org.id,
 														organizationName:
 															org.name,
-													}))
-													.filter(
-														(training) =>
-															training.progress ===
-																undefined ||
-															training.progress <
-																100
-													);
+													})
+												);
+
+											allTaggedTrainings = [
+												...allTaggedTrainings,
+												...allTagged,
+											];
+
+											// Filtrer pour garder uniquement les formations non complétées (progress < 100)
+											const incompleteTrainings =
+												allTagged.filter(
+													(training) =>
+														training.progress ===
+															undefined ||
+														training.progress < 100
+												);
 
 											taggedTrainings = [
 												...taggedTrainings,
-												...tagTrainings,
+												...incompleteTrainings,
 											];
 										}
 									} catch (error) {
@@ -144,6 +151,12 @@ export default function GuidePage() {
 										);
 									}
 								}
+
+								// Si nous avons des formations taguées au total mais aucune incomplète,
+								// cela signifie que toutes ont été complétées
+								hasCompletedTaggedTrainings =
+									allTaggedTrainings.length > 0 &&
+									taggedTrainings.length === 0;
 							}
 						}
 
@@ -177,6 +190,7 @@ export default function GuidePage() {
 							userTags,
 							taggedTrainings,
 							orgTrainings,
+							hasCompletedTaggedTrainings,
 						};
 					} catch (error) {
 						console.error(
@@ -188,6 +202,7 @@ export default function GuidePage() {
 							userTags: [],
 							taggedTrainings: [],
 							orgTrainings: [],
+							hasCompletedTaggedTrainings: false,
 						};
 					}
 				})
@@ -218,24 +233,7 @@ export default function GuidePage() {
 		wiseTwinLoading ||
 		currentTrainingsLoading
 	) {
-		return (
-			<div className="container mx-auto py-8">
-				<div className="flex justify-between items-center mb-6">
-					<div className="animate-pulse">
-						<div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-1/4 mb-2"></div>
-						<div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-2/4"></div>
-					</div>
-				</div>
-				<div className="grid grid-cols-1 gap-6">
-					<div className="animate-pulse">
-						<div className="h-32 bg-gray-200 dark:bg-gray-700 rounded-lg"></div>
-					</div>
-					<div className="animate-pulse">
-						<div className="h-64 bg-gray-200 dark:bg-gray-700 rounded-lg"></div>
-					</div>
-				</div>
-			</div>
-		);
+		return <LoadingState />;
 	}
 
 	// Vérifier si nous avons des formations à afficher
@@ -267,32 +265,14 @@ export default function GuidePage() {
 					isLoading={currentTrainingsLoading}
 				/>
 
-				{/* 2. Formations de chaque organisation */}
-				{organizationsData.map((orgData) => (
-					<OrganizationTrainingPanel
-						key={orgData.organization.id}
-						organization={orgData.organization}
-						taggedTrainings={[]}
-						organizationTrainings={orgData.orgTrainings}
-						showAllTrainings={true}
-						noSampleData={true}
-					/>
-				))}
+				{/* 2. Organisations avec leurs formations */}
+				<OrganizationsSection organizationsData={organizationsData} />
 
-				{/* 3. Formations taguées pour l'utilisateur */}
-				{organizationsData.map(
-					(orgData) =>
-						orgData.taggedTrainings.length > 0 && (
-							<OrganizationTrainingPanel
-								key={`${orgData.organization.id}-tagged`}
-								organization={orgData.organization}
-								taggedTrainings={orgData.taggedTrainings}
-								organizationTrainings={[]}
-								showTaggedOnly={true}
-								noSampleData={true}
-							/>
-						)
-				)}
+				{/* 3. Formations populaires */}
+				<PopularTrainings
+					trainings={popularTrainings}
+					isLoading={popularTrainingsLoading}
+				/>
 
 				{/* 4. Formations recommandées par WiseTwin */}
 				{wiseTwinTrainings.length > 0 && (
@@ -303,28 +283,7 @@ export default function GuidePage() {
 				{!hasOrganizations && <NoOrganizationGuide />}
 
 				{/* Message si aucune formation n'est disponible */}
-				{!hasAnyTraining && (
-					<div className="text-center py-12 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
-						<div className="inline-flex items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/20 p-6 mb-4">
-							<BookOpen className="w-8 h-8 text-wisetwin-blue" />
-						</div>
-						<h3 className="text-lg font-medium mb-2">
-							Aucune formation trouvée
-						</h3>
-						<p className="text-gray-500 dark:text-gray-400 mb-6 max-w-md mx-auto">
-							Aucune formation n'est disponible pour le moment.
-							Explorez notre catalogue pour découvrir nos
-							programmes.
-						</p>
-						<Button
-							onClick={() => router.push("/wisetrainer")}
-							className="bg-wisetwin-blue hover:bg-wisetwin-blue-light"
-						>
-							Explorer le catalogue
-							<ArrowRight className="ml-2 h-4 w-4" />
-						</Button>
-					</div>
-				)}
+				{!hasAnyTraining && <NoTrainingsMessage />}
 			</div>
 		</div>
 	);

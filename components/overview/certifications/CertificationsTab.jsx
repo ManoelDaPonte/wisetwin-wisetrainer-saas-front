@@ -75,7 +75,7 @@ export default function CertificationsTab() {
 			className="space-y-6"
 		>
 			{/* En-tête avec bouton de téléchargement du rapport complet */}
-			<div className="flex justify-between items-center">
+			<div className="flex justify-between items-center mt-8">
 				<h2 className="text-xl font-bold text-wisetwin-darkblue dark:text-white">
 					Vos certifications et diplômes
 				</h2>
@@ -92,7 +92,7 @@ export default function CertificationsTab() {
 
 			{/* Message si aucune certification */}
 			{!isLoading && completedTrainings.length === 0 ? (
-				<Card className="bg-gray-50 dark:bg-gray-800 border-dashed">
+				<Card className="">
 					<CardContent className="flex flex-col items-center justify-center py-12">
 						<Award className="w-12 h-12 text-gray-400 mb-4" />
 						<h3 className="text-lg font-medium mb-2">
