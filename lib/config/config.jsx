@@ -86,10 +86,9 @@ export const navigationItems = {
 	],
 	coreItems: [
 		{
-			id: "digital-twin",
+			id: "wisetwin",
 			label: "WiseTwin",
 			icon: Box,
-			disabled: true,
 		},
 		{
 			id: "wisetrainer",
