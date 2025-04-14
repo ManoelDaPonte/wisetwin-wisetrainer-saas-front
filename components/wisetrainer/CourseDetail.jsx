@@ -14,6 +14,7 @@ import QuestionnaireModal from "@/components/wisetrainer/QuestionnaireModal";
 import InteractiveGuideModal from "@/components/wisetrainer/InteractiveGuideModal";
 import { useUnityEvents } from "@/lib/hooks/useUnityEvents";
 import WISETRAINER_CONFIG from "@/lib/config/wisetrainer/wisetrainer";
+import { useToast } from "@/lib/hooks/useToast";
 
 export default function CourseDetail({ params }) {
 	const router = useRouter();
@@ -22,9 +23,12 @@ export default function CourseDetail({ params }) {
 	const [course, setCourse] = useState(null);
 	const [userProgress, setUserProgress] = useState(null);
 	const [isLoading, setIsLoading] = useState(true);
+	const [isInitializingProgress, setIsInitializingProgress] = useState(false);
+	const [hasInitializedProgress, setHasInitializedProgress] = useState(false);
 	const unityBuildRef = useRef(null);
 	const [activeTab, setActiveTab] = useState("details");
 	const [selectedModule, setSelectedModule] = useState(null);
+	const { toast } = useToast();
 
 	const handleSwitchTab = (tabId) => {
 		setActiveTab(tabId);
@@ -55,6 +59,26 @@ export default function CourseDetail({ params }) {
 			fetchCourseDetails();
 		}
 	}, [courseId, containerName, containerLoading]);
+
+	// Initialiser automatiquement la progression lorsque l'utilisateur accède au cours
+	useEffect(() => {
+		// Si nous avons les détails du cours et qu'aucune progression n'existe ou est à 0%
+		if (
+			course &&
+			containerName &&
+			!containerLoading &&
+			!hasInitializedProgress &&
+			(!userProgress || userProgress.progress === 0)
+		) {
+			initializeProgress();
+		}
+	}, [
+		course,
+		userProgress,
+		containerName,
+		containerLoading,
+		hasInitializedProgress,
+	]);
 
 	const fetchCourseDetails = async () => {
 		setIsLoading(true);
@@ -187,6 +211,77 @@ export default function CourseDetail({ params }) {
 		}
 	};
 
+	// Initialiser la progression de l'utilisateur
+	const initializeProgress = async () => {
+		if (isInitializingProgress || hasInitializedProgress) return;
+
+		try {
+			setIsInitializingProgress(true);
+
+			console.log(
+				"Initialisation de la progression pour le cours",
+				courseId
+			);
+
+			// Vérifier d'abord si les fichiers de formation sont présents dans le container
+			const checkResponse = await axios.get(
+				`${WISETRAINER_CONFIG.API_ROUTES.CHECK_BLOB}`,
+				{
+					params: {
+						container: containerName,
+						blob: `${WISETRAINER_CONFIG.BLOB_PREFIXES.WISETRAINER}${courseId}.loader.js`,
+					},
+				}
+			);
+
+			// Si les fichiers n'existent pas, essayer de les importer d'abord
+			if (!checkResponse.data.exists) {
+				console.log(
+					"Fichiers de formation non trouvés, tentative d'importation"
+				);
+
+				// Importer depuis le container source
+				await axios.post(
+					`${WISETRAINER_CONFIG.API_ROUTES.IMPORT_BUILD}/${containerName}/${courseId}`
+				);
+
+				console.log("Importation terminée");
+			}
+
+			// Initialiser la progression à 0%
+			const response = await axios.post(
+				WISETRAINER_CONFIG.API_ROUTES.UPDATE_PROGRESS,
+				{
+					userId: containerName,
+					trainingId: courseId,
+					progress: 0, // Commencer à 0%
+				}
+			);
+
+			if (response.data.success) {
+				toast({
+					title: "Formation initialisée",
+					description:
+						"Vous avez commencé cette formation. Votre progression sera enregistrée automatiquement.",
+					variant: "info",
+				});
+
+				// Rafraîchir les détails pour obtenir la dernière progression
+				await fetchCourseDetails();
+			}
+
+			setHasInitializedProgress(true);
+		} catch (error) {
+			console.error(
+				"Erreur lors de l'initialisation de la progression:",
+				error
+			);
+			// Ne pas afficher de toast d'erreur pour éviter de perturber l'utilisateur
+		} finally {
+			setIsInitializingProgress(false);
+		}
+	};
+
 	// Helper pour formater le nom du cours
 	const formatCourseName = (id) => {
 		return id
@@ -268,6 +363,12 @@ export default function CourseDetail({ params }) {
 				if (response.data.success) {
 					// Rafraîchir les données du cours
 					await fetchCourseDetails();
+
+					toast({
+						title: "Module terminé",
+						description: `Vous avez complété ce module avec un score de ${score}%`,
+						variant: "success",
+					});
 				} else {
 					throw new Error(
 						response.data.error ||
@@ -326,6 +427,12 @@ export default function CourseDetail({ params }) {
 				if (response.data.success) {
 					// Rafraîchir les données du cours
 					await fetchCourseDetails();
+
+					toast({
+						title: "Guide terminé",
+						description: "Vous avez complété ce guide avec succès",
+						variant: "success",
+					});
 				} else {
 					throw new Error(
 						response.data.error ||

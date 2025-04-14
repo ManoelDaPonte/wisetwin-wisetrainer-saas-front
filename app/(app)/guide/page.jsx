@@ -7,14 +7,12 @@ import { useToast } from "@/lib/hooks/useToast";
 
 // Hooks personnalisés
 import { useTrainingWiseTwin } from "@/lib/hooks/useTrainingWiseTwin";
-import { usePopularTrainings } from "@/lib/hooks/usePopularTrainings";
 import { useCurrentTraining } from "@/lib/hooks/useCurrentTraining";
 
 // Composants personnalisés
 import NoOrganizationGuide from "@/components/guide/NoOrganizationGuide";
 import WiseTwinRecommendations from "@/components/guide/WiseTwinRecommendations";
 import CurrentTrainingsPanel from "@/components/guide/CurrentTrainingsPanel";
-import PopularTrainings from "@/components/guide/PopularTrainings";
 import OrganizationsSection from "@/components/guide/OrganizationsSection";
 import NoTrainingsMessage from "@/components/guide/NoTrainingsMessage";
 import LoadingState from "@/components/guide/LoadingState";
@@ -33,10 +31,6 @@ export default function GuidePage() {
 	// Utiliser le hook pour les formations WiseTwin
 	const { trainings: wiseTwinTrainings, isLoading: wiseTwinLoading } =
 		useTrainingWiseTwin(containerName);
-
-	// Utiliser le hook pour les formations populaires
-	const { trainings: popularTrainings, isLoading: popularTrainingsLoading } =
-		usePopularTrainings();
 
 	// Charger les données utilisateur
 	useEffect(() => {
@@ -243,7 +237,6 @@ export default function GuidePage() {
 				org.taggedTrainings.length > 0 || org.orgTrainings.length > 0
 		) ||
 		wiseTwinTrainings.length > 0 ||
-		popularTrainings.length > 0 ||
 		currentTrainings.length > 0;
 
 	return (
@@ -267,12 +260,6 @@ export default function GuidePage() {
 
 				{/* 2. Organisations avec leurs formations */}
 				<OrganizationsSection organizationsData={organizationsData} />
-
-				{/* 3. Formations populaires */}
-				<PopularTrainings
-					trainings={popularTrainings}
-					isLoading={popularTrainingsLoading}
-				/>
 
 				{/* 4. Formations recommandées par WiseTwin */}
 				{wiseTwinTrainings.length > 0 && (
