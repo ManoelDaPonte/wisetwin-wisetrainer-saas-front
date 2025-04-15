@@ -351,12 +351,12 @@ export default function CourseDetail({ params }) {
 				score = 0;
 			}
 
-			// Fermer le questionnaire
+			// Fermer le questionnaire - faire une seule fois
 			setShowQuestionnaire(false);
 
-			// Notifier le build Unity que le questionnaire est complété
+			// Notifier le build Unity que le questionnaire est complété - faire une seule fois
 			if (unityBuildRef.current && unityBuildRef.current.isReady) {
-				// Envoyer d'abord le message de complétion du questionnaire (existant)
+				// Envoyer d'abord le message de complétion du questionnaire
 				unityBuildRef.current.completeQuestionnaire(
 					currentScenario.id,
 					score >= 70
@@ -386,25 +386,21 @@ export default function CourseDetail({ params }) {
 				}
 
 				// Envoyer le message au SequenceManager
-				console.log(
-					`Envoi du message '${stepCommand}' au SequenceManager`
-				);
-				unityBuildRef.current.sendMessage(
-					"SequenceManager", // Nom de l'objet dans Unity
-					"ReceiveCommand", // Nom de la méthode à appeler (basé sur le code partagé)
-					stepCommand // Paramètre à passer (step1, step2, etc.)
-				);
-			}
-
-			// Fermer le questionnaire
-			setShowQuestionnaire(false);
-
-			// Notifier le build Unity que le questionnaire est complété
-			if (unityBuildRef.current && unityBuildRef.current.isReady) {
-				unityBuildRef.current.completeQuestionnaire(
-					currentScenario.id,
-					score >= 70
-				);
+				try {
+					console.log(
+						`Envoi du message '${stepCommand}' au SequenceManager`
+					);
+					unityBuildRef.current.sendMessage(
+						"SequenceManager", // Nom de l'objet dans Unity
+						"ReceiveCommand", // Nom de la méthode à appeler
+						stepCommand // Paramètre à passer (step1, step2, etc.)
+					);
+				} catch (error) {
+					console.error(
+						"Erreur lors de l'envoi du message à Unity:",
+						error
+					);
+				}
 			}
 
 			// Mettre à jour la progression en base de données
@@ -415,8 +411,6 @@ export default function CourseDetail({ params }) {
 					{
 						userId: containerName,
 						trainingId: courseId,
-						// Toujours utiliser le nombre total de modules du cours (userProgress.totalModules)
-						// et non pas la valeur completedModules + 1
 						progress: Math.round(
 							((userProgress.completedModules + 1) /
 								course.modules.length) *
