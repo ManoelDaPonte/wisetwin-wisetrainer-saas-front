@@ -45,7 +45,44 @@
               }
             ],
             "explanation": "Pour des raisons de sécurité, le chauffeur doit toujours se tenir soit dans la zone de sécurité clairement délimitée, soit dans la cabine de son camion pendant les opérations de chargement."
+          }
+        ]
+      },
+      {
+        "id": "forklift-safety",
+        "order": 2,
+        "title": "Sécurité des chariots élévateurs",
+        "description": "Règles de sécurité pour l'utilisation des chariots élévateurs en zone de chargement",
+        "questions": [
+          {
+            "id": "loading-zone-q2",
+            "text": "Quel équipement doit porter le personnel pour être détecté par le système de sécurité du chariot élévateur ?",
+            "type": "SINGLE",
+            "options": [
+              {
+                "id": "lz-q2-o1",
+                "text": "Un badge spécifique",
+                "isCorrect": true
+              },
+              {
+                "id": "lz-q2-o2",
+                "text": "Un gilet réfléchissant",
+                "isCorrect": false
+              },
+              {
+                "id": "lz-q2-o3",
+                "text": "Un casque de sécurité",
+                "isCorrect": false
+              },
+              {
+                "id": "lz-q2-o4",
+                "text": "Une combinaison de travail",
+                "isCorrect": false
+              }
+            ],
+            "explanation": "Le gilet réfléchissant est l'équipement essentiel permettant aux systèmes de détection des chariots élévateurs d'identifier la présence de personnel. Il augmente également la visibilité pour les opérateurs de chariot."
           },
+
           {
             "id": "forklift-q1",
             "text": "Quelle est la vitesse maximale autorisée pour un chariot élévateur (Fenwick) en présence de piétons ?",
@@ -77,42 +114,6 @@
         ]
       },
       {
-        "id": "forklift-safety",
-        "order": 2,
-        "title": "Sécurité des chariots élévateurs",
-        "description": "Règles de sécurité pour l'utilisation des chariots élévateurs en zone de chargement",
-        "questions": [
-          {
-            "id": "loading-zone-q2",
-            "text": "Quel équipement doit porter le personnel pour être détecté par le système de sécurité du chariot élévateur ?",
-            "type": "SINGLE",
-            "options": [
-              {
-                "id": "lz-q2-o1",
-                "text": "Un badge spécifique",
-                "isCorrect": false
-              },
-              {
-                "id": "lz-q2-o2",
-                "text": "Un gilet réfléchissant",
-                "isCorrect": true
-              },
-              {
-                "id": "lz-q2-o3",
-                "text": "Un casque de sécurité",
-                "isCorrect": false
-              },
-              {
-                "id": "lz-q2-o4",
-                "text": "Une combinaison de travail",
-                "isCorrect": false
-              }
-            ],
-            "explanation": "Le gilet réfléchissant est l'équipement essentiel permettant aux systèmes de détection des chariots élévateurs d'identifier la présence de personnel. Il augmente également la visibilité pour les opérateurs de chariot."
-          }
-        ]
-      },
-      {
         "id": "general-safety-rules",
         "order": 3,
         "title": "Règles générales de sécurité",
@@ -121,7 +122,8 @@
           {
             "id": "forklift-q2",
             "text": "Lors du chargement dans un conteneur, à quoi faut-il être particulièrement attentif concernant la hauteur de levée du chariot élévateur ?",
-            "type": "SINGLE",
+            "image": "/images/wisetrainer/foklift-lifting.png",
+            "type": "MULTIPLE",
             "options": [
               {
                 "id": "fk-q2-o1",
@@ -130,8 +132,8 @@
               },
               {
                 "id": "fk-q2-o2",
-                "text": "La charge à lever en fonction du chariot élevateur (faire une question sur quel type de chariot pour combien de charge)",
-                "isCorrect": false
+                "text": "La charge à lever en fonction du chariot élevateur",
+                "isCorrect": true
               },
               {
                 "id": "fk-q2-o3",
