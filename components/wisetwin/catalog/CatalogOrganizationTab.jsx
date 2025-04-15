@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/select";
 import BuildCard from "@/components/wisetwin/catalog/BuildCard";
 import BuildsLoading from "@/components/wisetwin/catalog/BuildsLoading";
+import { Card, CardContent } from "@/components/ui/card";
 
 export default function CatalogOrganizationTab({
 	organizations = [],
@@ -65,21 +66,27 @@ export default function CatalogOrganizationTab({
 
 		if (isEmptyCatalog) {
 			return (
-				<div className="flex flex-col items-center justify-center py-12 bg-gray-50 dark:bg-gray-800 rounded-lg">
-					<Building className="w-16 h-16 text-gray-300 dark:text-gray-600 mb-4" />
-					<h3 className="text-lg font-medium mb-2">
-						Aucun environnement 3D disponible
-					</h3>
-					<p className="text-gray-500 dark:text-gray-400 text-center mb-6 max-w-md mx-auto">
-						{selectedOrganization
-							? `L'organisation "${selectedOrganization.name}" n'a pas encore d'environnements 3D disponibles.`
-							: "Cette organisation n'a pas encore d'environnements 3D disponibles."}
-					</p>
-					<p className="text-wisetwin-blue dark:text-wisetwin-blue-light text-center mb-4 max-w-md mx-auto font-medium">
-						Demandez à votre administrateur de commander un nouveau
-						digital twin pour votre organisation.
-					</p>
-				</div>
+				<Card className="w-full border-gray-200 dark:border-gray-700">
+					<CardContent className="flex flex-col items-center justify-center py-12 text-center">
+						<div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-full mb-4">
+							<Building className="w-12 h-12 text-gray-300 dark:text-gray-600" />
+						</div>
+						<h3 className="text-lg font-medium mb-2">
+							Aucun environnement 3D disponible
+						</h3>
+						<p className="text-gray-500 dark:text-gray-400 mb-6 max-w-md mx-auto">
+							{selectedOrganization
+								? `L'organisation "${selectedOrganization.name}" n'a pas encore d'environnements 3D disponibles.`
+								: "Cette organisation n'a pas encore d'environnements 3D disponibles."}
+						</p>
+						<div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg mb-4 max-w-md">
+							<p className="text-wisetwin-blue dark:text-wisetwin-blue-light font-medium">
+								Demandez à votre administrateur de commander un
+								nouveau digital twin pour votre organisation.
+							</p>
+						</div>
+					</CardContent>
+				</Card>
 			);
 		}
 

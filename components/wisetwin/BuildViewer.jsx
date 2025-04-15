@@ -4,7 +4,6 @@
 import React, {
 	useState,
 	useEffect,
-	useCallback,
 	forwardRef,
 	useImperativeHandle,
 } from "react";
@@ -12,44 +11,27 @@ import { Unity, useUnityContext } from "react-unity-webgl";
 import { Button } from "@/components/ui/button";
 import WISETWIN_CONFIG from "@/lib/config/wisetwin/wisetwin";
 
-const BuildViewer = forwardRef(({ buildId, containerName }, ref) => {
+const BuildViewer = forwardRef(({ buildId, containerName, build }, ref) => {
 	const [loadingTimeout, setLoadingTimeout] = useState(false);
 	const [buildError, setBuildError] = useState(null);
 	const [buildStatus, setBuildStatus] = useState("checking");
 	const [manualLoadingProgress, setManualLoadingProgress] = useState(10);
 
+	// Utiliser les valeurs par défaut si build n'est pas défini
 	// Construire les URLs pour les fichiers Unity avec le bon préfixe
-	// Pour les builds d'organisation, utiliser le container spécifié sinon utiliser le container par défaut
 	const sourceContainer =
-		build?.sourceContainer || WISETWIN_CONFIG.CONTAINER_NAMES.SOURCE;
-	const blobPrefix =
-		build?.blobPrefix || WISETWIN_CONFIG.BLOB_PREFIXES.WISETWIN || "";
+		(build && build.sourceContainer) ||
+		WISETWIN_CONFIG.CONTAINER_NAMES.SOURCE;
 
-	// Essayer plusieurs formats possibles (compressés et non compressés)
-	// Les extensions .br sont généralement supportées par les navigateurs modernes pour une meilleure compression
-	let loaderUrl = `/api/azure/fetch-blob-data/${sourceContainer}/${blobPrefix}${buildId}.loader.js`;
-	let dataUrl, frameworkUrl, codeUrl;
+	// D'après les logs, il semble que les fichiers n'ont pas de préfixe
+	// On va d'abord essayer sans préfixe
+	const blobPrefix = "";
 
-	// Essayer d'abord les formats compressés .br (Brotli)
-	dataUrl = `/api/azure/fetch-blob-data/${sourceContainer}/${blobPrefix}${buildId}.data.br`;
-	frameworkUrl = `/api/azure/fetch-blob-data/${sourceContainer}/${blobPrefix}${buildId}.framework.js.br`;
-	codeUrl = `/api/azure/fetch-blob-data/${sourceContainer}/${blobPrefix}${buildId}.wasm.br`;
-
-	// Fallback aux formats .gz si .br n'est pas disponible
-	const useGzipFallback = true;
-	if (useGzipFallback) {
-		dataUrl = `/api/azure/fetch-blob-data/${sourceContainer}/${blobPrefix}${buildId}.data.gz`;
-		frameworkUrl = `/api/azure/fetch-blob-data/${sourceContainer}/${blobPrefix}${buildId}.framework.js.gz`;
-		codeUrl = `/api/azure/fetch-blob-data/${sourceContainer}/${blobPrefix}${buildId}.wasm.gz`;
-	}
-
-	// Fallback aux fichiers non compressés (pour les tests locaux ou les builds simples)
-	const useUncompressedFallback = false;
-	if (useUncompressedFallback) {
-		dataUrl = `/api/azure/fetch-blob-data/${sourceContainer}/${blobPrefix}${buildId}.data`;
-		frameworkUrl = `/api/azure/fetch-blob-data/${sourceContainer}/${blobPrefix}${buildId}.framework.js`;
-		codeUrl = `/api/azure/fetch-blob-data/${sourceContainer}/${blobPrefix}${buildId}.wasm`;
-	}
+	// URL pour les fichiers Unity - essayer d'abord sans préfixe
+	const loaderUrl = `/api/azure/fetch-blob-data/${sourceContainer}/${blobPrefix}${buildId}.loader.js`;
+	const dataUrl = `/api/azure/fetch-blob-data/${sourceContainer}/${blobPrefix}${buildId}.data.gz`;
+	const frameworkUrl = `/api/azure/fetch-blob-data/${sourceContainer}/${blobPrefix}${buildId}.framework.js.gz`;
+	const codeUrl = `/api/azure/fetch-blob-data/${sourceContainer}/${blobPrefix}${buildId}.wasm.gz`;
 
 	console.log("URLs de chargement configurées:", {
 		loaderUrl,
@@ -57,7 +39,7 @@ const BuildViewer = forwardRef(({ buildId, containerName }, ref) => {
 		frameworkUrl,
 		codeUrl,
 		sourceContainer,
-		blobPrefix,
+		blobPrefix: blobPrefix || "(aucun préfixe)",
 	});
 
 	// Créer le contexte Unity
@@ -100,6 +82,7 @@ const BuildViewer = forwardRef(({ buildId, containerName }, ref) => {
 	}, [unityError]);
 
 	// Exposer des méthodes au composant parent via ref
+	// Exposer des méthodes au composant parent via ref
 	useImperativeHandle(ref, () => ({
 		resetCamera: () => {
 			if (isLoaded) {
@@ -110,23 +93,21 @@ const BuildViewer = forwardRef(({ buildId, containerName }, ref) => {
 		isReady: isLoaded,
 	}));
 
-	// Handlers pour les événements
-	const handleObjectSelected = useCallback((event) => {
-		console.log("Objet sélectionné:", event.detail);
-	}, []);
-
-	// Ajouter les écouteurs d'événements
+	// Pas besoin de handlers complexes pour les événements
+	// Juste un handler basique pour surveiller les sélections d'objets si nécessaire
 	useEffect(() => {
 		if (isLoaded) {
-			addEventListener("ObjectSelected", handleObjectSelected);
+			addEventListener("ObjectSelected", (event) => {
+				console.log("Objet sélectionné:", event.detail);
+			});
 		}
 
 		return () => {
 			if (isLoaded) {
-				removeEventListener("ObjectSelected", handleObjectSelected);
+				removeEventListener("ObjectSelected", () => {});
 			}
 		};
-	}, [isLoaded, addEventListener, removeEventListener, handleObjectSelected]);
+	}, [isLoaded, addEventListener, removeEventListener]);
 
 	// Détection de timeout de chargement
 	useEffect(() => {

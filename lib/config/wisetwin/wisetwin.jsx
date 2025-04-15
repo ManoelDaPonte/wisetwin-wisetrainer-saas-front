@@ -6,7 +6,7 @@ const WISETWIN_CONFIG = {
 	BLOB_PREFIXES: {
 		WISETWIN: "wisetwin/", // Préfixe pour les builds dans le container (à ne pas confondre avec wisetrainer/)
 	},
-	DEFAULT_IMAGE: "/images/png/wisetwin-placeholder.png", // Image par défaut pour les environnements
+	DEFAULT_IMAGE: "/images/png/placeholder.png", // Image par défaut pour les environnements
 	API_ROUTES: {
 		// Routes pour les API Azure Blob Storage
 		LIST_BUILDS: "/api/azure/wisetwin/builds",

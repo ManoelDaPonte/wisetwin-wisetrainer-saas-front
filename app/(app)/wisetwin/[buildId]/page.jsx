@@ -1,31 +1,68 @@
 //app/(app)/wisetwin/[buildId]/page.jsx
 "use client";
 import React, { useState, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, RotateCcw, Loader2 } from "lucide-react";
+import { ArrowLeft, RotateCcw } from "lucide-react";
 import axios from "axios";
 import { useAzureContainer } from "@/lib/hooks/useAzureContainer";
 import BuildViewer from "@/components/wisetwin/BuildViewer";
 import WISETWIN_CONFIG from "@/lib/config/wisetwin/wisetwin";
 import { useToast } from "@/lib/hooks/useToast";
 
-export default function BuildViewerPage({ params }) {
+export default function BuildViewerPage({ params: paramsPromise }) {
 	const router = useRouter();
+	const searchParams = useSearchParams();
 	const { containerName, isLoading: containerLoading } = useAzureContainer();
-	const [buildId, setBuildId] = useState(params?.buildId || null);
+	const [buildId, setBuildId] = useState(null);
 	const [build, setBuild] = useState(null);
 	const [isLoading, setIsLoading] = useState(true);
 	const [error, setError] = useState(null);
 	const viewerRef = useRef(null);
 	const { toast } = useToast();
 
-	// Extraire buildId des paramètres
+	// Extraire buildId des paramètres de façon asynchrone
 	useEffect(() => {
-		if (params?.buildId) {
-			setBuildId(params.buildId);
-		}
-	}, [params]);
+		const getParams = async () => {
+			try {
+				if (paramsPromise) {
+					// Si c'est une Promise, attendre sa résolution
+					if (typeof paramsPromise.then === "function") {
+						const resolvedParams = await paramsPromise;
+						if (resolvedParams && resolvedParams.buildId) {
+							setBuildId(resolvedParams.buildId);
+						}
+					}
+					// Si c'est déjà un objet (compatibilité avec les versions antérieures)
+					else if (paramsPromise.buildId) {
+						setBuildId(paramsPromise.buildId);
+					}
+				}
+				// Alternative: récupérer depuis l'URL si params ne fonctionne pas
+				else if (
+					window &&
+					window.location &&
+					window.location.pathname
+				) {
+					const pathParts = window.location.pathname.split("/");
+					if (pathParts.length > 2) {
+						const idFromPath = pathParts[pathParts.length - 1];
+						setBuildId(idFromPath);
+					}
+				}
+			} catch (e) {
+				console.error(
+					"Erreur lors de la récupération des paramètres:",
+					e
+				);
+				setError(
+					"Impossible de récupérer l'identifiant de l'environnement 3D"
+				);
+			}
+		};
+
+		getParams();
+	}, [paramsPromise]);
 
 	// Charger les détails du build
 	useEffect(() => {

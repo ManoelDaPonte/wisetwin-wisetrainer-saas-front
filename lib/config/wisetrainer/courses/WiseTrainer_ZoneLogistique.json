@@ -1,0 +1,312 @@
+{
+    "id": "WiseTrainer_ZoneLogistique",
+    "name": "Zone Logistique - CAMIONNEUR",
+    "description": "Sécurité et procédures pour les camionneurs en zone de chargement",
+    "imageUrl": "/images/png/wisetrainer-logistique.png",
+    "category": "Sécurité",
+    "difficulty": "Intermédiaire",
+    "duration": "45 min",
+    "objectMapping": {
+      "Truck_Driver": "truck-safety",
+      "Loading_Zone": "loading-procedure",
+      "Emergency_Procedure": "emergency-response"
+    },
+    "modules": [
+      {
+        "id": "truck-safety",
+        "order": 1,
+        "title": "Sécurité du camionneur en zone logistique",
+        "description": "Apprenez les bonnes pratiques de sécurité pour les camionneurs en zone logistique",
+        "questions": [
+          {
+            "id": "truck-safety-q1",
+            "text": "J'entre dans la zone logistique avec mon véhicule et doit stationner dans la zone de parking dédiée. Quelle est la manœuvre correcte à effectuer ?",
+            "type": "SINGLE",
+            "image": "/images/png/truck-parking.webp",
+            "options": [
+              {
+                "id": "ts-q1-o1",
+                "text": "Je m'aligne perpendiculairement à la place et recule en épi dans la zone de stationnement, en respectant les lignes.",
+                "isCorrect": true
+              },
+              {
+                "id": "ts-q1-o2",
+                "text": "Je me gare en marche avant dès que possible, peu importe l'angle.",
+                "isCorrect": false
+              },
+              {
+                "id": "ts-q1-o3",
+                "text": "Je laisse mon camion dans l'axe de circulation avec les warnings, le temps du déchargement.",
+                "isCorrect": false
+              },
+              {
+                "id": "ts-q1-o4",
+                "text": "Je me gare en travers sur plusieurs places pour éviter d'abîmer le chargement à l'arrière.",
+                "isCorrect": false
+              }
+            ]
+          },
+          {
+            "id": "truck-safety-q2",
+            "text": "Quelle est la première action à effectuer en arrivant dans la zone de chargement ?",
+            "type": "SINGLE",
+            "options": [
+              {
+                "id": "ts-q2-o1",
+                "text": "J'identifie et me gare dans la zone délimitée.",
+                "isCorrect": true
+              },
+              {
+                "id": "ts-q2-o2",
+                "text": "Je descends immédiatement du camion.",
+                "isCorrect": false
+              },
+              {
+                "id": "ts-q2-o3",
+                "text": "Je klaxonne pour signaler ma présence.",
+                "isCorrect": false
+              },
+              {
+                "id": "ts-q2-o4",
+                "text": "J'appelle le cariste.",
+                "isCorrect": false
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "loading-procedure",
+        "order": 2,
+        "title": "Procédures en zone de chargement",
+        "description": "Suivez les procédures correctes lors des opérations de chargement et déchargement",
+        "questions": [
+          {
+            "id": "loading-procedure-q1",
+            "text": "Lors des déplacements à pied dans une zone de chargement, quelle est la conduite à adopter ?",
+            "type": "SINGLE",
+            "image": "/images/png/pedestrian-zone.webp",
+            "options": [
+              {
+                "id": "lp-q1-o1",
+                "text": "Je me déplace uniquement dans les zones piétonnes balisées, même si cela rallonge mon trajet.",
+                "isCorrect": true
+              },
+              {
+                "id": "lp-q1-o2",
+                "text": "Je marche vite pour ne pas gêner les caristes.",
+                "isCorrect": false
+              },
+              {
+                "id": "lp-q1-o3",
+                "text": "Je coupe à travers les zones de manœuvre pour aller plus vite.",
+                "isCorrect": false
+              },
+              {
+                "id": "lp-q1-o4",
+                "text": "Je passe derrière les chariots élévateurs dès que je vois un espace libre.",
+                "isCorrect": false
+              }
+            ]
+          },
+          {
+            "id": "loading-procedure-q2",
+            "text": "Quel équipement est obligatoire pour circuler dans l'entrepôt ?",
+            "type": "SINGLE",
+            "options": [
+              {
+                "id": "lp-q2-o1",
+                "text": "Un gilet haute visibilité et des chaussures de sécurité.",
+                "isCorrect": true
+              },
+              {
+                "id": "lp-q2-o2",
+                "text": "Une veste normale et des baskets.",
+                "isCorrect": false
+              },
+              {
+                "id": "lp-q2-o3",
+                "text": "Une casquette de sécurité uniquement.",
+                "isCorrect": false
+              },
+              {
+                "id": "lp-q2-o4",
+                "text": "Un badge, rien d'autre.",
+                "isCorrect": false
+              }
+            ]
+          },
+          {
+            "id": "loading-procedure-q3",
+            "text": "Une fois arrivé dans une zone sécurisée d'un site logistique, quelle est la bonne action à effectuer en priorité ?",
+            "type": "SINGLE",
+            "options": [
+              {
+                "id": "lp-q3-o1",
+                "text": "Je badge pour signaler ma présence conformément aux consignes de sécurité.",
+                "isCorrect": true
+              },
+              {
+                "id": "lp-q3-o2",
+                "text": "Je frappe à la porte pour qu'on m'ouvre.",
+                "isCorrect": false
+              },
+              {
+                "id": "lp-q3-o3",
+                "text": "Je reste à attendre sans prévenir personne.",
+                "isCorrect": false
+              },
+              {
+                "id": "lp-q3-o4",
+                "text": "J'appelle un numéro que je crois avoir noté.",
+                "isCorrect": false
+              }
+            ]
+          },
+          {
+            "id": "loading-procedure-q4",
+            "text": "Où le chauffeur du camion doit-il se positionner pendant les opérations de chargement ?",
+            "type": "MULTIPLE",
+            "options": [
+              {
+                "id": "lp-q4-o1",
+                "text": "Dans la zone de sécurité délimitée",
+                "isCorrect": true
+              },
+              {
+                "id": "lp-q4-o2",
+                "text": "Dans la cabine du camion",
+                "isCorrect": true
+              },
+              {
+                "id": "lp-q4-o3",
+                "text": "À proximité du chariot élévateur",
+                "isCorrect": false
+              },
+              {
+                "id": "lp-q4-o4",
+                "text": "Près des bâches",
+                "isCorrect": false
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "emergency-response",
+        "order": 3,
+        "title": "Réponses aux situations d'urgence",
+        "description": "Apprenez à réagir correctement face aux situations d'urgence en zone logistique",
+        "questions": [
+          {
+            "id": "emergency-response-q1",
+            "text": "Que dois-je faire avant d'ouvrir les portes de mon camion à quai ?",
+            "type": "SINGLE",
+            "options": [
+              {
+                "id": "er-q1-o1",
+                "text": "M'assurer que le camion est bien calé et sécurisé.",
+                "isCorrect": true
+              },
+              {
+                "id": "er-q1-o2",
+                "text": "Ouvrir les portes rapidement pour gagner du temps.",
+                "isCorrect": false
+              },
+              {
+                "id": "er-q1-o3",
+                "text": "Laisser le cariste s'en occuper.",
+                "isCorrect": false
+              },
+              {
+                "id": "er-q1-o4",
+                "text": "Bouger le camion pour mieux le positionner.",
+                "isCorrect": false
+              }
+            ]
+          },
+          {
+            "id": "emergency-response-q2",
+            "text": "En cas d'incendie, quelle est la première réaction à avoir ?",
+            "type": "SINGLE",
+            "options": [
+              {
+                "id": "er-q2-o1",
+                "text": "Donner l'alerte et suivre les consignes d'évacuation.",
+                "isCorrect": true
+              },
+              {
+                "id": "er-q2-o2",
+                "text": "Chercher un extincteur sans prévenir personne.",
+                "isCorrect": false
+              },
+              {
+                "id": "er-q2-o3",
+                "text": "Terminer le chargement puis sortir.",
+                "isCorrect": false
+              },
+              {
+                "id": "er-q2-o4",
+                "text": "Se réfugier dans son véhicule.",
+                "isCorrect": false
+              }
+            ]
+          },
+          {
+            "id": "emergency-response-q3",
+            "text": "Puis-je utiliser mon téléphone portable dans la zone de chargement ?",
+            "type": "SINGLE",
+            "options": [
+              {
+                "id": "er-q3-o1",
+                "text": "Non, sauf en cas d'urgence.",
+                "isCorrect": true
+              },
+              {
+                "id": "er-q3-o2",
+                "text": "Oui, tant que je ne gêne personne.",
+                "isCorrect": false
+              },
+              {
+                "id": "er-q3-o3",
+                "text": "Oui, si j'utilise des écouteurs.",
+                "isCorrect": false
+              },
+              {
+                "id": "er-q3-o4",
+                "text": "Oui, pendant les manœuvres.",
+                "isCorrect": false
+              }
+            ]
+          },
+          {
+            "id": "emergency-response-q4",
+            "text": "Que faire si je ne comprends pas une consigne de sécurité sur le site ?",
+            "type": "SINGLE",
+            "options": [
+              {
+                "id": "er-q4-o1",
+                "text": "Je demande immédiatement des précisions au responsable.",
+                "isCorrect": true
+              },
+              {
+                "id": "er-q4-o2",
+                "text": "Je fais comme je pense être correct.",
+                "isCorrect": false
+              },
+              {
+                "id": "er-q4-o3",
+                "text": "J'ignore la consigne et continue.",
+                "isCorrect": false
+              },
+              {
+                "id": "er-q4-o4",
+                "text": "Je quitte le site sans prévenir.",
+                "isCorrect": false
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
