@@ -22,6 +22,7 @@
       "questions": [
         {
           "id": "truck-safety-q1",
+          "image": "/images/wisetrainer/camion-dechargement.png",
           "text": "Quelle est la première action à effectuer en arrivant dans la zone dechargement ?",
           "type": "SINGLE",
           "options": [
