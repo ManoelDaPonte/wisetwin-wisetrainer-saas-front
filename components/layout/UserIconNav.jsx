@@ -78,7 +78,7 @@ const UserIconNav = () => {
 										closeMenuAndExecute(
 											() =>
 												(window.location.href =
-													"/api/auth/logout")
+													"/auth/logout")
 										)
 									}
 								>

@@ -294,14 +294,48 @@ export default function CourseDetail({ params }) {
 		router.push("/wisetrainer");
 	};
 
+	// const handleScenarioComplete = async (results) => {
+	// 	try {
+	// 		if (!currentScenario) return;
+
+	// 		// Gérer les différents formats de résultats possibles
+	// 		let score;
+	// 		if (Array.isArray(results)) {
+	// 			// Si c'est un tableau de résultats individuels
+	// 			const correctAnswers = results.filter(
+	// 				(r) => r.isCorrect
+	// 			).length;
+	// 			score = Math.round((correctAnswers / results.length) * 100);
+	// 			console.log(
+	// 				`Scénario ${currentScenario.id} complété avec score: ${score}`
+	// 			);
+	// 		} else if (typeof results === "object" && results !== null) {
+	// 			// Si c'est un seul objet avec un score
+	// 			score = results.score || 0;
+	// 			console.log(
+	// 				`Scénario ${currentScenario.id} complété avec score fourni: ${score}`
+	// 			);
+	// 		} else if (typeof results === "number") {
+	// 			// Si c'est directement un score numérique
+	// 			score = Math.round(results);
+	// 			console.log(
+	// 				`Scénario ${currentScenario.id} complété avec score numérique: ${score}`
+	// 			);
+	// 		} else {
+	// 			// Fallback
+	// 			score = 0;
+	// 			console.warn(
+	// 				`Format de résultats non reconnu pour ${currentScenario.id}`
+	// 			);
+	// 		}
+
 	const handleScenarioComplete = async (results) => {
 		try {
 			if (!currentScenario) return;
 
-			// Gérer les différents formats de résultats possibles
+			// Traitement existant des résultats...
 			let score;
 			if (Array.isArray(results)) {
-				// Si c'est un tableau de résultats individuels
 				const correctAnswers = results.filter(
 					(r) => r.isCorrect
 				).length;
@@ -310,22 +344,55 @@ export default function CourseDetail({ params }) {
 					`Scénario ${currentScenario.id} complété avec score: ${score}`
 				);
 			} else if (typeof results === "object" && results !== null) {
-				// Si c'est un seul objet avec un score
 				score = results.score || 0;
-				console.log(
-					`Scénario ${currentScenario.id} complété avec score fourni: ${score}`
-				);
 			} else if (typeof results === "number") {
-				// Si c'est directement un score numérique
 				score = Math.round(results);
-				console.log(
-					`Scénario ${currentScenario.id} complété avec score numérique: ${score}`
-				);
 			} else {
-				// Fallback
 				score = 0;
-				console.warn(
-					`Format de résultats non reconnu pour ${currentScenario.id}`
+			}
+
+			// Fermer le questionnaire
+			setShowQuestionnaire(false);
+
+			// Notifier le build Unity que le questionnaire est complété
+			if (unityBuildRef.current && unityBuildRef.current.isReady) {
+				// Envoyer d'abord le message de complétion du questionnaire (existant)
+				unityBuildRef.current.completeQuestionnaire(
+					currentScenario.id,
+					score >= 70
+				);
+
+				// Déterminer quelle étape envoyer au SequenceManager
+				let stepCommand = "step1"; // Par défaut
+
+				// Si l'ID de la question est au format "question-X"
+				if (currentScenario.id.startsWith("question-")) {
+					const stepNumber = currentScenario.id.replace(
+						"question-",
+						""
+					);
+					stepCommand = `step${stepNumber}`;
+					console.log(
+						`Déterminé étape à partir de l'ID: ${stepCommand}`
+					);
+				}
+				// Si l'ID est au format "truck-safety"
+				else if (currentScenario.id === "truck-safety") {
+					stepCommand = "step1";
+				} else if (currentScenario.id === "loading-procedure") {
+					stepCommand = "step2";
+				} else if (currentScenario.id === "emergency-response") {
+					stepCommand = "step3";
+				}
+
+				// Envoyer le message au SequenceManager
+				console.log(
+					`Envoi du message '${stepCommand}' au SequenceManager`
+				);
+				unityBuildRef.current.sendMessage(
+					"SequenceManager", // Nom de l'objet dans Unity
+					"ReceiveCommand", // Nom de la méthode à appeler (basé sur le code partagé)
+					stepCommand // Paramètre à passer (step1, step2, etc.)
 				);
 			}
 

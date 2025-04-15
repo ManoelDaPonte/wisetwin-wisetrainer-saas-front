@@ -1,8 +1,7 @@
-// components/login/LoginContent.jsx
 "use client";
 
 import React, { useEffect } from "react";
-import { useUser } from "@auth0/nextjs-auth0";
+import { useUser } from "@auth0/nextjs-auth0"; // Notez l'import modifié
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
@@ -31,9 +30,9 @@ const LoginContent = () => {
 	// Fonction pour gérer le clic sur le bouton de connexion
 	const handleLogin = () => {
 		// Créer l'URL de connexion avec le paramètre returnTo si présent
-		let loginUrl = "/api/auth/login";
+		let loginUrl = "/auth/login"; // Notez le changement ici: /api/auth/login -> /auth/login
 		if (returnTo) {
-			loginUrl += `?returnTo=${returnTo}`;
+			loginUrl += `?returnTo=${encodeURIComponent(returnTo)}`;
 		}
 		window.location.href = loginUrl;
 	};
@@ -41,13 +40,12 @@ const LoginContent = () => {
 	// Fonction pour gérer le clic sur le bouton d'inscription
 	const handleSignup = () => {
 		// Créer l'URL d'inscription avec le paramètre returnTo si présent
-		let signupUrl = "/api/auth/signup";
+		let signupUrl = "/auth/login?screen_hint=signup"; // Notez le changement ici
 		if (returnTo) {
-			signupUrl += `?returnTo=${returnTo}`;
+			signupUrl += `&returnTo=${encodeURIComponent(returnTo)}`;
 		}
 		window.location.href = signupUrl;
 	};
-
 	return (
 		<div className="flex flex-col md:flex-row h-screen w-screen overflow-hidden">
 			{/* Section de gauche: Image de fond et présentation */}

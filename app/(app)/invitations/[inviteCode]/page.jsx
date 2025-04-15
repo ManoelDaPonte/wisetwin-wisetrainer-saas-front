@@ -71,7 +71,7 @@ export default function InvitationPage() {
 			// Rediriger vers la page de connexion si l'utilisateur n'est pas connecté
 			// Sauvegarder l'URL actuelle pour rediriger vers cette page après la connexion
 			const returnUrl = encodeURIComponent(window.location.pathname);
-			router.push(`/api/auth/login?returnTo=${returnUrl}`);
+			router.push(`/auth/login?returnTo=${returnUrl}`);
 			return;
 		}
 
@@ -304,7 +304,7 @@ export default function InvitationPage() {
 										size="sm"
 										className="mt-2"
 										onClick={() =>
-											router.push("/api/auth/logout")
+											router.push("/auth/logout")
 										}
 									>
 										Se déconnecter

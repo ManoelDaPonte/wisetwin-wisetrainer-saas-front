@@ -1,51 +1,56 @@
 import { NextResponse } from "next/server";
 import { auth0 } from "@/lib/auth0";
 
-export async function middleware(req) {
-	// Utiliser le middleware Auth0 pour gérer les sessions
-	const res = await auth0.middleware(req);
+export async function middleware(request) {
+	// Utiliser le middleware Auth0 pour gérer les sessions et les routes d'authentification
+	const authRes = await auth0.middleware(request);
+
+	// Si le chemin commence par /auth, laisser le middleware Auth0 le gérer
+	if (request.nextUrl.pathname.startsWith("/auth")) {
+		return authRes;
+	}
 
 	// Obtenir la session à partir du middleware Auth0
-	const session = await auth0.getSession(req);
+	const session = await auth0.getSession(request);
 
 	// Si l'utilisateur accède à la page de connexion et est déjà connecté
-	if (req.nextUrl.pathname === "/login" && session) {
+	if (request.nextUrl.pathname === "/login" && session) {
 		// S'il y a un returnTo dans l'URL, rediriger vers cette destination
-		const returnTo = req.nextUrl.searchParams.get("returnTo");
+		const returnTo = request.nextUrl.searchParams.get("returnTo");
 		if (returnTo) {
-			// Ne pas encoder à nouveau l'URL
-			return NextResponse.redirect(new URL(returnTo, req.url));
+			return NextResponse.redirect(new URL(returnTo, request.url));
 		}
 		// Sinon, rediriger vers la page d'accueil
-		return NextResponse.redirect(new URL("/", req.url));
+		return NextResponse.redirect(new URL("/", request.url));
 	}
 
 	// Si l'utilisateur tente d'accéder à des pages protégées sans être connecté
 	if (
 		!session &&
-		req.nextUrl.pathname !== "/login" &&
-		!req.nextUrl.pathname.startsWith("/api/auth")
+		request.nextUrl.pathname !== "/login" &&
+		!request.nextUrl.pathname.startsWith("/auth")
 	) {
 		// Récupérer le chemin actuel pour la redirection après authentification
-		const currentPath = req.nextUrl.pathname;
-		const searchParams = req.nextUrl.search;
+		const currentPath = request.nextUrl.pathname;
+		const searchParams = request.nextUrl.search;
 		const fullPath = searchParams
 			? `${currentPath}${searchParams}`
 			: currentPath;
 
 		// Créer l'URL de redirection vers la page de login avec le paramètre returnTo
-		const loginUrl = new URL("/login", req.url);
-		loginUrl.searchParams.set("returnTo", fullPath); // Pas d'encodage ici
+		const loginUrl = new URL("/login", request.url);
+		loginUrl.searchParams.set("returnTo", fullPath);
 
 		return NextResponse.redirect(loginUrl);
 	}
 
-	return res;
+	// Retourner la réponse du middleware Auth0 pour propager les en-têtes nécessaires
+	return authRes;
 }
 
 export const config = {
 	matcher: [
-		// Exclure les routes publiques du middleware
-		"/((?!api/auth|login|api/auth/.*|_next/static|_next/image|favicon.ico|.*\\..*$).*)",
+		// Match toutes les routes sauf les ressources statiques
+		"/((?!_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt).*)",
 	],
 };
