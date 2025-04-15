@@ -1,5 +1,5 @@
 //components/wisetrainer/courses/CatalogCourseCard.jsx
-import React from "react";
+import React, { useState } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import {
@@ -12,7 +12,14 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Clock, BookOpen, Info, Building, Sparkles } from "lucide-react";
+import {
+	Clock,
+	BookOpen,
+	Info,
+	Building,
+	Sparkles,
+	PlayCircle,
+} from "lucide-react";
 import WISETRAINER_CONFIG from "@/lib/config/wisetrainer/wisetrainer";
 
 const CatalogCourseCard = ({
@@ -20,10 +27,18 @@ const CatalogCourseCard = ({
 	onEnroll,
 	onToggleInfo,
 	flippedCardId,
-	isImporting,
 	isEnrolled,
 	itemVariants,
 }) => {
+	// Vérifier que le cours existe pour éviter l'erreur
+	if (!course) {
+		return null;
+	}
+
+	// État pour gérer les erreurs d'image
+	const [imgError, setImgError] = useState(false);
+	const [imgLoaded, setImgLoaded] = useState(false);
+
 	const isFlipped = flippedCardId === course.id;
 
 	// Déterminer la source de la formation (WiseTwin par défaut ou organisation)
@@ -34,6 +49,11 @@ const CatalogCourseCard = ({
 	const modules = course.modules || [];
 	const hasModules = modules.length > 0;
 
+	// Déterminer l'URL de l'image à utiliser
+	const imageUrl = imgError
+		? WISETRAINER_CONFIG.DEFAULT_IMAGE
+		: course.imageUrl || WISETRAINER_CONFIG.DEFAULT_IMAGE;
+
 	return (
 		<motion.div variants={itemVariants}>
 			<Card
@@ -42,19 +62,30 @@ const CatalogCourseCard = ({
 			>
 				{/* Image du cours couvrant toute la largeur */}
 				{!isFlipped && (
-					<div className="relative w-full h-52 overflow-hidden rounded-t-lg">
+					<div className="relative w-full h-52 overflow-hidden rounded-t-lg bg-gray-100 dark:bg-gray-800">
+						{/* Image avec gestion de chargement et d'erreur */}
+						{!imgLoaded && !imgError && (
+							<div className="absolute inset-0 flex items-center justify-center">
+								<div className="w-8 h-8 border-4 border-wisetwin-blue border-t-transparent rounded-full animate-spin"></div>
+							</div>
+						)}
+
 						<Image
-							src={
-								course.imageUrl ||
-								WISETRAINER_CONFIG.DEFAULT_IMAGE
-							}
-							alt={course.name}
+							src={imageUrl}
+							alt={course.name || "Formation"}
 							fill
-							className="object-cover"
+							className={`object-cover transition-opacity duration-300 ${
+								imgLoaded ? "opacity-100" : "opacity-0"
+							}`}
+							onLoad={() => setImgLoaded(true)}
 							onError={(e) => {
+								setImgError(true);
+								setImgLoaded(true);
 								e.target.src = WISETRAINER_CONFIG.DEFAULT_IMAGE;
 							}}
+							priority={true}
 						/>
+
 						{/* Badge de difficulté superposé sur l'image */}
 						<div className="absolute top-3 right-3">
 							<Badge
@@ -232,19 +263,18 @@ const CatalogCourseCard = ({
 
 				<CardFooter className="flex gap-2 mt-auto pt-2">
 					<Button
-						className={`flex-1 ${
-							isFlipped
-								? "bg-wisetwin-blue hover:bg-wisetwin-blue-light"
-								: "bg-wisetwin-blue hover:bg-wisetwin-blue-light"
-						}`}
+						className={`flex-1 bg-wisetwin-blue hover:bg-wisetwin-blue-light text-white`}
 						onClick={() => onEnroll(course)}
-						disabled={isImporting || isEnrolled}
+						disabled={isEnrolled}
 					>
-						{isImporting
-							? "Inscription..."
-							: isEnrolled
-							? "Déjà inscrit"
-							: "S'inscrire"}
+						{isEnrolled ? (
+							<>Déjà commencée</>
+						) : (
+							<>
+								<PlayCircle className="mr-2 h-4 w-4" />
+								Commencer
+							</>
+						)}
 					</Button>
 					<Button
 						className="flex-1"

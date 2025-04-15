@@ -4,22 +4,29 @@ import { motion } from "framer-motion";
 import CourseCard from "@/components/wisetrainer/courses/CourseCard";
 import EmptyCoursesState from "@/components/wisetrainer/courses/EmptyCoursesState";
 import CoursesLoading from "@/components/wisetrainer/courses/CoursesLoading";
-import { Building } from "lucide-react";
+import { Building, BookOpen, ArrowRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 
 const PersonalCoursesTab = ({
 	isLoading,
-	courses,
+	courses = [], // Valeur par défaut
 	onCourseSelect,
 	onUnenroll,
 	onBrowseCatalog,
 	containerVariants,
 	itemVariants,
 }) => {
+	// S'assurer que courses est un tableau valide
+	const validCourses = Array.isArray(courses) ? courses : [];
+
 	// Divisez les cours en "En cours" et "Terminés"
-	const inProgressCourses = courses.filter((course) => course.progress < 100);
-	const completedCourses = courses.filter(
-		(course) => course.progress === 100
+	const inProgressCourses = validCourses.filter(
+		(course) => course && course.progress < 100
+	);
+	const completedCourses = validCourses.filter(
+		(course) => course && course.progress === 100
 	);
 
 	// État pour contrôler si la section "Terminés" est réduite ou développée
@@ -34,7 +41,7 @@ const PersonalCoursesTab = ({
 			</div>
 			{isLoading ? (
 				<CoursesLoading />
-			) : courses.length === 0 ? (
+			) : validCourses.length === 0 ? (
 				<EmptyCoursesState onBrowseCatalog={onBrowseCatalog} />
 			) : (
 				<div className="space-y-10">
@@ -53,19 +60,28 @@ const PersonalCoursesTab = ({
 						</h3>
 
 						{inProgressCourses.length === 0 ? (
-							<div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-6 text-center">
-								<p className="text-gray-500 dark:text-gray-400">
-									Vous n'avez pas de formations en cours.
-									Parcourez le catalogue pour commencer une
-									nouvelle formation.
-								</p>
-								<button
-									className="mt-4 text-wisetwin-blue hover:underline"
-									onClick={onBrowseCatalog}
-								>
-									Découvrir les formations
-								</button>
-							</div>
+							<Card className=" border-gray-200 dark:border-gray-700">
+								<CardContent className="flex flex-col items-center justify-center py-10 text-center">
+									<div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-full mb-4">
+										<BookOpen className="h-8 w-8 text-wisetwin-blue dark:text-wisetwin-blue-light" />
+									</div>
+									<h4 className="text-lg font-medium mb-2">
+										Aucune formation en cours
+									</h4>
+									<p className="text-gray-500 dark:text-gray-400 mb-6 max-w-md">
+										Parcourez notre catalogue et commencez
+										une nouvelle formation pour développer
+										vos compétences.
+									</p>
+									<Button
+										className="bg-wisetwin-blue hover:bg-wisetwin-blue-light text-white flex items-center gap-2"
+										onClick={onBrowseCatalog}
+									>
+										Découvrir les formations
+										<ArrowRight className="h-4 w-4" />
+									</Button>
+								</CardContent>
+							</Card>
 						) : (
 							<motion.div
 								variants={containerVariants}
@@ -73,15 +89,18 @@ const PersonalCoursesTab = ({
 								animate="visible"
 								className="grid grid-cols-1 md:grid-cols-2 gap-8"
 							>
-								{inProgressCourses.map((course) => (
-									<CourseCard
-										key={course.id}
-										course={course}
-										onSelect={onCourseSelect}
-										onUnenroll={onUnenroll}
-										itemVariants={itemVariants}
-									/>
-								))}
+								{inProgressCourses.map(
+									(course) =>
+										course && (
+											<CourseCard
+												key={course.id}
+												course={course}
+												onSelect={onCourseSelect}
+												onUnenroll={onUnenroll}
+												itemVariants={itemVariants}
+											/>
+										)
+								)}
 							</motion.div>
 						)}
 					</div>
@@ -114,15 +133,18 @@ const PersonalCoursesTab = ({
 									animate="visible"
 									className="grid grid-cols-1 md:grid-cols-2 gap-8"
 								>
-									{completedCourses.map((course) => (
-										<CourseCard
-											key={course.id}
-											course={course}
-											onSelect={onCourseSelect}
-											onUnenroll={onUnenroll}
-											itemVariants={itemVariants}
-										/>
-									))}
+									{completedCourses.map(
+										(course) =>
+											course && (
+												<CourseCard
+													key={course.id}
+													course={course}
+													onSelect={onCourseSelect}
+													onUnenroll={onUnenroll}
+													itemVariants={itemVariants}
+												/>
+											)
+									)}
 								</motion.div>
 							)}
 						</div>

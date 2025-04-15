@@ -24,6 +24,7 @@ model User {
     userStats        UserStats? // Statistiques de l'utilisateur
     UserSession      UserSession[]
     organizations    OrganizationMember[]
+    tags             UserTag[] // Tags associés à l'utilisateur
 }
 
 // Modèle de cours de formation
@@ -42,6 +43,7 @@ model Course {
     userCourses          UserCourse[] // Utilisateurs inscrits à ce cours
     userSessions         UserSession[] // Sessions des utilisateurs liées à ce cours
     OrganizationTraining OrganizationTraining[]
+    TagTraining          TagTraining[]
 }
 
 // Modèle de module (partie d'un cours)
@@ -225,6 +227,7 @@ model Organization {
     members     OrganizationMember[]
     trainings   OrganizationTraining[]
     invitations OrganizationInvitation[]
+    tags        OrganizationTag[] // Relation with tags
 }
 
 // Modèle pour gérer les membres d'une organisation
@@ -271,4 +274,46 @@ model OrganizationInvitation {
     updatedAt      DateTime     @updatedAt
 
     @@unique([email, organizationId]) // Un utilisateur ne peut être invité qu'une fois dans une organisation
+}
+
+// Modèle pour les tags d'organisation
+model OrganizationTag {
+    id             String       @id @default(uuid())
+    organizationId String
+    organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+    name           String
+    color          String?      @default("#3B82F6") // Couleur par défaut (bleu)
+    description    String?
+    createdAt      DateTime     @default(now())
+    updatedAt      DateTime     @updatedAt
+
+    // Relations
+    users     UserTag[]
+    trainings TagTraining[]
+
+    @@unique([organizationId, name])
+}
+
+// Relation entre utilisateurs et tags
+model UserTag {
+    id         String          @id @default(uuid())
+    userId     String
+    user       User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+    tagId      String
+    tag        OrganizationTag @relation(fields: [tagId], references: [id], onDelete: Cascade)
+    assignedAt DateTime        @default(now())
+
+    @@unique([userId, tagId])
+}
+
+// Relation entre tags et formations
+model TagTraining {
+    id         String          @id @default(uuid())
+    tagId      String
+    tag        OrganizationTag @relation(fields: [tagId], references: [id], onDelete: Cascade)
+    courseId   String
+    course     Course          @relation(fields: [courseId], references: [id], onDelete: Cascade)
+    assignedAt DateTime        @default(now())
+
+    @@unique([tagId, courseId])
 }

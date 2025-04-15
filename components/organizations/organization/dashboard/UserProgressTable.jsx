@@ -1,4 +1,4 @@
-// components/organizations/organization/dashboard/UserProgressTable.jsx
+//components/organizations/organization/dashboard/UserProgressTable.jsx
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -23,10 +23,18 @@ import {
 	Download,
 	Eye,
 	Users,
+	Tag,
+	X,
 } from "lucide-react";
 
 // Importation du composant modal de détails utilisateur
 import UserDetailsModal from "./UserDetailsModal";
+import {
+	Popover,
+	PopoverContent,
+	PopoverTrigger,
+} from "@/components/ui/popover";
+import { Checkbox } from "@/components/ui/checkbox";
 
 // Composant pour afficher l'indicateur de progression
 const ProgressIndicator = ({ value, size = "md" }) => {
@@ -79,7 +87,7 @@ const ProgressStatus = ({ status }) => {
 	);
 };
 
-export default function UserProgressTable({ users, trainings }) {
+export default function UserProgressTable({ users, trainings, tags = [] }) {
 	const [search, setSearch] = useState("");
 	const [filteredUsers, setFilteredUsers] = useState(users);
 	const [sortConfig, setSortConfig] = useState({
@@ -89,6 +97,8 @@ export default function UserProgressTable({ users, trainings }) {
 	const [selectedTraining, setSelectedTraining] = useState("all");
 	const [selectedUser, setSelectedUser] = useState(null);
 	const [isModalOpen, setIsModalOpen] = useState(false);
+	const [selectedTags, setSelectedTags] = useState([]);
+	const [tagFilterOpen, setTagFilterOpen] = useState(false);
 
 	// Formatage de date pour l'affichage
 	const formatDate = (dateString) => {
@@ -99,24 +109,49 @@ export default function UserProgressTable({ users, trainings }) {
 		});
 	};
 
+	// Appliquer tous les filtres (recherche, formation, tags)
+	const applyFilters = () => {
+		let filtered = [...users];
+
+		// Filtre par recherche
+		if (search.trim()) {
+			const searchLower = search.toLowerCase();
+			filtered = filtered.filter(
+				(user) =>
+					user.name.toLowerCase().includes(searchLower) ||
+					user.email.toLowerCase().includes(searchLower) ||
+					user.role.toLowerCase().includes(searchLower)
+			);
+		}
+
+		// Filtre par formation
+		if (selectedTraining !== "all") {
+			filtered = filtered.filter((user) =>
+				user.trainings.some((t) => t.id === selectedTraining)
+			);
+		}
+
+		// Filtre par tags
+		if (selectedTags.length > 0) {
+			filtered = filtered.filter((user) => {
+				// Si l'utilisateur n'a pas de tags, le filtrer
+				if (!user.tags || user.tags.length === 0) return false;
+
+				// Vérifier si l'utilisateur a au moins un des tags sélectionnés
+				return user.tags.some((tag) => selectedTags.includes(tag.id));
+			});
+		}
+
+		setFilteredUsers(filtered);
+	};
+
 	// Gestionnaire de recherche
 	const handleSearch = (e) => {
 		const value = e.target.value;
 		setSearch(value);
 
-		if (!value.trim()) {
-			setFilteredUsers(users);
-			return;
-		}
-
-		const filtered = users.filter(
-			(user) =>
-				user.name.toLowerCase().includes(value.toLowerCase()) ||
-				user.email.toLowerCase().includes(value.toLowerCase()) ||
-				user.role.toLowerCase().includes(value.toLowerCase())
-		);
-
-		setFilteredUsers(filtered);
+		// Appliquer tous les filtres
+		applyFilters();
 	};
 
 	// Gestionnaire de tri
@@ -140,16 +175,29 @@ export default function UserProgressTable({ users, trainings }) {
 	const handleTrainingFilter = (trainingId) => {
 		setSelectedTraining(trainingId);
 
-		if (trainingId === "all") {
-			setFilteredUsers(users);
-			return;
-		}
+		// Appliquer tous les filtres
+		applyFilters();
+	};
 
-		const filtered = users.filter((user) =>
-			user.trainings.some((t) => t.id === trainingId)
-		);
+	// Gestionnaire de filtre par tags
+	const handleTagFilter = (tagId) => {
+		setSelectedTags((prev) => {
+			// Si le tag est déjà sélectionné, le retirer
+			if (prev.includes(tagId)) {
+				return prev.filter((id) => id !== tagId);
+			}
+			// Sinon l'ajouter
+			return [...prev, tagId];
+		});
 
-		setFilteredUsers(filtered);
+		// Appliquer tous les filtres
+		applyFilters();
+	};
+
+	// Effacer tous les filtres de tags
+	const clearTagFilters = () => {
+		setSelectedTags([]);
+		applyFilters();
 	};
 
 	// Gestionnaire pour ouvrir le modal de détails d'un utilisateur
@@ -215,6 +263,7 @@ export default function UserProgressTable({ users, trainings }) {
 				selectedTraining
 			),
 			Statut: getUserStatusForTraining(user, selectedTraining),
+			Tags: user.tags ? user.tags.map((t) => t.name).join(", ") : "",
 		}));
 
 		// Convertir en CSV
@@ -288,6 +337,90 @@ export default function UserProgressTable({ users, trainings }) {
 							</select>
 							<SlidersHorizontal className="absolute right-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
 						</div>
+
+						{tags && tags.length > 0 && (
+							<Popover
+								open={tagFilterOpen}
+								onOpenChange={setTagFilterOpen}
+							>
+								<PopoverTrigger asChild>
+									<Button
+										variant="outline"
+										className="flex items-center gap-2"
+									>
+										<Tag className="h-4 w-4" />
+										Tags
+										{selectedTags.length > 0 && (
+											<Badge className="bg-wisetwin-blue text-white ml-1">
+												{selectedTags.length}
+											</Badge>
+										)}
+									</Button>
+								</PopoverTrigger>
+								<PopoverContent className="w-56 p-3">
+									<div className="space-y-3">
+										<div className="flex items-center justify-between">
+											<h4 className="text-sm font-medium">
+												Filtrer par tags
+											</h4>
+											{selectedTags.length > 0 && (
+												<Button
+													variant="ghost"
+													size="sm"
+													className="h-6 px-2 text-xs"
+													onClick={clearTagFilters}
+												>
+													<X className="h-3 w-3 mr-1" />
+													Effacer
+												</Button>
+											)}
+										</div>
+										<div className="space-y-2 max-h-60 overflow-y-auto">
+											{tags.map((tag) => (
+												<div
+													key={tag.id}
+													className="flex items-center space-x-2"
+												>
+													<Checkbox
+														id={`filter-tag-${tag.id}`}
+														checked={selectedTags.includes(
+															tag.id
+														)}
+														onCheckedChange={() =>
+															handleTagFilter(
+																tag.id
+															)
+														}
+													/>
+													<label
+														htmlFor={`filter-tag-${tag.id}`}
+														className="text-sm flex items-center cursor-pointer"
+													>
+														<div
+															className="w-3 h-3 rounded-full mr-2"
+															style={{
+																backgroundColor:
+																	tag.color,
+															}}
+														></div>
+														{tag.name}
+													</label>
+												</div>
+											))}
+										</div>
+										<Button
+											size="sm"
+											className="w-full mt-2 bg-wisetwin-blue hover:bg-wisetwin-blue-light text-white"
+											onClick={() =>
+												setTagFilterOpen(false)
+											}
+										>
+											Appliquer
+										</Button>
+									</div>
+								</PopoverContent>
+							</Popover>
+						)}
 					</div>
 				</div>
 			</CardHeader>
@@ -312,6 +445,7 @@ export default function UserProgressTable({ users, trainings }) {
 									</div>
 								</TableHead>
 								<TableHead className="w-32">Rôle</TableHead>
+								<TableHead className="w-32">Tags</TableHead>
 								<TableHead
 									className="cursor-pointer"
 									onClick={() => handleSort("lastActive")}
@@ -375,7 +509,7 @@ export default function UserProgressTable({ users, trainings }) {
 							{filteredUsers.length === 0 ? (
 								<TableRow>
 									<TableCell
-										colSpan={8}
+										colSpan={9}
 										className="text-center py-8 text-muted-foreground"
 									>
 										Aucun utilisateur trouvé avec les
@@ -397,6 +531,36 @@ export default function UserProgressTable({ users, trainings }) {
 											<Badge variant="outline">
 												{user.role}
 											</Badge>
+										</TableCell>
+										<TableCell>
+											<div className="flex flex-wrap gap-1.5">
+												{user.tags &&
+												user.tags.length > 0 ? (
+													user.tags.map((tag) => (
+														<div
+															key={tag.id}
+															className="w-3.5 h-3.5 rounded-full"
+															style={{
+																backgroundColor:
+																	tag.color,
+															}}
+															title={tag.name} // Pour voir le nom au survol
+														></div>
+													))
+												) : (
+													<span className="text-gray-400 text-xs">
+														Aucun
+													</span>
+												)}
+												{user.tags &&
+													user.tags.length > 5 && (
+														<div className="flex items-center justify-center w-3.5 h-3.5 rounded-full bg-gray-200 dark:bg-gray-700 text-xs">
+															+
+															{user.tags.length -
+																5}
+														</div>
+													)}
+											</div>
 										</TableCell>
 										<TableCell>
 											<div className="flex items-center">

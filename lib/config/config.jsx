@@ -1,52 +1,83 @@
-// lib/config/config.jsx
 import {
 	Home,
 	LayoutDashboard,
 	ChartNoAxesCombined,
 	Box,
 	GraduationCap,
-	FolderKanban,
-	AlertTriangle,
-	TrendingUp,
 	BookText,
 	Users,
-	ServerCog,
+	Compass,
+	Settings,
 } from "lucide-react";
+
+export const STATS_CONFIG = {
+	MEDALS: {
+		GOLD: {
+			icon: "Trophy",
+			color: "#FFD700",
+			label: "Or",
+			minScore: 90,
+		},
+		SILVER: {
+			icon: "Award",
+			color: "#C0C0C0",
+			label: "Argent",
+			minScore: 75,
+		},
+		BRONZE: {
+			icon: "Medal",
+			color: "#CD7F32",
+			label: "Bronze",
+			minScore: 60,
+		},
+	},
+	ACTIVITY_TYPES: {
+		TRAINING_STARTED: "training_started",
+		TRAINING_COMPLETED: "training_completed",
+		MODULE_COMPLETED: "module_completed",
+		QUIZ_COMPLETED: "quiz_completed",
+		SESSION_STARTED: "session_started",
+		SESSION_ENDED: "session_ended",
+	},
+	PDF_TEMPLATES: {
+		CERTIFICATE: "certificate_template",
+		FULL_REPORT: "full_report_template",
+	},
+};
 
 export const HomePageCards = [
 	{
-		title: "Formation en Réalité Virtuelle",
+		title: "WiseTrainer & WiseTwin",
 		description:
-			"Accédez à nos modules de formation interactifs pour maîtriser les procédures de sécurité essentielles. Pratiquez dans un environnement virtuel avant d'appliquer vos compétences sur le terrain.",
+			"Accédez à nos modules de formation interactifs en 3D ou simplement explorez les environnements virtuels. Formez-vous aux procédures de sécurité essentielles ou familiarisez-vous avec les espaces industriels avant d'y accéder.",
 		icon: GraduationCap,
 		route: "/wisetrainer",
-		primaryAction: "Commencer la formation",
-		secondaryInfo: "Plusieurs scénarios disponibles",
+		primaryAction: "Commencer l'exploration",
+		secondaryInfo: "Formation interactive et exploration 3D",
 	},
 	{
-		title: "Tableau de Bord",
+		title: "Suivez votre progression",
 		description:
-			"Visualisez vos statistiques et suivez votre progression sur l'ensemble des modules de formation. Consultez vos résultats récents et reprenez facilement vos sessions de formation.",
-		icon: LayoutDashboard,
+			"Visualisez vos statistiques et suivez votre progression sur l'ensemble des modules de formation. Consultez vos résultats récents, télécharger vos diplômes et reprenez facilement vos sessions de formation là où vous les avez laissées.",
+		icon: ChartNoAxesCombined,
 		route: "/overview",
 		primaryAction: "Voir mes statistiques",
-		secondaryInfo: "Suivi de progression en temps réel",
+		secondaryInfo: "Suivi personnalisé en temps réel",
 	},
 	{
-		title: "Jumeau Numérique",
+		title: "Gérez vos organisations",
 		description:
-			"Explorez des environnements virtuels interactifs représentant fidèlement vos installations et équipements. Cette fonctionnalité sera bientôt disponible pour enrichir votre expérience de formation.",
-		icon: Box,
-		route: "/digital-twin",
-		disabled: true,
-		primaryAction: "Explorer",
-		secondaryInfo: "Bientôt disponible",
+			"Créez ou rejoignez des organisations pour collaborer avec votre équipe. Assignez des formations spécifiques, suivez la progression des membres et analysez les performances collectives.",
+		icon: Users,
+		route: "/organization",
+		primaryAction: "Gérer les organisations",
+		secondaryInfo: "Administration des équipes et formations",
 	},
 ];
 
 export const navigationItems = {
 	topItems: [
-		{ id: "", label: "Premier Pas", icon: Home },
+		{ id: "guide", label: "Guide", icon: Compass },
 		{
 			id: "overview",
 			label: "Statistiques",
@@ -55,10 +86,9 @@ export const navigationItems = {
 	],
 	coreItems: [
 		{
-			id: "digital-twin",
+			id: "wisetwin",
 			label: "WiseTwin",
 			icon: Box,
-			disabled: true,
 		},
 		{
 			id: "wisetrainer",
@@ -66,35 +96,17 @@ export const navigationItems = {
 			icon: GraduationCap,
 		},
 	],
-	settingsItems: [
-		{
-			id: "iot-dashboard",
-			label: "Device",
-			icon: FolderKanban,
-		},
-		{
-			id: "alerts",
-			label: "Alerts",
-			icon: AlertTriangle,
-		},
-		{
-			id: "predictive",
-			label: "Predictive",
-			icon: TrendingUp,
-			disabled: true,
-		},
-	],
 	otherItems: [
-		// {
-		// 	id: "documentation",
-		// 	label: "Docs",
-		// 	icon: BookText,
-		// 	external: true,
-		// },
 		{
 			id: "organization",
 			label: "Organisation",
 			icon: Users,
+			disabled: false,
+		},
+		{
+			id: "settings",
+			label: "Paramètres",
+			icon: Settings,
 			disabled: false,
 		},
 	],

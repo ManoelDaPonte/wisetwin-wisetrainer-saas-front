@@ -14,6 +14,7 @@ import QuestionnaireModal from "@/components/wisetrainer/QuestionnaireModal";
 import InteractiveGuideModal from "@/components/wisetrainer/InteractiveGuideModal";
 import { useUnityEvents } from "@/lib/hooks/useUnityEvents";
 import WISETRAINER_CONFIG from "@/lib/config/wisetrainer/wisetrainer";
+import { useToast } from "@/lib/hooks/useToast";
 
 export default function CourseDetail({ params }) {
 	const router = useRouter();
@@ -22,9 +23,12 @@ export default function CourseDetail({ params }) {
 	const [course, setCourse] = useState(null);
 	const [userProgress, setUserProgress] = useState(null);
 	const [isLoading, setIsLoading] = useState(true);
+	const [isInitializingProgress, setIsInitializingProgress] = useState(false);
+	const [hasInitializedProgress, setHasInitializedProgress] = useState(false);
 	const unityBuildRef = useRef(null);
 	const [activeTab, setActiveTab] = useState("details");
 	const [selectedModule, setSelectedModule] = useState(null);
+	const { toast } = useToast();
 
 	const handleSwitchTab = (tabId) => {
 		setActiveTab(tabId);
@@ -55,6 +59,26 @@ export default function CourseDetail({ params }) {
 			fetchCourseDetails();
 		}
 	}, [courseId, containerName, containerLoading]);
+
+	// Initialiser automatiquement la progression lorsque l'utilisateur accède au cours
+	useEffect(() => {
+		// Si nous avons les détails du cours et qu'aucune progression n'existe ou est à 0%
+		if (
+			course &&
+			containerName &&
+			!containerLoading &&
+			!hasInitializedProgress &&
+			(!userProgress || userProgress.progress === 0)
+		) {
+			initializeProgress();
+		}
+	}, [
+		course,
+		userProgress,
+		containerName,
+		containerLoading,
+		hasInitializedProgress,
+	]);
 
 	const fetchCourseDetails = async () => {
 		setIsLoading(true);
@@ -187,6 +211,77 @@ export default function CourseDetail({ params }) {
 		}
 	};
 
+	// Initialiser la progression de l'utilisateur
+	const initializeProgress = async () => {
+		if (isInitializingProgress || hasInitializedProgress) return;
+
+		try {
+			setIsInitializingProgress(true);
+
+			console.log(
+				"Initialisation de la progression pour le cours",
+				courseId
+			);
+
+			// Vérifier d'abord si les fichiers de formation sont présents dans le container
+			const checkResponse = await axios.get(
+				`${WISETRAINER_CONFIG.API_ROUTES.CHECK_BLOB}`,
+				{
+					params: {
+						container: containerName,
+						blob: `${WISETRAINER_CONFIG.BLOB_PREFIXES.WISETRAINER}${courseId}.loader.js`,
+					},
+				}
+			);
+
+			// Si les fichiers n'existent pas, essayer de les importer d'abord
+			if (!checkResponse.data.exists) {
+				console.log(
+					"Fichiers de formation non trouvés, tentative d'importation"
+				);
+
+				// Importer depuis le container source
+				await axios.post(
+					`${WISETRAINER_CONFIG.API_ROUTES.IMPORT_BUILD}/${containerName}/${courseId}`
+				);
+
+				console.log("Importation terminée");
+			}
+
+			// Initialiser la progression à 0%
+			const response = await axios.post(
+				WISETRAINER_CONFIG.API_ROUTES.UPDATE_PROGRESS,
+				{
+					userId: containerName,
+					trainingId: courseId,
+					progress: 0, // Commencer à 0%
+				}
+			);
+
+			if (response.data.success) {
+				toast({
+					title: "Formation initialisée",
+					description:
+						"Vous avez commencé cette formation. Votre progression sera enregistrée automatiquement.",
+					variant: "info",
+				});
+
+				// Rafraîchir les détails pour obtenir la dernière progression
+				await fetchCourseDetails();
+			}
+
+			setHasInitializedProgress(true);
+		} catch (error) {
+			console.error(
+				"Erreur lors de l'initialisation de la progression:",
+				error
+			);
+			// Ne pas afficher de toast d'erreur pour éviter de perturber l'utilisateur
+		} finally {
+			setIsInitializingProgress(false);
+		}
+	};
+
 	// Helper pour formater le nom du cours
 	const formatCourseName = (id) => {
 		return id
@@ -199,14 +294,48 @@ export default function CourseDetail({ params }) {
 		router.push("/wisetrainer");
 	};
 
+	// const handleScenarioComplete = async (results) => {
+	// 	try {
+	// 		if (!currentScenario) return;
+
+	// 		// Gérer les différents formats de résultats possibles
+	// 		let score;
+	// 		if (Array.isArray(results)) {
+	// 			// Si c'est un tableau de résultats individuels
+	// 			const correctAnswers = results.filter(
+	// 				(r) => r.isCorrect
+	// 			).length;
+	// 			score = Math.round((correctAnswers / results.length) * 100);
+	// 			console.log(
+	// 				`Scénario ${currentScenario.id} complété avec score: ${score}`
+	// 			);
+	// 		} else if (typeof results === "object" && results !== null) {
+	// 			// Si c'est un seul objet avec un score
+	// 			score = results.score || 0;
+	// 			console.log(
+	// 				`Scénario ${currentScenario.id} complété avec score fourni: ${score}`
+	// 			);
+	// 		} else if (typeof results === "number") {
+	// 			// Si c'est directement un score numérique
+	// 			score = Math.round(results);
+	// 			console.log(
+	// 				`Scénario ${currentScenario.id} complété avec score numérique: ${score}`
+	// 			);
+	// 		} else {
+	// 			// Fallback
+	// 			score = 0;
+	// 			console.warn(
+	// 				`Format de résultats non reconnu pour ${currentScenario.id}`
+	// 			);
+	// 		}
+
 	const handleScenarioComplete = async (results) => {
 		try {
 			if (!currentScenario) return;
 
-			// Gérer les différents formats de résultats possibles
+			// Traitement existant des résultats...
 			let score;
 			if (Array.isArray(results)) {
-				// Si c'est un tableau de résultats individuels
 				const correctAnswers = results.filter(
 					(r) => r.isCorrect
 				).length;
@@ -215,34 +344,63 @@ export default function CourseDetail({ params }) {
 					`Scénario ${currentScenario.id} complété avec score: ${score}`
 				);
 			} else if (typeof results === "object" && results !== null) {
-				// Si c'est un seul objet avec un score
 				score = results.score || 0;
-				console.log(
-					`Scénario ${currentScenario.id} complété avec score fourni: ${score}`
-				);
 			} else if (typeof results === "number") {
-				// Si c'est directement un score numérique
 				score = Math.round(results);
-				console.log(
-					`Scénario ${currentScenario.id} complété avec score numérique: ${score}`
-				);
 			} else {
-				// Fallback
 				score = 0;
-				console.warn(
-					`Format de résultats non reconnu pour ${currentScenario.id}`
-				);
 			}
 
-			// Fermer le questionnaire
+			// Fermer le questionnaire - faire une seule fois
 			setShowQuestionnaire(false);
 
-			// Notifier le build Unity que le questionnaire est complété
+			// Notifier le build Unity que le questionnaire est complété - faire une seule fois
 			if (unityBuildRef.current && unityBuildRef.current.isReady) {
+				// Envoyer d'abord le message de complétion du questionnaire
 				unityBuildRef.current.completeQuestionnaire(
 					currentScenario.id,
 					score >= 70
 				);
+
+				// Déterminer quelle étape envoyer au SequenceManager
+				let stepCommand = "step1"; // Par défaut
+
+				// Si l'ID de la question est au format "question-X"
+				if (currentScenario.id.startsWith("question-")) {
+					const stepNumber = currentScenario.id.replace(
+						"question-",
+						""
+					);
+					stepCommand = `step${stepNumber}`;
+					console.log(
+						`Déterminé étape à partir de l'ID: ${stepCommand}`
+					);
+				}
+				// Si l'ID est au format "truck-safety"
+				else if (currentScenario.id === "truck-safety") {
+					stepCommand = "step1";
+				} else if (currentScenario.id === "loading-procedure") {
+					stepCommand = "step2";
+				} else if (currentScenario.id === "emergency-response") {
+					stepCommand = "step3";
+				}
+
+				// Envoyer le message au SequenceManager
+				try {
+					console.log(
+						`Envoi du message '${stepCommand}' au SequenceManager`
+					);
+					unityBuildRef.current.sendMessage(
+						"SequenceManager", // Nom de l'objet dans Unity
+						"ReceiveCommand", // Nom de la méthode à appeler
+						stepCommand // Paramètre à passer (step1, step2, etc.)
+					);
+				} catch (error) {
+					console.error(
+						"Erreur lors de l'envoi du message à Unity:",
+						error
+					);
+				}
 			}
 
 			// Mettre à jour la progression en base de données
@@ -253,8 +411,6 @@ export default function CourseDetail({ params }) {
 					{
 						userId: containerName,
 						trainingId: courseId,
-						// Toujours utiliser le nombre total de modules du cours (userProgress.totalModules)
-						// et non pas la valeur completedModules + 1
 						progress: Math.round(
 							((userProgress.completedModules + 1) /
 								course.modules.length) *
@@ -268,6 +424,12 @@ export default function CourseDetail({ params }) {
 				if (response.data.success) {
 					// Rafraîchir les données du cours
 					await fetchCourseDetails();
+
+					toast({
+						title: "Module terminé",
+						description: `Vous avez complété ce module avec un score de ${score}%`,
+						variant: "success",
+					});
 				} else {
 					throw new Error(
 						response.data.error ||
@@ -326,6 +488,12 @@ export default function CourseDetail({ params }) {
 				if (response.data.success) {
 					// Rafraîchir les données du cours
 					await fetchCourseDetails();
+
+					toast({
+						title: "Guide terminé",
+						description: "Vous avez complété ce guide avec succès",
+						variant: "success",
+					});
 				} else {
 					throw new Error(
 						response.data.error ||

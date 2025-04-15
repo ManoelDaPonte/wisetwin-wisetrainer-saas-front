@@ -146,7 +146,6 @@ const UnityBuild = forwardRef(
 					);
 				}
 			},
-			// Ajouter cette nouvelle méthode
 			resetCamera: () => {
 				if (isLoaded) {
 					console.log("Resetting camera position");
@@ -155,6 +154,20 @@ const UnityBuild = forwardRef(
 						"ResetCamera",
 						""
 					);
+				}
+			},
+
+			// Ajoutez cette nouvelle méthode
+			sendMessage: (objectName, methodName, parameter) => {
+				if (isLoaded) {
+					console.log(
+						`Sending message to Unity: ${objectName}.${methodName}("${parameter}")`
+					);
+					sendMessage(objectName, methodName, parameter);
+					return true;
+				} else {
+					console.warn("Unity is not loaded, cannot send message");
+					return false;
 				}
 			},
 			startTutorial: () => {

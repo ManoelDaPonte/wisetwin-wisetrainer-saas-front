@@ -1,7 +1,7 @@
 //lib/hooks/useSessionTracker.jsx
 import { useState, useEffect } from "react";
 import axios from "axios";
-import { useUser } from "@auth0/nextjs-auth0/client";
+import { useUser } from "@auth0/nextjs-auth0";
 import { useAzureContainer } from "@/lib/hooks/useAzureContainer";
 
 export function useSessionTracker(courseId = null) {

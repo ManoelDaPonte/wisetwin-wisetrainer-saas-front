@@ -1,4 +1,4 @@
-// components/LeftNavBar.jsx
+//components/layout/LeftNavBar.jsx
 "use client";
 
 import { useRouter, usePathname } from "next/navigation";
@@ -8,7 +8,7 @@ import Image from "next/image";
 
 import navigationItems from "@/lib/config/config";
 import { cn } from "@/lib/utils";
-import { useTheme } from "@/lib/hooks/useTheme"; // Importons notre hook de thème
+import { useTheme } from "@/lib/hooks/useTheme";
 
 const { topItems, coreItems, settingsItems, otherItems } = navigationItems;
 
@@ -16,7 +16,7 @@ export default function LeftNavBar() {
 	const router = useRouter();
 	const pathname = usePathname();
 	const [activeId, setActiveId] = useState("");
-	const { theme } = useTheme(); // Utilisons notre hook de thème
+	const { theme } = useTheme();
 
 	// Mettre à jour l'ID actif en fonction du chemin actuel
 	useEffect(() => {
@@ -57,8 +57,8 @@ export default function LeftNavBar() {
 					isActive && !isDisabled
 						? "bg-wisetwin-darkblue/10 text-wisetwin-darkblue dark:text-wisetwin-blue"
 						: isDisabled
-						? "text-muted-foreground" // Utilisation de classes Tailwind variables
-						: "text-foreground hover:bg-accent dark:hover:bg-wisetwin-blue/10" // Classes variables
+						? "text-muted-foreground"
+						: "text-foreground hover:bg-accent dark:hover:bg-wisetwin-blue/10"
 				)}
 			>
 				{/* Utilisation des composants Lucide */}
@@ -85,9 +85,7 @@ export default function LeftNavBar() {
 	// Fonction pour générer une section de navigation avec un séparateur visuel au lieu d'un titre
 	const NavSection = ({ items, withDivider = false }) => (
 		<div className="mb-6">
-			{withDivider && (
-				<div className="h-px bg-border my-4 mx-4"></div> // Utilisation de la variable border
-			)}
+			{withDivider && <div className="h-px bg-border my-4 mx-4"></div>}
 			<div className="space-y-1">
 				{items.map((item) => (
 					<NavItem
@@ -102,15 +100,18 @@ export default function LeftNavBar() {
 
 	return (
 		<aside className="bg-background border-r border-border w-60 h-screen">
-			{/* Logo */}
-			<div className="py-6 flex justify-center items-center">
+			{/* Logo - naviguer vers la page d'accueil au clic */}
+			<div
+				className="py-6 flex justify-center items-center cursor-pointer"
+				onClick={() => router.push("/")}
+			>
 				<div className="px-4 flex items-center">
 					<Image
 						src={
 							theme === "dark"
 								? "/logos/logo_parrot_light.svg"
 								: "/logos/logo_parrot_dark.svg"
-						} // Change le logo selon le thème
+						}
 						alt="Wise Twin Logo"
 						width={15}
 						height={15}
@@ -130,7 +131,6 @@ export default function LeftNavBar() {
 			<div className="flex-1 overflow-y-auto py-4 px-3">
 				<NavSection items={topItems} />
 				<NavSection items={coreItems} withDivider={true} />
-				{/* <NavSection items={settingsItems} withDivider={true} /> */}
 				<NavSection items={otherItems} withDivider={true} />
 			</div>
 		</aside>

@@ -2,7 +2,7 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
-import { useUser } from "@auth0/nextjs-auth0/client";
+import { useUser } from "@auth0/nextjs-auth0";
 import { useAzureContainer } from "@/lib/hooks/useAzureContainer";
 import WISETRAINER_CONFIG from "@/lib/config/wisetrainer/wisetrainer";
 
@@ -170,7 +170,6 @@ export function DashboardProvider({ children }) {
 		}
 	};
 
-	// Charger les statistiques de l'utilisateur
 	const loadUserStats = async () => {
 		try {
 			// Récupérer les statistiques depuis l'API
@@ -197,6 +196,40 @@ export function DashboardProvider({ children }) {
 					? Math.max(1, Math.round(response.data.totalTimeSpent / 60)) // Convertir minutes en heures, minimum 1h
 					: 0;
 
+				// Calculer le score moyen à partir des formations
+				const calculateAverageScore = () => {
+					const completedTrainings = trainings.filter(
+						(t) => t.progress === 100
+					);
+					if (completedTrainings.length === 0) return 0;
+
+					// Moyenne des scores de modules pour chaque formation
+					const totalScore = completedTrainings.reduce(
+						(sum, training) => {
+							// Calculer le score moyen de cette formation
+							const moduleScores =
+								training.modules
+									?.filter((m) => m.completed)
+									.map((m) => m.score) || [];
+							const trainingAvg =
+								moduleScores.length > 0
+									? Math.round(
+											moduleScores.reduce(
+												(a, b) => a + b,
+												0
+											) / moduleScores.length
+									  )
+									: 0;
+							return sum + (trainingAvg || 0);
+						},
+						0
+					);
+
+					return (
+						Math.round(totalScore / completedTrainings.length) || 0
+					);
+				};
+
 				setStats({
 					digitalTwin: 0, // Pas encore implémenté
 					wiseTrainer:
@@ -208,11 +241,49 @@ export function DashboardProvider({ children }) {
 					questionsAnswered: response.data.questionsAnswered || 0,
 					correctAnswers: response.data.correctAnswers || 0,
 					successRate: successRate,
+					// Calculer le score moyen à partir des formations
+					averageScore:
+						response.data.averageScore || calculateAverageScore(),
+					// Ajouter le nombre de sessions complétées
+					sessionsCompleted: response.data.sessionsCompleted || 0,
 				});
 			}
 		} catch (error) {
 			console.error("Erreur lors du chargement des statistiques:", error);
 			// Utiliser les statistiques locales en cas d'erreur
+
+			// Calculer le score moyen à partir des formations
+			const calculateAverageScore = () => {
+				const completedTrainings = trainings.filter(
+					(t) => t.progress === 100
+				);
+				if (completedTrainings.length === 0) return 0;
+
+				// Moyenne des scores de modules pour chaque formation
+				const totalScore = completedTrainings.reduce(
+					(sum, training) => {
+						// Calculer le score moyen de cette formation
+						const moduleScores =
+							training.modules
+								?.filter((m) => m.completed)
+								.map((m) => m.score) || [];
+						const trainingAvg =
+							moduleScores.length > 0
+								? Math.round(
+										moduleScores.reduce(
+											(a, b) => a + b,
+											0
+										) / moduleScores.length
+								  )
+								: 0;
+						return sum + (trainingAvg || 0);
+					},
+					0
+				);
+
+				return Math.round(totalScore / completedTrainings.length) || 0;
+			};
+
 			setStats({
 				digitalTwin: 0,
 				wiseTrainer: trainings.length || 0,
@@ -221,8 +292,35 @@ export function DashboardProvider({ children }) {
 				questionsAnswered: 0,
 				correctAnswers: 0,
 				successRate: 0,
+				averageScore: calculateAverageScore(),
+				sessionsCompleted: 0,
 			});
 		}
+	};
+
+	// Calculer le score moyen à partir des formations terminées
+	const calculateAverageScore = (trainings) => {
+		const completedTrainings = trainings.filter((t) => t.progress === 100);
+		if (completedTrainings.length === 0) return 0;
+
+		// Moyenne des scores de modules pour chaque formation
+		const totalScore = completedTrainings.reduce((sum, training) => {
+			// Calculer le score moyen de cette formation
+			const moduleScores =
+				training.modules
+					?.filter((m) => m.completed)
+					.map((m) => m.score) || [];
+			const trainingAvg =
+				moduleScores.length > 0
+					? Math.round(
+							moduleScores.reduce((a, b) => a + b, 0) /
+								moduleScores.length
+					  )
+					: 0;
+			return sum + trainingAvg;
+		}, 0);
+
+		return Math.round(totalScore / completedTrainings.length);
 	};
 
 	// Utilité pour calculer le taux de complétion moyen

@@ -1,4 +1,4 @@
-// components/organization/MembersTable.jsx
+//components/organizations/organization/members/MembersTable.jsx
 import React, { useState } from "react";
 import {
 	DropdownMenu,
@@ -24,9 +24,11 @@ import {
 	Crown,
 	UserMinus,
 	UserCog,
+	Tag,
 } from "lucide-react";
 import ConfirmationModal from "@/components/common/ConfirmationModal";
 import { Badge } from "@/components/ui/badge";
+import { useRouter } from "next/navigation";
 
 export default function MembersTable({
 	members = [],
@@ -40,6 +42,7 @@ export default function MembersTable({
 		member: null,
 		newRole: null,
 	});
+	const router = useRouter();
 
 	// Vérifier si l'utilisateur peut modifier les rôles (doit être OWNER ou ADMIN)
 	const canManageRoles = ["OWNER", "ADMIN"].includes(currentUserRole);
@@ -107,6 +110,13 @@ export default function MembersTable({
 		});
 	};
 
+	const handleManageTags = (memberId) => {
+		// Naviguer vers l'onglet d'association des tags utilisateurs
+		router.push(
+			`/organization?tab=tags&subTab=user-associations&highlight=${memberId}`
+		);
+	};
+
 	const confirmAction = () => {
 		const { type, member, newRole } = confirmationModal;
 
@@ -144,6 +154,7 @@ export default function MembersTable({
 						<TableHead>Membre</TableHead>
 						<TableHead>Email</TableHead>
 						<TableHead>Rôle</TableHead>
+						<TableHead>Tags</TableHead>
 						<TableHead>A rejoint le</TableHead>
 						{canManageRoles && (
 							<TableHead className="text-right">
@@ -160,6 +171,29 @@ export default function MembersTable({
 							</TableCell>
 							<TableCell>{member.email}</TableCell>
 							<TableCell>{getRoleBadge(member.role)}</TableCell>
+							<TableCell>
+								<div className="flex flex-wrap gap-1 max-w-xs">
+									{member.tags && member.tags.length > 0 ? (
+										<div className="flex flex-wrap gap-1.5">
+											{member.tags.map((tag) => (
+												<div
+													key={tag.id}
+													className="w-4 h-4 rounded-full"
+													style={{
+														backgroundColor:
+															tag.color,
+													}}
+													title={tag.name} // Ajouter un titre pour montrer le nom en survol
+												></div>
+											))}
+										</div>
+									) : (
+										<span className="text-gray-400 text-sm">
+											Aucun tag
+										</span>
+									)}
+								</div>
+							</TableCell>
 							<TableCell>{formatDate(member.joinedAt)}</TableCell>
 							{canManageRoles && (
 								<TableCell className="text-right">
@@ -216,6 +250,17 @@ export default function MembersTable({
 												>
 													<User className="mr-2 h-4 w-4" />
 													Membre
+												</DropdownMenuItem>
+
+												<DropdownMenuItem
+													onClick={() =>
+														handleManageTags(
+															member.id
+														)
+													}
+												>
+													<Tag className="mr-2 h-4 w-4" />
+													Gérer les tags
 												</DropdownMenuItem>
 
 												{currentUserRole === "OWNER" &&
