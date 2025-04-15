@@ -351,10 +351,10 @@ export default function CourseDetail({ params }) {
 				score = 0;
 			}
 
-			// Fermer le questionnaire - faire une seule fois
+			// Fermer le questionnaire
 			setShowQuestionnaire(false);
 
-			// Notifier le build Unity que le questionnaire est complété - faire une seule fois
+			// Notifier le build Unity que le questionnaire est complété
 			if (unityBuildRef.current && unityBuildRef.current.isReady) {
 				// Envoyer d'abord le message de complétion du questionnaire
 				unityBuildRef.current.completeQuestionnaire(
@@ -362,44 +362,62 @@ export default function CourseDetail({ params }) {
 					score >= 70
 				);
 
-				// Déterminer quelle étape envoyer au SequenceManager
-				let stepCommand = "step1"; // Par défaut
+				// Déterminer quelle touche simuler en fonction du numéro de module
 
-				// Si l'ID de la question est au format "question-X"
-				if (currentScenario.id.startsWith("question-")) {
-					const stepNumber = currentScenario.id.replace(
-						"question-",
-						""
-					);
-					stepCommand = `step${stepNumber}`;
-					console.log(
-						`Déterminé étape à partir de l'ID: ${stepCommand}`
-					);
-				}
-				// Si l'ID est au format "truck-safety"
-				else if (currentScenario.id === "truck-safety") {
-					stepCommand = "step1";
-				} else if (currentScenario.id === "loading-procedure") {
-					stepCommand = "step2";
-				} else if (currentScenario.id === "emergency-response") {
-					stepCommand = "step3";
-				}
+				// Trouver l'index du module complété (on commence à 0, donc module 1 = index 0)
+				const moduleIndex = course.modules.findIndex(
+					(module) => module.id === currentScenario.id
+				);
 
-				// Envoyer le message au SequenceManager
-				try {
-					console.log(
-						`Envoi du message '${stepCommand}' au SequenceManager`
-					);
-					unityBuildRef.current.sendMessage(
-						"SequenceManager", // Nom de l'objet dans Unity
-						"ReceiveCommand", // Nom de la méthode à appeler
-						stepCommand // Paramètre à passer (step1, step2, etc.)
-					);
-				} catch (error) {
-					console.error(
-						"Erreur lors de l'envoi du message à Unity:",
-						error
-					);
+				// Touche à simuler = numéro de module (index + 1)
+				const keyToSimulate =
+					moduleIndex >= 0 ? String(moduleIndex + 1) : "1";
+
+				console.log(
+					`Module index: ${moduleIndex}, simulant l'appui sur la touche '${keyToSimulate}'`
+				);
+
+				// Simuler un événement clavier
+				console.log(
+					`Simulation de l'appui sur la touche '${keyToSimulate}'`
+				);
+
+				// 1. Créer un événement keydown
+				const keydownEvent = new KeyboardEvent("keydown", {
+					key: keyToSimulate,
+					code: `Digit${keyToSimulate}`,
+					keyCode: 48 + parseInt(keyToSimulate), // Codes ASCII: 1 = 49, 2 = 50, etc.
+					which: 48 + parseInt(keyToSimulate),
+					bubbles: true,
+					cancelable: true,
+				});
+
+				// 2. Créer un événement keyup (nécessaire pour compléter l'action de touche)
+				const keyupEvent = new KeyboardEvent("keyup", {
+					key: keyToSimulate,
+					code: `Digit${keyToSimulate}`,
+					keyCode: 48 + parseInt(keyToSimulate),
+					which: 48 + parseInt(keyToSimulate),
+					bubbles: true,
+					cancelable: true,
+				});
+
+				// 3. Dispatcher les événements sur l'élément Unity ou sur le document
+				// Option 1: Dispatcher sur l'élément Unity (si possible d'obtenir l'élément)
+				const unityCanvas = document.querySelector("canvas");
+				if (unityCanvas) {
+					unityCanvas.dispatchEvent(keydownEvent);
+					// Petit délai pour que ça semble naturel
+					setTimeout(() => {
+						unityCanvas.dispatchEvent(keyupEvent);
+					}, 100);
+				}
+				// Option 2: Dispatcher sur le document (fallback)
+				else {
+					document.dispatchEvent(keydownEvent);
+					setTimeout(() => {
+						document.dispatchEvent(keyupEvent);
+					}, 100);
 				}
 			}
 

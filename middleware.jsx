@@ -50,7 +50,7 @@ export async function middleware(request) {
 
 export const config = {
 	matcher: [
-		// Match toutes les routes sauf les ressources statiques
-		"/((?!_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt).*)",
+		// Match toutes les routes sauf les ressources statiques et le logo
+		"/((?!_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt|logos/).*)",
 	],
 };
