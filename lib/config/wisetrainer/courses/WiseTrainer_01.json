@@ -43,7 +43,7 @@
         },
         {
           "id": "pressure-risk-q2",
-          "text": "Choisissez les mesures de prévention adaptées pour ce risque",
+          "text": "Choisissez les mesures de prévention adaptées pour ce risque.",
           "type": "MULTIPLE",
           "options": [
             {
