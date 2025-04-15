@@ -49,6 +49,24 @@ function CompletedTrainings({
 	);
 }
 
+// Fonction utilitaire pour calculer le score moyen d'une formation
+const calculateTrainingScore = (training) => {
+	if (!training.modules || training.modules.length === 0) {
+		return training.score || 0;
+	}
+
+	const completedModules = training.modules.filter((m) => m.completed);
+	if (completedModules.length === 0) {
+		return training.score || 0;
+	}
+
+	const totalScore = completedModules.reduce(
+		(sum, module) => sum + (module.score || 0),
+		0
+	);
+	return Math.round(totalScore / completedModules.length);
+};
+
 // Liste des dernières formations terminées
 CompletedTrainings.List = function CompletedTrainingsList({
 	completedTrainings,
@@ -80,33 +98,39 @@ CompletedTrainings.List = function CompletedTrainingsList({
 					</div>
 				) : completedTrainings.length > 0 ? (
 					<div className="space-y-4">
-						{completedTrainings.map((training, index) => (
-							<div
-								key={training.id}
-								className="flex items-center justify-between"
-							>
-								<div className="flex items-center gap-3">
-									<div className="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/20 flex items-center justify-center">
-										<GraduationCap className="w-5 h-5 text-green-600 dark:text-green-400" />
+						{completedTrainings.map((training) => {
+							// Calculer le score moyen de cette formation
+							const averageScore =
+								calculateTrainingScore(training);
+
+							return (
+								<div
+									key={training.id}
+									className="flex items-center justify-between"
+								>
+									<div className="flex items-center gap-3">
+										<div className="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/20 flex items-center justify-center">
+											<GraduationCap className="w-5 h-5 text-green-600 dark:text-green-400" />
+										</div>
+										<div>
+											<div className="font-medium line-clamp-1">
+												{training.name}
+											</div>
+											<div className="text-sm text-muted-foreground">
+												Terminé le{" "}
+												{formatDate(
+													training.completedAt ||
+														training.lastAccessed
+												)}
+											</div>
+										</div>
 									</div>
-									<div>
-										<div className="font-medium line-clamp-1">
-											{training.name}
-										</div>
-										<div className="text-sm text-muted-foreground">
-											Terminé le{" "}
-											{formatDate(
-												training.completedAt ||
-													training.lastAccessed
-											)}
-										</div>
+									<div className="flex items-center justify-center w-10 h-10 rounded-full bg-green-100 text-green-800 font-bold dark:bg-green-900/30 dark:text-green-300">
+										{averageScore}
 									</div>
 								</div>
-								<div className="flex items-center justify-center w-10 h-10 rounded-full bg-green-100 text-green-800 font-bold dark:bg-green-900/30 dark:text-green-300">
-									{training.score || 100}
-								</div>
-							</div>
-						))}
+							);
+						})}
 					</div>
 				) : (
 					<div className="text-center py-6 text-muted-foreground">

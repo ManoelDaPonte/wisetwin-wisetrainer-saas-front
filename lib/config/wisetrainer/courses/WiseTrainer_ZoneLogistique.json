@@ -2,7 +2,7 @@
     "id": "WiseTrainer_ZoneLogistique",
     "name": "Zone Logistique - CAMIONNEUR",
     "description": "Sécurité et procédures pour les camionneurs en zone de chargement",
-    "imageUrl": "/images/png/wisetrainer-logistique.png",
+    "imageUrl": "/images/png/camion.png",
     "category": "Sécurité",
     "difficulty": "Intermédiaire",
     "duration": "45 min",
