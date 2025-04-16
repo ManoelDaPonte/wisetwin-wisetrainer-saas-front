@@ -22,6 +22,7 @@
       "questions": [
         {
           "id": "truck-safety-q1",
+          "image": "/images/png/camion.png",
           "text": "Quelle est la première action à effectuer en arrivant dans la zone dechargement ?",
           "type": "SINGLE",
           "options": [
@@ -85,6 +86,7 @@
       "questions": [
         {
           "id": "loading-procedure-q1",
+          "image": "/images/wisetrainer/epi.jpg",
           "text": "Quel équipement est obligatoire pour circuler dans l’entrepôt ?",
           "type": "SINGLE",
           "options": [
@@ -120,6 +122,7 @@
       "questions": [
         {
           "id": "loading-procedure-q1",
+          "image": "/images/wisetrainer/pieton.jpg",
           "text": "Lors des déplacements à pied dans une zone de chargement, quelle est la conduite à adopter ?",
           "type": "SINGLE",
           "options": [
@@ -149,8 +152,9 @@
     },
     {
       "id": "zone-securise",
+      "image": "/images/wisetrainer/camion-parking.png",
       "order": 4,
-      "title": "Réponses aux situations d'urgence",
+      "title": "Identification et préparation",
       "description": "Apprenez à réagir correctement face aux situations d'urgence en zone logistique",
       "questions": [
         {
@@ -186,11 +190,12 @@
     {
       "id": "emergency-response",
       "order": 5,
-      "title": "Réponses aux situations d'urgence",
+      "title": "Identification et préparation",
       "description": "Apprenez à réagir correctement face aux situations d'urgence en zone logistique",
       "questions": [
         {
           "id": "emergency-response-q1",
+          "image": "/images/wisetrainer/attente-camionneur.png",
           "text": "Où dois-je me positionner lors des opérations de chargement et déchargement ?",
           "type": "MULTIPLE",
           "options": [
