@@ -20,7 +20,8 @@
         "questions": [
           {
             "id": "loading-zone-q1",
-            "text": "Où le chauffeur du camion doit-il se positionner pendant les opérations de chargement ?",
+            "image": "/images/wisetrainer/attente-camionneur.png",
+            "text": "Où le chauffeur du camion doit-il se positionner pendant les opérations de chargement (2 Réponses possibles)?",
             "type": "MULTIPLE",
             "options": [
               {
@@ -56,6 +57,7 @@
         "questions": [
           {
             "id": "loading-zone-q2",
+            "image": "/images/wisetrainer/talking-camion.png",
             "text": "Quel équipement doit porter le personnel pour être détecté par le système de sécurité du chariot élévateur ?",
             "type": "SINGLE",
             "options": [
@@ -91,7 +93,7 @@
               {
                 "id": "fk-q1-o1",
                 "text": "1 km/h",
-                "isCorrect": false
+                "isCorrect": true
               },
               {
                 "id": "fk-q1-o2",
@@ -101,7 +103,7 @@
               {
                 "id": "fk-q1-o3",
                 "text": "3 km/h",
-                "isCorrect": true
+                "isCorrect": false
               },
               {
                 "id": "fk-q1-o4",
@@ -121,8 +123,8 @@
         "questions": [
           {
             "id": "forklift-q2",
-            "text": "Lors du chargement dans un conteneur, à quoi faut-il être particulièrement attentif concernant la hauteur de levée du chariot élévateur ?",
-            "image": "/images/wisetrainer/foklift-lifting.png",
+            "text": "Lors du chargement dans un conteneur, à quoi faut-il être particulièrement attentif concernant la hauteur de levée du chariot élévateur (2 Réponses possibles)?",
+            "image": "/images/wisetrainer/foklift-issue.png",
             "type": "MULTIPLE",
             "options": [
               {
