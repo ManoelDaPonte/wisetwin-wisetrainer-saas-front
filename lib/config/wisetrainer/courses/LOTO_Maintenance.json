@@ -2,7 +2,7 @@
     "id": "LOTO_Maintenance",
     "name": "Accès à la zone robotisée pour maintenance",
     "description": "Accès a la zone robotisée pour maintenance du bras robot",
-    "imageUrl": "/images/png/wisetrainer-02.png",
+    "imageUrl": "/images/png/consignation.png",
     "category": "Sécurité",
     "difficulty": "Intermédiaire",
     "duration": "45 min",
