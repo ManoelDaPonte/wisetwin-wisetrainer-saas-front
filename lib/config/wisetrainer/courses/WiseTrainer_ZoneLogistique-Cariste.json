@@ -124,7 +124,7 @@
           {
             "id": "forklift-q2",
             "text": "Lors du chargement dans un conteneur, à quoi faut-il être particulièrement attentif concernant la hauteur de levée du chariot élévateur (2 Réponses possibles)?",
-            "image": "/images/wisetrainer/foklift-issue.png",
+            "image": "/images/wisetrainer/forklift-issue.png",
             "type": "MULTIPLE",
             "options": [
               {
