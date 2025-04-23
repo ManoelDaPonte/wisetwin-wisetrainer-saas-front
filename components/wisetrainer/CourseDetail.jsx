@@ -362,20 +362,30 @@ export default function CourseDetail({ params }) {
 					score >= 70
 				);
 
-				// Déterminer quelle touche simuler en fonction du numéro de module
+				// Déterminer quelle touche simuler
+				let keyToSimulate;
 
-				// Trouver l'index du module complété (on commence à 0, donc module 1 = index 0)
-				const moduleIndex = course.modules.findIndex(
-					(module) => module.id === currentScenario.id
-				);
-
-				// Touche à simuler = numéro de module (index + 1)
-				const keyToSimulate =
-					moduleIndex >= 0 ? String(moduleIndex + 1) : "1";
-
-				console.log(
-					`Module index: ${moduleIndex}, simulant l'appui sur la touche '${keyToSimulate}'`
-				);
+				// Vérifier si le scénario actuel est "general-safety-rules" et si le score est insuffisant
+				if (
+					currentScenario.id === "general-safety-rules" &&
+					score < 70
+				) {
+					// Pour ce module spécifique, si l'utilisateur se trompe, on simule la touche 4
+					keyToSimulate = "4";
+					console.log(
+						`Module ${currentScenario.id} échoué, simulation de la touche '4'`
+					);
+				} else {
+					// Pour les autres modules, conserver la logique existante
+					const moduleIndex = course.modules.findIndex(
+						(module) => module.id === currentScenario.id
+					);
+					keyToSimulate =
+						moduleIndex >= 0 ? String(moduleIndex + 1) : "1";
+					console.log(
+						`Module index: ${moduleIndex}, simulation de la touche '${keyToSimulate}'`
+					);
+				}
 
 				// Simuler un événement clavier
 				console.log(
@@ -403,7 +413,6 @@ export default function CourseDetail({ params }) {
 				});
 
 				// 3. Dispatcher les événements sur l'élément Unity ou sur le document
-				// Option 1: Dispatcher sur l'élément Unity (si possible d'obtenir l'élément)
 				const unityCanvas = document.querySelector("canvas");
 				if (unityCanvas) {
 					unityCanvas.dispatchEvent(keydownEvent);
@@ -411,9 +420,7 @@ export default function CourseDetail({ params }) {
 					setTimeout(() => {
 						unityCanvas.dispatchEvent(keyupEvent);
 					}, 100);
-				}
-				// Option 2: Dispatcher sur le document (fallback)
-				else {
+				} else {
 					document.dispatchEvent(keydownEvent);
 					setTimeout(() => {
 						document.dispatchEvent(keyupEvent);
@@ -421,9 +428,8 @@ export default function CourseDetail({ params }) {
 				}
 			}
 
-			// Mettre à jour la progression en base de données
+			// [Le reste de votre code pour mettre à jour la progression reste inchangé]
 			try {
-				// Appeler l'API pour mettre à jour la progression
 				const response = await axios.post(
 					WISETRAINER_CONFIG.API_ROUTES.UPDATE_PROGRESS,
 					{
@@ -440,9 +446,7 @@ export default function CourseDetail({ params }) {
 				);
 
 				if (response.data.success) {
-					// Rafraîchir les données du cours
 					await fetchCourseDetails();
-
 					toast({
 						title: "Module terminé",
 						description: `Vous avez complété ce module avec un score de ${score}%`,
