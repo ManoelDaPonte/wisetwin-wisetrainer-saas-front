@@ -35,7 +35,7 @@ export async function GET(request, { params }) {
 			);
 		}
 
-		// Vérifier que l'utilisateur est membre de l'organisation
+		// Vérifier si l'utilisateur est membre de l'organisation
 		const membership = await prisma.organizationMember.findFirst({
 			where: {
 				organizationId: organizationId,
@@ -45,7 +45,9 @@ export async function GET(request, { params }) {
 
 		if (!membership) {
 			return NextResponse.json(
-				{ error: "Vous n'êtes pas membre de cette organisation" },
+				{
+					error: "Vous n'avez pas accès aux ressources de cette organisation",
+				},
 				{ status: 403 }
 			);
 		}

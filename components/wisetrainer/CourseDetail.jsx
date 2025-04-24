@@ -51,6 +51,10 @@ export default function CourseDetail({ params }) {
 		if (params?.courseId) {
 			setCourseId(params.courseId);
 		}
+
+		if (params?.orgId) {
+			setOrgId(params.orgId);
+		}
 	}, [params]);
 
 	// Charger les détails du cours quand courseId et containerName sont disponibles
@@ -82,6 +86,12 @@ export default function CourseDetail({ params }) {
 
 	const fetchCourseDetails = async () => {
 		setIsLoading(true);
+		try {
+		  // URL différente pour les cours d'organisation
+		  const apiUrl = orgId 
+			? `${WISETRAINER_CONFIG.API_ROUTES.ORGANIZATION_COURSE_DETAILS}/${orgId}/${courseId}`
+			: `${WISETRAINER_CONFIG.API_ROUTES.COURSE_DETAILS}/${courseId}`;
+			
 		try {
 			console.log(
 				`Chargement des détails du cours ${courseId} pour le container ${containerName}`

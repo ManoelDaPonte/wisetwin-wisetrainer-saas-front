@@ -105,8 +105,13 @@ export default function WiseTrainerCourses() {
 			return;
 		}
 
-		// Rediriger directement vers la page de la formation
-		router.push(`/wisetrainer/${course.id}`);
+		if (course.source && course.source.type === "organization") {
+			router.push(
+				`/wisetrainer/${course.source.organizationId}/${course.id}`
+			);
+		} else {
+			router.push(`/wisetrainer/${course.id}`);
+		}
 
 		// Notification informative
 		toast({

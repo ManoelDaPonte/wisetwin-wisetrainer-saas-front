@@ -37,6 +37,8 @@ model Course {
     category             String // Catégorie (ex: "Sécurité")
     difficulty           String // Niveau de difficulté (ex: "Intermédiaire")
     duration             String // Durée estimée (ex: "30 min")
+    sourceType           String? // "organization" ou "wisetwin"
+    sourceOrganizationId String? // ID de l'organisation source si applicable
     createdAt            DateTime               @default(now())
     updatedAt            DateTime               @updatedAt
     modules              Module[] // Modules du cours
@@ -44,6 +46,8 @@ model Course {
     userSessions         UserSession[] // Sessions des utilisateurs liées à ce cours
     OrganizationTraining OrganizationTraining[]
     TagTraining          TagTraining[]
+
+    @@unique([courseId, sourceType, sourceOrganizationId])
 }
 
 // Modèle de module (partie d'un cours)
