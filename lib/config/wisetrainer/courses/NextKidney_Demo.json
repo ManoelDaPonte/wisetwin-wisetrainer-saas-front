@@ -1,0 +1,155 @@
+{
+    "id": "NextKidney_Demo",
+    "name": "Installation et amorçage du système Nextkidney",
+    "description": "Guide d'installation et d'amorçage du système Nextkidney Renaux-HD pour investigations cliniques",
+    "imageUrl": "/images/wisetrainer/nextkidney.jpg",
+    "category": "Médical",
+    "difficulty": "Intermédiaire",
+    "duration": "30 min",
+    "objectMapping": {
+      "sprite-1": "dialysate-set-installation",
+      "sprite-2": "dialysate-cartridge-insertion"
+    },
+    "modules": [
+      {
+        "id": "dialysate-set-installation",
+        "order": 1,
+        "title": "Dialysate Cartridge insertion",
+        "description": "Comment insérer la cartouche de dialysat dans le système Nextkidney",
+        "type": "guide",
+        "educational": {
+          "title": "Dialysate Cartridge insertion",
+          "content": {
+          },
+          "imageUrl": "/images/png/Captura_de_pantalla_2025-04-23_172419.png"
+        },
+        "sequenceButtons": ["commutateur", "demande-d-acces", "operateur-cle-acces-1", "cle-1", "poignee", "Lock", "porte"],
+        "steps": [
+          {
+            "id": "step-1",
+            "title": "Commutateur en manuel",
+            "instruction": "Je mets le commutateur en manuel",
+            "validationEvent": "commutateur",
+            "validationType": "3d",
+            "hint": "Touner le button en haut a gauche du panneau de contrôle"
+          },
+          {
+            "id": "step-2",
+            "title": "Demande d'accès",
+            "instruction": "Je fais une demande d'accès et j'active le mode réglage",
+            "validationEvent": "demande-d-acces",
+            "validationType": "3d",
+            "hint": "Recherchez un grand bouton vert sur le panneau de contrôle"
+          },
+          {
+            "id": "step-3",
+            "title": "Tourner la clé opérateur",
+            "instruction": "Je tourne la clé opérateur et la mettre en position 0",
+            "validationEvent": "operateur-cle-acces-1",
+            "validationType": "3d",
+            "hint": "La clé se trouve sur le côté gauche du panneau principal"
+          },
+          {
+            "id": "step-4",
+            "title": "Retirer la clé et la garder sur soi",
+            "instruction": "J'enlève la clé et la garde avec moi",
+            "validationEvent": "cle-1",
+            "validationType": "3d",
+            "hint": "Le robot ne peut être manipulé qu'en mode manuel, s'il est laissé en auto il ne fonctionnera pas"
+          },
+          {
+            "id": "step-5",
+            "title": "Ouvrir la porte et la bloquer mecaniquement",
+            "instruction": "Je fais glisser la poignée de la porte pour l'ouvrir et la bloquer",
+            "validationEvent": "poignee",
+            "validationType": "3d",
+            "hint": "Le trousseau de clés est accroché sur le côté de la baie robot, Le commutateur 'mode réglage' se trouve sur le panneau à droite"
+          },
+          {
+            "id": "step-6",
+            "title": "Consignation",
+            "instruction": "J'identifie que j'entre dans la zone avec mon badge",
+            "validationEvent": "Lock",
+            "validationType": "3d"
+          },
+          {
+            "id": "step-7",
+            "title": "Entrer dans la zone",
+            "instruction": "J'ouvre la porte et j'entre dans la zone",
+            "validationEvent": "porte",
+            "validationType": "3d"
+          }
+        ]
+      },
+      {
+        "id": "dialysate-cartridge-insertion",
+        "order": 2,
+        "title": "Weighing Bag Installation",
+        "description": "Comment installer le sac de pesée dans le système Nextkidney",
+        "type": "guide",
+        "educational": {
+          "title": "Weighing Bag Installation",
+          "content": {
+          },
+          "imageUrl": "/images/png/Captura_de_pantalla_2025-04-23_172419.png"
+        },
+        "sequenceButtons": ["commutateur", "demande-d-acces", "operateur-cle-acces-1", "cle-1", "poignee", "Lock", "porte"],
+        "steps": [
+          {
+            "id": "step-1",
+            "title": "Commutateur en manuel",
+            "instruction": "Je mets le commutateur en manuel",
+            "validationEvent": "commutateur",
+            "validationType": "3d",
+            "hint": "Touner le button en haut a gauche du panneau de contrôle"
+          },
+          {
+            "id": "step-2",
+            "title": "Demande d'accès",
+            "instruction": "Je fais une demande d'accès et j'active le mode réglage",
+            "validationEvent": "demande-d-acces",
+            "validationType": "3d",
+            "hint": "Recherchez un grand bouton vert sur le panneau de contrôle"
+          },
+          {
+            "id": "step-3",
+            "title": "Tourner la clé opérateur",
+            "instruction": "Je tourne la clé opérateur et la mettre en position 0",
+            "validationEvent": "operateur-cle-acces-1",
+            "validationType": "3d",
+            "hint": "La clé se trouve sur le côté gauche du panneau principal"
+          },
+          {
+            "id": "step-4",
+            "title": "Retirer la clé et la garder sur soi",
+            "instruction": "J'enlève la clé et la garde avec moi",
+            "validationEvent": "cle-1",
+            "validationType": "3d",
+            "hint": "Le robot ne peut être manipulé qu'en mode manuel, s'il est laissé en auto il ne fonctionnera pas"
+          },
+          {
+            "id": "step-5",
+            "title": "Ouvrir la porte et la bloquer mecaniquement",
+            "instruction": "Je fais glisser la poignée de la porte pour l'ouvrir et la bloquer",
+            "validationEvent": "poignee",
+            "validationType": "3d",
+            "hint": "Le trousseau de clés est accroché sur le côté de la baie robot, Le commutateur 'mode réglage' se trouve sur le panneau à droite"
+          },
+          {
+            "id": "step-6",
+            "title": "Consignation",
+            "instruction": "J'identifie que j'entre dans la zone avec mon badge",
+            "validationEvent": "Lock",
+            "validationType": "3d"
+          },
+          {
+            "id": "step-7",
+            "title": "Entrer dans la zone",
+            "instruction": "J'ouvre la porte et j'entre dans la zone",
+            "validationEvent": "porte",
+            "validationType": "3d"
+          }
+        ]
+      }
+    ]
+  }
