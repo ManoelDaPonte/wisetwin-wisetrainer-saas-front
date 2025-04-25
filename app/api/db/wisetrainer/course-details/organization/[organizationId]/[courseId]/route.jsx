@@ -22,7 +22,8 @@ export async function GET(request, { params }) {
 
 async function handleGetCourseDetails(request, params, authResult) {
 	try {
-		const { courseId, organizationId } = params;
+		const resolvedParams = await params;
+		const { courseId, organizationId } = resolvedParams;
 
 		if (!courseId || !organizationId) {
 			return NextResponse.json(
@@ -43,6 +44,8 @@ async function handleGetCourseDetails(request, params, authResult) {
 					organizationId: organizationId,
 					course: {
 						courseId: courseId,
+						sourceType: "organization",
+						sourceOrganizationId: organizationId,
 					},
 				},
 				include: {
@@ -79,6 +82,7 @@ async function handleGetCourseDetails(request, params, authResult) {
 					type: "organization",
 					organizationId: organizationId,
 					name: organization.name,
+					containerName: organization.azureContainer,
 				},
 				modules: modules.map((m) => ({
 					id: m.moduleId,
@@ -110,6 +114,7 @@ async function handleGetCourseDetails(request, params, authResult) {
 						type: "organization",
 						organizationId: organizationId,
 						name: organization.name,
+						containerName: organization.azureContainer,
 					},
 				});
 			}

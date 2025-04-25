@@ -22,7 +22,9 @@ export async function GET(request, { params }) {
 
 async function handleGetOrganizationBuilds(request, params, authResult) {
 	try {
-		const { organizationId } = params;
+		const resolvedParams = await params;
+		const { organizationId } = resolvedParams;
+
 		const organization = authResult.organization;
 
 		if (!organization.azureContainer) {

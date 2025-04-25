@@ -20,137 +20,58 @@ export function useCurrentTraining() {
 			setIsLoading(true);
 			setError(null);
 
-			// Deux approches parallèles pour obtenir les données les plus complètes possible
-
-			// 1. Récupérer les formations de l'utilisateur depuis la base de données
+			// Récupérer les formations de l'utilisateur depuis la base de données
+			// Cette API ne récupère que les informations de progression, pas les fichiers
 			const dbResponse = await axios.get(
 				`${WISETRAINER_CONFIG.API_ROUTES.USER_TRAININGS}/${containerName}`
 			);
 
-			// 2. Vérifier les fichiers dans le container de l'utilisateur (peut contenir des formations non encore dans la DB)
-			const containerResponse = await axios.get(
-				WISETRAINER_CONFIG.API_ROUTES.LIST_BUILDS,
-				{
-					params: {
-						container: containerName,
-						prefix: WISETRAINER_CONFIG.BLOB_PREFIXES.WISETRAINER,
-					},
-				}
-			);
+			// Formations depuis la base de données avec info de progression
+			const userTrainings = dbResponse.data?.trainings || [];
 
-			// Formations depuis la base de données
-			const dbTrainings = dbResponse.data?.trainings || [];
-
-			// Extraire les IDs des formations dans le container
-			let containerTrainingIds = [];
-			if (containerResponse.data?.blobs) {
-				const blobs = containerResponse.data.blobs;
-
-				// Extraire les IDs uniques des builds (sans extension)
-				const buildIdsSet = new Set();
-				blobs.forEach((blob) => {
-					// Exemple: "wisetrainer/safety-101.data.gz" -> "safety-101"
-					const match = blob.match(
-						/(?:wisetrainer\/)?([^\/]+?)(?:\.data\.gz|\.framework\.js\.gz|\.loader\.js|\.wasm\.gz)$/
-					);
-					if (match && match[1]) {
-						buildIdsSet.add(match[1]);
-					}
-				});
-
-				containerTrainingIds = Array.from(buildIdsSet);
-			}
-
-			// Fusionner les deux sources (priorité à la base de données pour les détails)
-			const mergedTrainings = [...dbTrainings];
-
-			// Pour chaque ID de formation trouvé dans le container mais pas dans la DB
-			const dbTrainingIds = dbTrainings.map((t) => t.id);
-			const missingTrainingIds = containerTrainingIds.filter(
-				(id) => !dbTrainingIds.includes(id)
-			);
-
-			// Si des formations sont présentes dans le container mais pas dans la DB,
-			// essayer de récupérer leurs détails
-			if (missingTrainingIds.length > 0) {
-				const additionalTrainings = await Promise.all(
-					missingTrainingIds.map(async (id) => {
-						try {
-							// Récupérer les détails de la formation
-							const details = await axios.get(
-								`${WISETRAINER_CONFIG.API_ROUTES.COURSE_DETAILS}/${id}`
-							);
-
-							// Créer un objet formation avec les données disponibles
-							return {
-								id,
-								name:
-									details.data?.name || formatCourseName(id),
-								description:
-									details.data?.description ||
-									`Formation interactive sur ${formatCourseName(
-										id
-									).toLowerCase()}`,
-								imageUrl:
-									details.data?.imageUrl ||
-									WISETRAINER_CONFIG.DEFAULT_IMAGE,
-								difficulty:
-									details.data?.difficulty || "Intermédiaire",
-								duration: details.data?.duration || "30 min",
-								category: details.data?.category || "Formation",
-								modules: details.data?.modules || [],
-								progress: 0, // Par défaut 0% car pas encore commencée
-								lastAccessed: new Date().toISOString(),
-								completedModules: 0,
-								totalModules:
-									details.data?.modules?.length || 3,
-							};
-						} catch (error) {
-							console.warn(
-								`Impossible de récupérer les détails pour ${id}:`,
-								error
-							);
-							// Version minimale si on ne peut pas récupérer les détails
-							return {
-								id,
-								name: formatCourseName(id),
-								description: `Formation interactive sur ${formatCourseName(
-									id
-								).toLowerCase()}`,
-								imageUrl: WISETRAINER_CONFIG.DEFAULT_IMAGE,
-								difficulty: "Intermédiaire",
-								duration: "30 min",
-								progress: 0,
-								lastAccessed: new Date().toISOString(),
-								modules: [],
-								completedModules: 0,
-								totalModules: 3,
-							};
-						}
-					})
-				);
-
-				// Ajouter ces formations aux formations existantes
-				mergedTrainings.push(...additionalTrainings);
-			}
-
-			// Enrichir chaque formation avec des détails supplémentaires
+			// Enrichir chaque formation avec des détails supplémentaires et la source
 			const enrichedTrainings = await Promise.all(
-				mergedTrainings.map(async (training) => {
+				userTrainings.map(async (training) => {
 					try {
-						// Récupérer les détails du cours depuis le fichier de configuration
+						// Déterminer la source de la formation
+						let source = {
+							type: "wisetwin",
+							name: "WiseTwin",
+							containerName:
+								WISETRAINER_CONFIG.CONTAINER_NAMES.SOURCE,
+						};
+
+						let courseDetailsUrl = `${WISETRAINER_CONFIG.API_ROUTES.COURSE_DETAILS}/${training.id}`;
+
+						// Vérifier si c'est une formation d'organisation
+						if (
+							training.source &&
+							training.source.type === "organization"
+						) {
+							source = {
+								type: "organization",
+								name: training.source.name || "Organisation",
+								organizationId: training.source.organizationId,
+								containerName:
+									training.source.containerName || null,
+							};
+
+							// Utiliser l'API de détails de cours d'organisation
+							courseDetailsUrl = `${WISETRAINER_CONFIG.API_ROUTES.COURSE_DETAILS}/organization/${source.organizationId}/${training.id}`;
+						}
+
+						// Récupérer les détails du cours depuis la source appropriée
 						const courseDetails = await axios
-							.get(
-								`${WISETRAINER_CONFIG.API_ROUTES.COURSE_DETAILS}/${training.id}`
-							)
+							.get(courseDetailsUrl)
 							.then((res) => res.data)
 							.catch(() => null);
 
-						// Récupérer l'image et les modules du fichier de configuration
+						// Récupérer l'image et les modules
 						const imageUrl =
 							courseDetails?.imageUrl ||
 							training.imageUrl ||
 							WISETRAINER_CONFIG.DEFAULT_IMAGE;
+
 						const availableModules = courseDetails?.modules || [];
 
 						// Fusionner avec les modules déjà complétés par l'utilisateur
@@ -167,8 +88,14 @@ export function useCurrentTraining() {
 							};
 						});
 
+						// Génération d'un ID composite qui inclut la source
+						const compositeId = `${training.id}__${source.type}__${
+							source.organizationId || "wisetwin"
+						}`;
+
 						return {
 							...training,
+							compositeId, // ID composite pour identifier de manière unique
 							imageUrl,
 							modules:
 								mergedModules.length > 0
@@ -181,13 +108,41 @@ export function useCurrentTraining() {
 							completedModules:
 								training.modules?.filter((m) => m.completed)
 									.length || 0,
+							source: source, // Information de source enrichie
+							// URL pour accéder à la formation (basée sur la source)
+							trainingUrl:
+								source.type === "organization"
+									? `/wisetrainer/organization/${source.organizationId}/${training.id}`
+									: `/wisetrainer/${training.id}`,
 						};
 					} catch (error) {
 						console.warn(
 							`Erreur lors de l'enrichissement du cours ${training.id}:`,
 							error
 						);
-						return training;
+
+						// Déterminer la source basique
+						const source = training.source || {
+							type: "wisetwin",
+							name: "WiseTwin",
+							containerName:
+								WISETRAINER_CONFIG.CONTAINER_NAMES.SOURCE,
+						};
+
+						// Même en cas d'erreur, créer un ID composite
+						const compositeId = `${training.id}__${source.type}__${
+							source.organizationId || "wisetwin"
+						}`;
+
+						return {
+							...training,
+							compositeId,
+							source,
+							trainingUrl:
+								source.type === "organization"
+									? `/wisetrainer/organization/${source.organizationId}/${training.id}`
+									: `/wisetrainer/${training.id}`,
+						};
 					}
 				})
 			);
