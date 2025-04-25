@@ -151,10 +151,15 @@ export async function POST(request) {
 
 		// Générer un nom de container unique pour l'organisation
 		// Utiliser un préfixe 'org-' suivi d'un timestamp et d'un ID aléatoire
-		const timestamp = Date.now();
-		const randomId = Math.random().toString(36).substring(2, 10);
-		const containerName = `org-${timestamp}-${randomId}`;
+		const normalizedName = name
+			.toLowerCase()
+			.replace(/[^a-z0-9]/g, "-") // Remplacer caractères non alphanumériques par des tirets
+			.replace(/-+/g, "-") // Éviter les tirets multiples
+			.replace(/^-|-$/g, ""); // Supprimer les tirets au début et à la fin
 
+		// Ajouter un suffixe unique pour éviter les conflits
+		const uniqueSuffix = Math.random().toString(36).substring(2, 8);
+		const containerName = `${normalizedName}-${uniqueSuffix}`;
 		// Créer le container Azure
 		const containerResult = await createAzureContainer(containerName);
 

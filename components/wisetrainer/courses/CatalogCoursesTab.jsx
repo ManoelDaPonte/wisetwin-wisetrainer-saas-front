@@ -14,6 +14,7 @@ const CatalogCoursesTab = ({
 	isImporting,
 	containerVariants,
 	itemVariants,
+	isUserEnrolled, // Accepter la fonction de vérification
 }) => {
 	// Vérifier si courses est un tableau valide
 	const validCourses = Array.isArray(courses) ? courses : [];
@@ -56,7 +57,7 @@ const CatalogCoursesTab = ({
 						(course) =>
 							course && (
 								<CatalogCourseCard
-									key={course.id}
+									key={course.compositeId || course.id} // Utiliser l'ID composite si disponible
 									course={{
 										...course,
 										// Ajouter WiseTwin comme source s'il n'y en a pas déjà une
@@ -69,9 +70,14 @@ const CatalogCoursesTab = ({
 									onToggleInfo={onToggleInfo}
 									flippedCardId={flippedCardId}
 									isImporting={isImporting === course.id}
-									isEnrolled={validPersonalCourses.some(
-										(c) => c && c.id === course.id
-									)}
+									isEnrolled={
+										isUserEnrolled
+											? isUserEnrolled(
+													course,
+													validPersonalCourses
+											  )
+											: false
+									}
 									itemVariants={itemVariants}
 								/>
 							)

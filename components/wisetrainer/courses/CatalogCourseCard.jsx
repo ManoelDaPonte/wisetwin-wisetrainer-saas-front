@@ -19,6 +19,7 @@ import {
 	Building,
 	Sparkles,
 	PlayCircle,
+	Database,
 } from "lucide-react";
 import WISETRAINER_CONFIG from "@/lib/config/wisetrainer/wisetrainer";
 
@@ -135,13 +136,30 @@ const CatalogCourseCard = ({
 									{course.difficulty}
 								</Badge>
 							</div>
-							<CardDescription className="flex items-center gap-1">
-								{isOrganizationCourse ? (
-									<Building className="h-4 w-4" />
-								) : (
-									<Sparkles className="h-4 w-4" />
-								)}
-								{source.name}
+
+							{/* Information de source avec container */}
+							<CardDescription className="flex flex-col gap-1">
+								<div className="flex items-center">
+									{isOrganizationCourse ? (
+										<Building className="h-4 w-4 mr-1" />
+									) : (
+										<Sparkles className="h-4 w-4 mr-1" />
+									)}
+									<span>{source.name}</span>
+								</div>
+
+								{/* Afficher le container source */}
+								<div className="flex items-center text-xs text-gray-500 mt-1">
+									<Database className="h-3 w-3 mr-1" />
+									<span>
+										{isOrganizationCourse
+											? `Container organisation: ${
+													source.containerName ||
+													"Non disponible"
+											  }`
+											: `Container WiseTwin: ${WISETRAINER_CONFIG.CONTAINER_NAMES.SOURCE}`}
+									</span>
+								</div>
 							</CardDescription>
 						</CardHeader>
 
@@ -237,14 +255,31 @@ const CatalogCourseCard = ({
 							<CardTitle className="text-xl">
 								{course.name}
 							</CardTitle>
-							<CardDescription className="flex items-center gap-1">
-								{isOrganizationCourse ? (
-									<Building className="h-4 w-4" />
-								) : (
-									<Sparkles className="h-4 w-4" />
-								)}
-								{source.name} • <Clock className="h-4 w-4" />
-								{course.duration}
+							<CardDescription className="flex flex-col gap-1">
+								<div className="flex items-center">
+									{isOrganizationCourse ? (
+										<Building className="h-4 w-4 mr-1" />
+									) : (
+										<Sparkles className="h-4 w-4 mr-1" />
+									)}
+									<span>{source.name}</span>
+									<span className="mx-1">•</span>
+									<Clock className="h-4 w-4 mr-1" />
+									<span>{course.duration}</span>
+								</div>
+
+								{/* Afficher le container source */}
+								<div className="flex items-center text-xs text-gray-500 mt-1">
+									<Database className="h-3 w-3 mr-1" />
+									<span>
+										{isOrganizationCourse
+											? `Container: ${
+													source.containerName ||
+													"Non disponible"
+											  }`
+											: `Container: ${WISETRAINER_CONFIG.CONTAINER_NAMES.SOURCE}`}
+									</span>
+								</div>
 							</CardDescription>
 						</CardHeader>
 
@@ -263,7 +298,11 @@ const CatalogCourseCard = ({
 
 				<CardFooter className="flex gap-2 mt-auto pt-2">
 					<Button
-						className={`flex-1 bg-wisetwin-blue hover:bg-wisetwin-blue-light text-white`}
+						className={`flex-1 ${
+							isEnrolled
+								? "bg-gray-400 hover:bg-gray-500"
+								: "bg-wisetwin-blue hover:bg-wisetwin-blue-light"
+						} text-white`}
 						onClick={() => onEnroll(course)}
 						disabled={isEnrolled}
 					>

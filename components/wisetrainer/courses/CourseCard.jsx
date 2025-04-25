@@ -13,10 +13,22 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { Clock, BookOpen, Calendar, Building, Sparkles } from "lucide-react";
+import {
+	Clock,
+	BookOpen,
+	Calendar,
+	Building,
+	Sparkles,
+	Database,
+} from "lucide-react";
 import WISETRAINER_CONFIG from "@/lib/config/wisetrainer/wisetrainer";
 
 const CourseCard = ({ course, onSelect, onUnenroll, itemVariants }) => {
+	// Vérifier que le cours existe pour éviter les erreurs
+	if (!course) {
+		return null;
+	}
+
 	// Formatage de la date
 	const formatDate = (dateString) => {
 		if (!dateString) return "Date inconnue";
@@ -27,14 +39,15 @@ const CourseCard = ({ course, onSelect, onUnenroll, itemVariants }) => {
 		});
 	};
 
-	// Gérer le clic sur la carte
-	const handleCardClick = () => {
-		onSelect(course);
-	};
-
 	// Déterminer la source de la formation (WiseTwin par défaut ou organisation)
 	const source = course.source || { type: "wisetwin", name: "WiseTwin" };
 	const isOrganizationCourse = source.type === "organization";
+
+	// Gérer le clic sur la carte avec l'URL appropriée
+	const handleCardClick = () => {
+		// Passer le cours entier pour que la logique de redirection puisse utiliser les infos de source
+		onSelect(course);
+	};
 
 	return (
 		<motion.div variants={itemVariants}>
@@ -56,6 +69,7 @@ const CourseCard = ({ course, onSelect, onUnenroll, itemVariants }) => {
 							e.target.src = WISETRAINER_CONFIG.DEFAULT_IMAGE;
 						}}
 					/>
+
 					{/* Badge de difficulté superposé sur l'image */}
 					<div className="absolute top-3 right-3">
 						<Badge
@@ -110,9 +124,26 @@ const CourseCard = ({ course, onSelect, onUnenroll, itemVariants }) => {
 
 				<CardHeader className="pb-2">
 					<CardTitle className="text-xl">{course.name}</CardTitle>
-					<CardDescription className="flex items-center gap-1 text-sm">
-						<Calendar className="h-4 w-4" />
-						Dernier accès: {formatDate(course.lastAccessed)}
+					<CardDescription className="flex flex-col gap-1 text-sm">
+						<div className="flex items-center">
+							<Calendar className="h-4 w-4 mr-1" />
+							<span>
+								Dernier accès: {formatDate(course.lastAccessed)}
+							</span>
+						</div>
+
+						{/* Afficher le container source */}
+						<div className="flex items-center text-xs text-gray-500 mt-1">
+							<Database className="h-3 w-3 mr-1" />
+							<span>
+								{isOrganizationCourse
+									? `Container organisation: ${
+											source.containerName ||
+											"Non disponible"
+									  }`
+									: `Container WiseTwin: ${WISETRAINER_CONFIG.CONTAINER_NAMES.SOURCE}`}
+							</span>
+						</div>
 					</CardDescription>
 				</CardHeader>
 

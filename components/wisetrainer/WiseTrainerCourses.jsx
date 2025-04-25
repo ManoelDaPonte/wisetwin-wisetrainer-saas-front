@@ -17,12 +17,16 @@ import CatalogCoursesTab from "@/components/wisetrainer/courses/CatalogCoursesTa
 import CatalogOrganizationTab from "@/components/wisetrainer/courses/CatalogOrganizationTab";
 import WISETRAINER_CONFIG from "@/lib/config/wisetrainer/wisetrainer";
 
+import UnenrollModal from "@/components/wisetrainer/UnenrollModal";
+
 export default function WiseTrainerCourses() {
 	const router = useRouter();
 	const { containerName } = useAzureContainer();
 	const [activeTab, setActiveTab] = useState("personal");
 	const [flippedCardId, setFlippedCardId] = useState(null);
 	const [selectedOrgId, setSelectedOrgId] = useState(null);
+	const [showUnenrollModal, setShowUnenrollModal] = useState(false);
+	const [courseToUnenroll, setCourseToUnenroll] = useState(null);
 	const { toast } = useToast();
 
 	// Utiliser les hooks personnalisés pour récupérer les données
@@ -65,6 +69,12 @@ export default function WiseTrainerCourses() {
 		fetchUserOrganizations();
 	}, []);
 
+	// Fonction pour gérer la désinscription avec modale
+	const handleUnenroll = (course) => {
+		setCourseToUnenroll(course);
+		setShowUnenrollModal(true);
+	};
+
 	const fetchUserOrganizations = async () => {
 		try {
 			setIsLoadingOrgs(true);
@@ -105,31 +115,115 @@ export default function WiseTrainerCourses() {
 			return;
 		}
 
-		// Rediriger directement vers la page de la formation
-		router.push(`/wisetrainer/${course.id}`);
+		try {
+			// Log pour déboguer les informations de source
+			console.log("INFO INSCRIPTION - Démarrage de la formation:", {
+				courseId: course.id,
+				sourceType: course.source?.type || "wisetwin",
+				sourceOrganizationId: course.source?.organizationId || null,
+				sourceName: course.source?.name || "WiseTwin",
+				compositeId: course.compositeId || `${course.id}__unknown`,
+			});
 
-		// Notification informative
-		toast({
-			title: "Formation prête",
-			description:
-				"Vous accédez à la formation. La progression sera automatiquement enregistrée.",
-			variant: "info",
-		});
+			// Inscription de l'utilisateur à la formation
+			const response = await axios.post(
+				`${WISETRAINER_CONFIG.API_ROUTES.ENROLL_COURSE}`,
+				{
+					userId: containerName,
+					courseId: course.id,
+					sourceType: course.source?.type || "wisetwin",
+					sourceOrganizationId: course.source?.organizationId || null,
+					sourceContainerName: course.source?.containerName || null,
+				}
+			);
+
+			console.log(
+				"INFO INSCRIPTION - Réponse d'inscription:",
+				response.data
+			);
+
+			if (response.data.success) {
+				// Redirection basée sur la source de la formation
+				if (
+					course.source &&
+					course.source.type === "organization" &&
+					course.source.organizationId
+				) {
+					console.log("Redirection vers cours d'organisation:", {
+						courseId: course.id,
+						orgId: course.source.organizationId,
+					});
+					router.push(
+						`/wisetrainer/organization/${course.source.organizationId}/${course.id}`
+					);
+				} else {
+					console.log("Redirection vers cours standard:", {
+						courseId: course.id,
+					});
+					router.push(`/wisetrainer/${course.id}`);
+				}
+
+				// Rafraîchir la liste des formations personnelles
+				await refreshPersonalCourses();
+
+				toast({
+					title: "Formation ajoutée",
+					description:
+						'Vous pouvez maintenant accéder à cette formation depuis "Mes Formations"',
+					variant: "success",
+				});
+			} else {
+				throw new Error(
+					response.data.error ||
+						"Échec de l'inscription à la formation"
+				);
+			}
+		} catch (error) {
+			console.error(
+				"Erreur lors de l'inscription à la formation:",
+				error
+			);
+			toast({
+				title: "Erreur",
+				description:
+					"Impossible d'ajouter cette formation. Veuillez réessayer.",
+				variant: "destructive",
+			});
+		}
 	};
 
-	const handleUnenroll = async (course) => {
+	// Fonction pour gérer la sélection d'un cours
+	const handleCourseSelect = (course) => {
+		// Vérifier si le cours a des informations de source
 		if (
-			!confirm(
-				`Êtes-vous sûr de vouloir supprimer "${course.name}" de votre liste ? Votre progression sera perdue.`
-			)
+			course.source &&
+			course.source.type === "organization" &&
+			course.source.organizationId
 		) {
-			return;
+			// Rediriger vers la version organisation du cours
+			router.push(
+				`/wisetrainer/organization/${course.source.organizationId}/${course.id}`
+			);
+		} else {
+			// Rediriger vers la version standard du cours
+			router.push(`/wisetrainer/${course.id}`);
 		}
+	};
+
+	// Fonction pour se désinscrire d'une formation
+	const confirmUnenroll = async () => {
+		if (!courseToUnenroll) return;
 
 		try {
-			// Appeler l'API pour supprimer les fichiers du container
+			// Modifier l'appel API pour utiliser le format d'URL avec les paramètres
 			const response = await axios.delete(
-				`${WISETRAINER_CONFIG.API_ROUTES.UNENROLL}/${containerName}/${course.id}`
+				`${
+					WISETRAINER_CONFIG.API_ROUTES.UNENROLL_COURSE
+				}/${containerName}/${courseToUnenroll.id}?sourceType=${
+					courseToUnenroll.source?.type || "wisetwin"
+				}&sourceOrganizationId=${
+					courseToUnenroll.source?.organizationId || ""
+				}`
 			);
 
 			if (response.data.success) {
@@ -138,7 +232,7 @@ export default function WiseTrainerCourses() {
 
 				toast({
 					title: "Formation supprimée",
-					description: `"${course.name}" a été supprimée de votre liste`,
+					description: `"${courseToUnenroll.name}" a été supprimée de votre liste. Vous pouvez la réajouter à tout moment depuis le catalogue.`,
 					variant: "success",
 				});
 			} else {
@@ -153,15 +247,75 @@ export default function WiseTrainerCourses() {
 				description: "Une erreur est survenue. Veuillez réessayer.",
 				variant: "destructive",
 			});
+		} finally {
+			// Fermer la modale
+			setShowUnenrollModal(false);
+			setCourseToUnenroll(null);
 		}
 	};
 
-	const handleCourseSelect = (course) => {
-		router.push(`/wisetrainer/${course.id}`);
+	// Fonction pour fermer la modale
+	const closeUnenrollModal = () => {
+		setShowUnenrollModal(false);
+		setCourseToUnenroll(null);
 	};
 
 	const toggleCardFlip = (courseId) => {
 		setFlippedCardId(flippedCardId === courseId ? null : courseId);
+	};
+
+	const isUserEnrolled = (course, personalCourses) => {
+		// Si aucune formation personnelle, retourne false
+		if (!personalCourses || personalCourses.length === 0) {
+			return false;
+		}
+
+		if (course.id === "WiseTrainer_01") {
+			// Ajoutez l'ID qui pose problème ici
+			console.log("INFO VÉRIFICATION - Détails du cours à vérifier:", {
+				id: course.id,
+				sourceType: course.source?.type || "wisetwin",
+				sourceOrgId: course.source?.organizationId || null,
+				compositeId: course.compositeId || `${course.id}__unknown`,
+			});
+
+			// Afficher toutes les formations personnelles pour comparaison
+			personalCourses.forEach((pc) => {
+				console.log("INFO VÉRIFICATION - Formation personnelle:", {
+					id: pc.id,
+					sourceType: pc.source?.type || "wisetwin",
+					sourceOrgId: pc.source?.organizationId || null,
+					compositeId: pc.compositeId || `${pc.id}__unknown`,
+				});
+			});
+		}
+
+		// Récupérer les informations de source du cours
+		const sourceType = course.source?.type || "wisetwin";
+		const orgId = course.source?.organizationId || null;
+
+		// Vérifier si le cours existe déjà dans les formations personnelles
+		return personalCourses.some((personalCourse) => {
+			const personalSourceType =
+				personalCourse.source?.type || "wisetwin";
+			const personalOrgId = personalCourse.source?.organizationId || null;
+
+			// Vérifier l'ID du cours ET sa source
+			return (
+				personalCourse.id === course.id &&
+				personalSourceType === sourceType &&
+				// Si les deux sont null, c'est égal. Sinon, comparer les valeurs
+				((personalOrgId === null && orgId === null) ||
+					personalOrgId === orgId)
+			);
+		});
+	};
+
+	// Fonction pour générer un ID composite pour un cours
+	const generateCompositeId = (course) => {
+		const sourceType = course.source?.type || "wisetwin";
+		const orgId = course.source?.organizationId || "wisetwin";
+		return `${course.id}__${sourceType}__${orgId}`;
 	};
 
 	return (
@@ -199,13 +353,23 @@ export default function WiseTrainerCourses() {
 				<TabsContent value="catalog">
 					<CatalogCoursesTab
 						isLoading={isLoadingWiseTwin}
-						courses={wiseTwinTrainings}
+						courses={wiseTwinTrainings.map((course) => ({
+							...course,
+							compositeId: generateCompositeId(course),
+							source: {
+								type: "wisetwin",
+								name: "WiseTwin",
+								containerName:
+									WISETRAINER_CONFIG.CONTAINER_NAMES.SOURCE,
+							},
+						}))}
 						personalCourses={personalCourses}
-						onEnroll={handleStartCourse} // Maintenant utilise la méthode handleStartCourse
+						onEnroll={handleStartCourse}
 						onToggleInfo={toggleCardFlip}
 						flippedCardId={flippedCardId}
 						containerVariants={containerVariants}
 						itemVariants={itemVariants}
+						isUserEnrolled={isUserEnrolled} // Passer la fonction de vérification
 					/>
 				</TabsContent>
 
@@ -214,18 +378,46 @@ export default function WiseTrainerCourses() {
 						organizations={userOrganizations}
 						selectedOrganizationId={selectedOrgId}
 						onSelectOrganization={handleSelectOrganization}
-						trainings={organizationTrainings || []}
+						trainings={(organizationTrainings || []).map(
+							(training) => {
+								// S'assurer que chaque formation a les informations de source complètes
+								const selectedOrg = userOrganizations.find(
+									(org) => org.id === selectedOrgId
+								);
+								return {
+									...training,
+									compositeId: `${training.id}__organization__${selectedOrgId}`,
+									source: {
+										type: "organization",
+										name:
+											selectedOrg?.name || "Organisation",
+										organizationId: selectedOrgId,
+										containerName:
+											selectedOrg?.azureContainer || null,
+									},
+								};
+							}
+						)}
 						isLoading={isLoadingOrgs || isLoadingOrg}
 						onCourseSelect={handleCourseSelect}
-						onEnroll={handleStartCourse} // Utilise également handleStartCourse
+						onEnroll={handleStartCourse}
 						onToggleInfo={toggleCardFlip}
 						flippedCardId={flippedCardId}
 						personalCourses={personalCourses}
 						containerVariants={containerVariants}
 						itemVariants={itemVariants}
+						isUserEnrolled={isUserEnrolled} // Passer la fonction de vérification
 					/>
 				</TabsContent>
 			</Tabs>
+
+			{/* Ajouter la modale à la fin du composant */}
+			<UnenrollModal
+				isOpen={showUnenrollModal}
+				onClose={closeUnenrollModal}
+				onConfirm={confirmUnenroll}
+				courseName={courseToUnenroll?.name || ""}
+			/>
 		</div>
 	);
 }
