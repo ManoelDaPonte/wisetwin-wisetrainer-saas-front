@@ -71,14 +71,27 @@ export default function QuestionnaireModal({
 				selectedAnswers: selectedAnswers[question.id] || [],
 			}));
 
+			// Déterminer la source correcte
+			const sourceType = scenario.source?.type || "wisetwin";
+			const sourceOrganizationId =
+				scenario.source?.organizationId || null;
+
+			console.log("Soumission du questionnaire avec source:", {
+				sourceType,
+				sourceOrganizationId,
+				trainingId,
+			});
+
 			// Envoyer les réponses à l'API pour vérification
 			const response = await axios.post(
 				WISETRAINER_CONFIG.API_ROUTES.SAVE_QUESTIONNAIRE,
 				{
-					userId: containerName, // Ici on utilise containerName
+					userId: containerName,
 					questionnaireId: scenario.id,
 					responses,
-					trainingId, // Cette variable n'est pas définie dans ton code affiché
+					trainingId,
+					sourceType, // Ajouter ces informations
+					sourceOrganizationId, // pour la source
 				}
 			);
 

@@ -116,8 +116,16 @@ export default function WiseTrainerCourses() {
 		}
 
 		try {
-			// Inscription de l'utilisateur à la formation sans télécharger les fichiers
-			// Cette API enregistre simplement la relation utilisateur-formation en base de données
+			// Log pour déboguer les informations de source
+			console.log("INFO INSCRIPTION - Démarrage de la formation:", {
+				courseId: course.id,
+				sourceType: course.source?.type || "wisetwin",
+				sourceOrganizationId: course.source?.organizationId || null,
+				sourceName: course.source?.name || "WiseTwin",
+				compositeId: course.compositeId || `${course.id}__unknown`,
+			});
+
+			// Inscription de l'utilisateur à la formation
 			const response = await axios.post(
 				`${WISETRAINER_CONFIG.API_ROUTES.ENROLL_COURSE}`,
 				{
@@ -127,6 +135,11 @@ export default function WiseTrainerCourses() {
 					sourceOrganizationId: course.source?.organizationId || null,
 					sourceContainerName: course.source?.containerName || null,
 				}
+			);
+
+			console.log(
+				"INFO INSCRIPTION - Réponse d'inscription:",
+				response.data
 			);
 
 			if (response.data.success) {
@@ -198,21 +211,19 @@ export default function WiseTrainerCourses() {
 	};
 
 	// Fonction pour se désinscrire d'une formation
-	// Fonction pour confirmer la désinscription
 	const confirmUnenroll = async () => {
 		if (!courseToUnenroll) return;
 
 		try {
-			// Appeler l'API pour désinscrire l'utilisateur de la formation
-			const response = await axios.post(
-				`${WISETRAINER_CONFIG.API_ROUTES.UNENROLL_COURSE}`,
-				{
-					userId: containerName,
-					courseId: courseToUnenroll.id,
-					sourceType: courseToUnenroll.source?.type || "wisetwin",
-					sourceOrganizationId:
-						courseToUnenroll.source?.organizationId || null,
-				}
+			// Modifier l'appel API pour utiliser le format d'URL avec les paramètres
+			const response = await axios.delete(
+				`${
+					WISETRAINER_CONFIG.API_ROUTES.UNENROLL_COURSE
+				}/${containerName}/${courseToUnenroll.id}?sourceType=${
+					courseToUnenroll.source?.type || "wisetwin"
+				}&sourceOrganizationId=${
+					courseToUnenroll.source?.organizationId || ""
+				}`
 			);
 
 			if (response.data.success) {
@@ -257,6 +268,26 @@ export default function WiseTrainerCourses() {
 		// Si aucune formation personnelle, retourne false
 		if (!personalCourses || personalCourses.length === 0) {
 			return false;
+		}
+
+		if (course.id === "WiseTrainer_01") {
+			// Ajoutez l'ID qui pose problème ici
+			console.log("INFO VÉRIFICATION - Détails du cours à vérifier:", {
+				id: course.id,
+				sourceType: course.source?.type || "wisetwin",
+				sourceOrgId: course.source?.organizationId || null,
+				compositeId: course.compositeId || `${course.id}__unknown`,
+			});
+
+			// Afficher toutes les formations personnelles pour comparaison
+			personalCourses.forEach((pc) => {
+				console.log("INFO VÉRIFICATION - Formation personnelle:", {
+					id: pc.id,
+					sourceType: pc.source?.type || "wisetwin",
+					sourceOrgId: pc.source?.organizationId || null,
+					compositeId: pc.compositeId || `${pc.id}__unknown`,
+				});
+			});
 		}
 
 		// Récupérer les informations de source du cours

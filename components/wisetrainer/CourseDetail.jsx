@@ -256,13 +256,24 @@ export default function CourseDetail({ params }) {
 				console.log("Importation terminée");
 			}
 
-			// Initialiser la progression à 0%
+			// Déterminer la source correcte en fonction des paramètres
+			const sourceType = organizationId ? "organization" : "wisetwin";
+			const sourceOrganizationId = organizationId || null;
+
+			console.log("Source pour initialisation:", {
+				sourceType,
+				sourceOrganizationId,
+				courseId,
+			});
+
+			// Initialiser la progression à 0% avec les bonnes informations de source
 			const response = await axios.post(
-				WISETRAINER_CONFIG.API_ROUTES.UPDATE_PROGRESS,
+				WISETRAINER_CONFIG.API_ROUTES.INITIALIZE_PROGRESS,
 				{
 					userId: containerName,
-					trainingId: courseId,
-					progress: 0, // Commencer à 0%
+					courseId: courseId,
+					sourceType: sourceType,
+					sourceOrganizationId: sourceOrganizationId,
 				}
 			);
 
@@ -436,6 +447,15 @@ export default function CourseDetail({ params }) {
 				}
 			}
 
+			const sourceType = organizationId ? "organization" : "wisetwin";
+			const sourceOrganizationId = organizationId || null;
+
+			console.log("Mise à jour de la progression avec source:", {
+				sourceType,
+				sourceOrganizationId,
+				courseId,
+			});
+
 			// [Le reste de votre code pour mettre à jour la progression reste inchangé]
 			try {
 				const response = await axios.post(
@@ -450,6 +470,8 @@ export default function CourseDetail({ params }) {
 						),
 						completedModule: currentScenario.id,
 						moduleScore: score,
+						sourceType, // Ajouter ces informations
+						sourceOrganizationId, // pour la source
 					}
 				);
 

@@ -53,11 +53,8 @@ export async function DELETE(request, { params }) {
 		const course = await prisma.course.findFirst({
 			where: {
 				courseId: courseId,
-				sourceType: "wisetwin", // Par défaut, nous cherchons les formations WiseTwin
-				sourceOrganizationId: null,
-			},
-			include: {
-				modules: true,
+				sourceType: sourceType,
+				sourceOrganizationId: sourceOrganizationId || null,
 			},
 		});
 

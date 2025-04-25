@@ -9,6 +9,7 @@ const WISETRAINER_CONFIG = {
 	API_ROUTES: {
 		// Routes pour les API Azure Blob Storage
 		LIST_BUILDS: "/api/azure/wisetrainer/builds",
+		IMPORT_BUILD: "/api/azure/wisetrainer/import",
 		UNENROLL_COURSE: "/api/db/wisetrainer/unenroll-course", // Nouvelle route pour désinscrire l'utilisateur
 		ENROLL_COURSE: "/api/db/wisetrainer/enroll-course", // Nouvelle route pour inscrire l'utilisateur
 		CHECK_BLOB: "/api/azure/check-blob-exists",
@@ -20,6 +21,7 @@ const WISETRAINER_CONFIG = {
 		FETCH_SCENARIO_BY_COURSE: "/api/db/wisetrainer/scenario",
 		SAVE_QUESTIONNAIRE: "/api/db/wisetrainer/save-questionnaire",
 		UPDATE_PROGRESS: "/api/db/wisetrainer/update-progress",
+		INITIALIZE_PROGRESS: "/api/db/wisetrainer/initialize-progress",
 		STATS_USER: "/api/db/stats/user",
 		WISETWIN_TRAININGS: "/api/db/wisetrainer/wisetwin-trainings",
 
