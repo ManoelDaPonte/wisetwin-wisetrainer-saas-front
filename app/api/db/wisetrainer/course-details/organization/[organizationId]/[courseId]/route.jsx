@@ -1,16 +1,28 @@
-//app/api/db/wisetrainer/course-details/organization/[organizationId]/[courseId]/route.jsx
-
+// app/api/db/wisetrainer/course-details/organization/[organizationId]/[courseId]/route.jsx
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 import fs from "fs";
 import path from "path";
+import {
+	checkOrganizationAccess,
+	withOrganizationAuth,
+} from "@/middleware/organizationAuth";
 
 const prisma = new PrismaClient();
 
 export async function GET(request, { params }) {
+	// Utiliser le middleware d'autorisation
+	return withOrganizationAuth(
+		request,
+		params,
+		() => checkOrganizationAccess({ requiredRole: "MEMBER" }),
+		handleGetCourseDetails
+	);
+}
+
+async function handleGetCourseDetails(request, params, authResult) {
 	try {
-		const resolvedParams = await params;
-		const { courseId, organizationId } = resolvedParams;
+		const { courseId, organizationId } = params;
 
 		if (!courseId || !organizationId) {
 			return NextResponse.json(
@@ -21,19 +33,8 @@ export async function GET(request, { params }) {
 			);
 		}
 
-		// Vérifiez d'abord si l'organisation existe
-		const organization = await prisma.organization.findUnique({
-			where: {
-				id: organizationId,
-			},
-		});
-
-		if (!organization) {
-			return NextResponse.json(
-				{ error: "Organisation non trouvée" },
-				{ status: 404 }
-			);
-		}
+		// L'utilisateur et l'organisation ont déjà été vérifiés par le middleware
+		const organization = authResult.organization;
 
 		// Vérifiez si le cours appartient à cette organisation
 		const organizationTraining =
@@ -60,6 +61,11 @@ export async function GET(request, { params }) {
 					order: "asc",
 				},
 			});
+
+			// Journaliser l'accès
+			console.log(
+				`Utilisateur ${authResult.user.id} accède au cours ${courseId} de l'organisation ${organizationId}`
+			);
 
 			return NextResponse.json({
 				id: organizationTraining.course.courseId,

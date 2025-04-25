@@ -1,70 +1,29 @@
 // app/api/organization/[organizationId]/builds/route.jsx
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
-import { auth0 } from "@/lib/auth0";
 import { BlobServiceClient } from "@azure/storage-blob";
 import WISETRAINER_CONFIG from "@/lib/config/wisetrainer/wisetrainer";
+import {
+	checkOrganizationAccess,
+	withOrganizationAuth,
+} from "@/middleware/organizationAuth";
 
 const prisma = new PrismaClient();
 
 export async function GET(request, { params }) {
+	// Utiliser le middleware d'autorisation
+	return withOrganizationAuth(
+		request,
+		params,
+		() => checkOrganizationAccess({ requiredRole: "MEMBER" }),
+		handleGetOrganizationBuilds
+	);
+}
+
+async function handleGetOrganizationBuilds(request, params, authResult) {
 	try {
-		const session = await auth0.getSession();
-		const resolvedParams = await params;
-		const { organizationId } = resolvedParams;
-
-		// Vérifier si l'utilisateur est authentifié
-		if (!session || !session.user) {
-			return NextResponse.json(
-				{ error: "Non autorisé" },
-				{ status: 401 }
-			);
-		}
-
-		// Récupérer l'utilisateur depuis la base de données
-		const user = await prisma.user.findUnique({
-			where: {
-				auth0Id: session.user.sub,
-			},
-		});
-
-		if (!user) {
-			return NextResponse.json(
-				{ error: "Utilisateur non trouvé" },
-				{ status: 404 }
-			);
-		}
-
-		// Vérifier si l'utilisateur est membre de l'organisation
-		const membership = await prisma.organizationMember.findFirst({
-			where: {
-				organizationId: organizationId,
-				userId: user.id,
-			},
-		});
-
-		if (!membership) {
-			return NextResponse.json(
-				{
-					error: "Vous n'avez pas accès aux ressources de cette organisation",
-				},
-				{ status: 403 }
-			);
-		}
-
-		// Récupérer l'organisation pour obtenir le nom du container Azure
-		const organization = await prisma.organization.findUnique({
-			where: {
-				id: organizationId,
-			},
-		});
-
-		if (!organization) {
-			return NextResponse.json(
-				{ error: "Organisation non trouvée" },
-				{ status: 404 }
-			);
-		}
+		const { organizationId } = params;
+		const organization = authResult.organization;
 
 		if (!organization.azureContainer) {
 			return NextResponse.json(
@@ -124,6 +83,11 @@ export async function GET(request, { params }) {
 		// Traiter les noms de fichiers pour en extraire des métadonnées
 		const builds = await processBuilds(blobs, organizationTrainings);
 
+		// Journaliser l'accès
+		console.log(
+			`Utilisateur ${authResult.user.id} accède aux builds de l'organisation ${organizationId}`
+		);
+
 		return NextResponse.json({
 			blobs,
 			builds,
@@ -142,8 +106,6 @@ export async function GET(request, { params }) {
 	}
 }
 
-// Fonction pour convertir les noms de blobs en métadonnées de formations
-//app/api/organization/[organizationId]/builds/route.jsx
 // Fonction pour convertir les noms de blobs en métadonnées de formations
 async function processBuilds(blobs, organizationTrainings = []) {
 	// Extraire les noms uniques de builds (sans extension)
