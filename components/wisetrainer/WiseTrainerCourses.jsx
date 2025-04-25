@@ -105,11 +105,27 @@ export default function WiseTrainerCourses() {
 			return;
 		}
 
-		if (course.source && course.source.type === "organization") {
+		// Ajout d'une vérification plus robuste
+		if (
+			course.source &&
+			course.source.type === "organization" &&
+			course.source.organizationId
+		) {
+			// Log pour débogage
+			console.log("Redirection vers cours d'organisation:", {
+				courseId: course.id,
+				orgId: course.source.organizationId,
+			});
+
 			router.push(
-				`/wisetrainer/${course.source.organizationId}/${course.id}`
+				`/wisetrainer/organization/${course.source.organizationId}/${course.id}`
 			);
 		} else {
+			// Log pour débogage
+			console.log("Redirection vers cours standard:", {
+				courseId: course.id,
+			});
+
 			router.push(`/wisetrainer/${course.id}`);
 		}
 

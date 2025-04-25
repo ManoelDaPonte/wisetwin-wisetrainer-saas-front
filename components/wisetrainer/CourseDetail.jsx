@@ -20,6 +20,9 @@ export default function CourseDetail({ params }) {
 	const router = useRouter();
 	const { containerName, isLoading: containerLoading } = useAzureContainer();
 	const [courseId, setCourseId] = useState(params?.courseId || null);
+	const [organizationId, setOrganizationId] = useState(
+		params?.organizationId || null
+	); // Ajout de cet état
 	const [course, setCourse] = useState(null);
 	const [userProgress, setUserProgress] = useState(null);
 	const [isLoading, setIsLoading] = useState(true);
@@ -52,8 +55,8 @@ export default function CourseDetail({ params }) {
 			setCourseId(params.courseId);
 		}
 
-		if (params?.orgId) {
-			setOrgId(params.orgId);
+		if (params?.organizationId) {
+			setOrganizationId(params.organizationId);
 		}
 	}, [params]);
 
@@ -87,15 +90,10 @@ export default function CourseDetail({ params }) {
 	const fetchCourseDetails = async () => {
 		setIsLoading(true);
 		try {
-		  // URL différente pour les cours d'organisation
-		  const apiUrl = orgId 
-			? `${WISETRAINER_CONFIG.API_ROUTES.ORGANIZATION_COURSE_DETAILS}/${orgId}/${courseId}`
-			: `${WISETRAINER_CONFIG.API_ROUTES.COURSE_DETAILS}/${courseId}`;
-			
-		try {
-			console.log(
-				`Chargement des détails du cours ${courseId} pour le container ${containerName}`
-			);
+			// URL différente pour les cours d'organisation
+			const apiUrl = organizationId
+				? `${WISETRAINER_CONFIG.API_ROUTES.ORGANIZATION_COURSE_DETAILS}/${organizationId}/${courseId}`
+				: `${WISETRAINER_CONFIG.API_ROUTES.COURSE_DETAILS}/${courseId}`;
 
 			// Charger les détails du cours depuis le fichier de configuration
 			let courseConfig;

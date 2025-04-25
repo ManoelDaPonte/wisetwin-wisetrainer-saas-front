@@ -140,9 +140,10 @@ export default function CatalogOrganizationTab({
 								key={course.id}
 								course={{
 									...course,
-									// Ajouter le nom de l'organisation comme source
+									// S'assurer que les informations d'organisation sont correctement définies
 									source: {
 										type: "organization",
+										organizationId: selectedOrganizationId, // Utiliser l'ID de l'organisation sélectionnée
 										name: selectedOrganization
 											? selectedOrganization.name
 											: "Organisation",
