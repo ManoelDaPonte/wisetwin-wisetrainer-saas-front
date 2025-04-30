@@ -1,6 +1,5 @@
 // lib/services/userService.js
 import { PrismaClient } from "@prisma/client";
-import { BlobServiceClient } from "@azure/storage-blob";
 
 const prisma = new PrismaClient();
 
