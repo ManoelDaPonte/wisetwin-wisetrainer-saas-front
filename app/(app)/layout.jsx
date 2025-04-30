@@ -4,10 +4,11 @@ import Image from "next/image";
 import TopNavBar from "@/components/layout/TopNavBar";
 import LeftNavBar from "@/components/layout/LeftNavBar";
 import TermsAcceptanceModal from "@/components/cookies/TermsAcceptanceModal";
-import { DashboardProvider } from "@/lib/contexts/DashboardContext";
+import { UserProvider } from "@/lib/contexts/UserContext";
 import { ThemeProvider } from "@/lib/contexts/ThemeContext";
 import { Toaster } from "@/components/ui/toaster";
 import "@/app/globals.css";
+import { User } from "lucide-react";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -23,7 +24,7 @@ export default function RootLayout({ children, pathname }) {
 			<body className={inter.className}>
 				{/* Fournisseurs de contexte */}
 				<ThemeProvider>
-					<DashboardProvider>
+					<UserProvider>
 						<div className="flex h-screen w-screen overflow-hidden">
 							{/* Barre de navigation latérale */}
 							<LeftNavBar />
@@ -61,7 +62,7 @@ export default function RootLayout({ children, pathname }) {
 							</div>
 						</div>
 						<Toaster />
-					</DashboardProvider>
+					</UserProvider>
 				</ThemeProvider>
 
 				{/* Modal d'acceptation des termes */}

@@ -15,7 +15,6 @@ model User {
     auth0Id          String               @unique // Identifiant Auth0 de l'utilisateur
     email            String               @unique
     name             String?
-    azureContainer   String? // Nom du container Azure de l'utilisateur
     createdAt        DateTime             @default(now())
     updatedAt        DateTime             @updatedAt
     userCourses      UserCourse[] // Relation avec les cours suivis

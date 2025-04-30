@@ -1,40 +1,11 @@
 // app/api/organization/route.jsx
 import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
 import { auth0 } from "@/lib/auth0";
-import { BlobServiceClient } from "@azure/storage-blob";
-
-const prisma = new PrismaClient();
-
-// Fonction pour créer un container Azure
-async function createAzureContainer(containerName) {
-	try {
-		// Connexion au service Azure Blob Storage
-		const blobServiceClient = BlobServiceClient.fromConnectionString(
-			process.env.AZURE_STORAGE_CONNECTION_STRING
-		);
-
-		// Récupération du client du container
-		const containerClient =
-			blobServiceClient.getContainerClient(containerName);
-
-		// Créer le container s'il n'existe pas
-		const createContainerResponse = await containerClient.createIfNotExists(
-			{
-				access: "blob", // Accès en lecture publique pour les blobs
-			}
-		);
-
-		return {
-			success: true,
-			created: createContainerResponse.succeeded,
-			containerName,
-		};
-	} catch (error) {
-		console.error("Erreur lors de la création du container:", error);
-		throw error;
-	}
-}
+import { findUserByAuth0Id } from "@/lib/services/userService";
+import {
+	getUserOrganizations,
+	createOrganization,
+} from "@/lib/services/organisation/organizationService";
 
 // GET pour récupérer toutes les organisations d'un utilisateur
 export async function GET(request) {
@@ -49,12 +20,8 @@ export async function GET(request) {
 			);
 		}
 
-		// Récupérer l'utilisateur depuis la base de données
-		const user = await prisma.user.findUnique({
-			where: {
-				auth0Id: session.user.sub,
-			},
-		});
+		// Récupérer l'utilisateur
+		const user = await findUserByAuth0Id(session.user.sub);
 
 		if (!user) {
 			return NextResponse.json(
@@ -63,38 +30,8 @@ export async function GET(request) {
 			);
 		}
 
-		// Récupérer les organisations dont l'utilisateur est membre
-		const membershipData = await prisma.organizationMember.findMany({
-			where: {
-				userId: user.id,
-			},
-			include: {
-				organization: true,
-			},
-		});
-
-		// Formater les résultats pour l'affichage
-		const organizations = await Promise.all(
-			membershipData.map(async (membership) => {
-				// Compter le nombre de membres pour chaque organisation
-				const membersCount = await prisma.organizationMember.count({
-					where: {
-						organizationId: membership.organization.id,
-					},
-				});
-
-				return {
-					id: membership.organization.id,
-					name: membership.organization.name,
-					description: membership.organization.description,
-					logoUrl: membership.organization.logoUrl,
-					createdAt: membership.organization.createdAt,
-					userRole: membership.role,
-					joinedAt: membership.joinedAt,
-					membersCount,
-				};
-			})
-		);
+		// Récupérer les organisations
+		const organizations = await getUserOrganizations(user.id);
 
 		return NextResponse.json({ organizations });
 	} catch (error) {
@@ -126,21 +63,17 @@ export async function POST(request) {
 		}
 
 		// Récupérer les données de la requête
-		const { name, description, logoUrl } = await request.json();
+		const organizationData = await request.json();
 
-		if (!name) {
+		if (!organizationData.name) {
 			return NextResponse.json(
 				{ error: "Le nom de l'organisation est requis" },
 				{ status: 400 }
 			);
 		}
 
-		// Récupérer l'utilisateur depuis la base de données
-		const user = await prisma.user.findUnique({
-			where: {
-				auth0Id: session.user.sub,
-			},
-		});
+		// Récupérer l'utilisateur
+		const user = await findUserByAuth0Id(session.user.sub);
 
 		if (!user) {
 			return NextResponse.json(
@@ -149,51 +82,16 @@ export async function POST(request) {
 			);
 		}
 
-		// Générer un nom de container unique pour l'organisation
-		// Utiliser un préfixe 'org-' suivi d'un timestamp et d'un ID aléatoire
-		const normalizedName = name
-			.toLowerCase()
-			.replace(/[^a-z0-9]/g, "-") // Remplacer caractères non alphanumériques par des tirets
-			.replace(/-+/g, "-") // Éviter les tirets multiples
-			.replace(/^-|-$/g, ""); // Supprimer les tirets au début et à la fin
-
-		// Ajouter un suffixe unique pour éviter les conflits
-		const uniqueSuffix = Math.random().toString(36).substring(2, 8);
-		const containerName = `${normalizedName}-${uniqueSuffix}`;
-		// Créer le container Azure
-		const containerResult = await createAzureContainer(containerName);
-
-		if (!containerResult.success) {
-			return NextResponse.json(
-				{ error: "Échec de la création du container Azure" },
-				{ status: 500 }
-			);
-		}
-
-		// Créer l'organisation avec le nom du container Azure
-		const organization = await prisma.organization.create({
-			data: {
-				name,
-				description,
-				logoUrl,
-				azureContainer: containerName,
-			},
-		});
-
-		// Ajouter l'utilisateur comme propriétaire de l'organisation
-		await prisma.organizationMember.create({
-			data: {
-				organizationId: organization.id,
-				userId: user.id,
-				role: "OWNER", // Le créateur est toujours propriétaire
-			},
-		});
+		// Créer l'organisation
+		const organization = await createOrganization(
+			organizationData,
+			user.id
+		);
 
 		return NextResponse.json({
 			success: true,
 			organization: {
 				...organization,
-				azureContainer: containerName,
 			},
 		});
 	} catch (error) {
