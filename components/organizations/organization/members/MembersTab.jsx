@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { RefreshCw } from "lucide-react";
 import MembersTable from "./MembersTable";
 import AddMemberButton from "./AddMemberButton";
-import { useOrganizationMembers } from "@/lib/hooks/organizations/useOrganizationMembers";
+import { useOrganizationMembers } from "@/lib/hooks/organizations/organization/useOrganizationMembers";
 
 export default function MembersTab({ organization }) {
 	const {

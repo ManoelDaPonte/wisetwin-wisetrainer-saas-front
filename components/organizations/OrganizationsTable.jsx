@@ -1,13 +1,21 @@
-// components/organization/OrganizationsTable.jsx
+// components/organizations/OrganizationsTable.jsx
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { Settings, Users, Calendar, ExternalLink } from "lucide-react";
+import {
+	Settings,
+	Users,
+	Calendar,
+	ExternalLink,
+	RefreshCw,
+} from "lucide-react";
 import Image from "next/image";
 
 export default function OrganizationsTable({
-	organizations,
-	isLoading,
+	organizations = [],
+	isLoading = false,
 	onManage,
+	onRefresh,
+	showRefreshButton = false,
 }) {
 	const formatDate = (dateString) => {
 		return new Date(dateString).toLocaleDateString("fr-FR", {
@@ -56,12 +64,27 @@ export default function OrganizationsTable({
 					Vous n'appartenez à aucune organisation pour le moment.
 					Créez-en une ou demandez à être invité.
 				</p>
+				{showRefreshButton && onRefresh && (
+					<Button variant="outline" onClick={onRefresh}>
+						<RefreshCw className="w-4 h-4 mr-2" />
+						Actualiser
+					</Button>
+				)}
 			</div>
 		);
 	}
 
 	return (
 		<div className="space-y-4">
+			{showRefreshButton && onRefresh && (
+				<div className="flex justify-end mb-4">
+					<Button variant="outline" onClick={onRefresh} size="sm">
+						<RefreshCw className="w-4 h-4 mr-2" />
+						Actualiser
+					</Button>
+				</div>
+			)}
+
 			{organizations.map((org) => (
 				<div
 					key={org.id}

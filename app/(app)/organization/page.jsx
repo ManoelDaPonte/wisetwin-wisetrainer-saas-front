@@ -1,105 +1,40 @@
 // app/(app)/organization/page.jsx
 "use client";
-import React, { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import axios from "axios";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Plus, Settings } from "lucide-react";
+import { Plus } from "lucide-react";
 import {
 	Card,
 	CardContent,
 	CardDescription,
-	CardFooter,
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
 import OrganizationsTable from "@/components/organizations/OrganizationsTable";
 import CreateOrganizationModal from "@/components/organizations/CreateOrganizationModal";
-import { useToast } from "@/lib/hooks/useToast";
+import { useOrganizations } from "@/lib/hooks/organizations/useOrganizations";
 
 export default function OrganizationPage() {
-	const router = useRouter();
-	const { toast } = useToast();
-	const [organizations, setOrganizations] = useState([]);
-	const [isLoading, setIsLoading] = useState(true);
 	const [showCreateModal, setShowCreateModal] = useState(false);
-
-	useEffect(() => {
-		fetchOrganizations();
-	}, []);
-
-	const fetchOrganizations = async () => {
-		try {
-			setIsLoading(true);
-			const response = await axios.get("/api/organization");
-
-			if (response.data.organizations) {
-				setOrganizations(response.data.organizations);
-			} else {
-				// Si aucune organisation n'est retournée, définir un tableau vide
-				setOrganizations([]);
-			}
-		} catch (error) {
-			console.error(
-				"Erreur lors du chargement des organisations:",
-				error
-			);
-			toast({
-				title: "Erreur",
-				description: "Impossible de charger les organisations",
-				variant: "destructive",
-			});
-		} finally {
-			setIsLoading(false);
-		}
-	};
+	const {
+		organizations,
+		isLoading,
+		fetchOrganizations,
+		createOrganization,
+		navigateToOrganization,
+	} = useOrganizations();
 
 	const handleCreateOrganization = async (organizationData) => {
-		try {
-			const response = await axios.post(
-				"/api/organization",
-				organizationData
-			);
+		const newOrganization = await createOrganization(organizationData);
 
-			if (response.data.success) {
-				toast({
-					title: "Organisation créée",
-					description: "L'organisation a été créée avec succès",
-					variant: "success",
-				});
+		if (newOrganization) {
+			setShowCreateModal(false);
 
-				setShowCreateModal(false);
-				await fetchOrganizations(); // Rafraîchir la liste
-
-				// Rediriger vers la page de l'organisation nouvellement créée
-				if (response.data.organization?.id) {
-					router.push(
-						`/organization/${response.data.organization.id}`
-					);
-				}
-			} else {
-				throw new Error(
-					response.data.error ||
-						"Échec de la création de l'organisation"
-				);
+			// Rediriger vers la page de l'organisation nouvellement créée
+			if (newOrganization.id) {
+				navigateToOrganization(newOrganization.id);
 			}
-		} catch (error) {
-			console.error(
-				"Erreur lors de la création de l'organisation:",
-				error
-			);
-			toast({
-				title: "Erreur",
-				description:
-					error.response?.data?.error ||
-					"Impossible de créer l'organisation",
-				variant: "destructive",
-			});
 		}
-	};
-
-	const handleManageOrganization = (organizationId) => {
-		router.push(`/organization/${organizationId}`);
 	};
 
 	return (
@@ -134,7 +69,9 @@ export default function OrganizationPage() {
 					<OrganizationsTable
 						organizations={organizations}
 						isLoading={isLoading}
-						onManage={handleManageOrganization}
+						onManage={navigateToOrganization}
+						onRefresh={fetchOrganizations}
+						showRefreshButton={true}
 					/>
 				</CardContent>
 			</Card>
