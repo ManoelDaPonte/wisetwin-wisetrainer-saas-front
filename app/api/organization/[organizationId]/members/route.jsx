@@ -1,8 +1,8 @@
 // app/api/organization/[organizationId]/members/route.jsx
 import { NextResponse } from "next/server";
 import { auth0 } from "@/lib/auth0";
-import { memberService } from "@/lib/services/organizations/organization/memberService";
-import { organizationAuthService } from "@/lib/services/organizations/organization/authService";
+import { currentOrganizationMemberService } from "@/lib/services/organizations/currentOrganization/currentOrganizationMemberService";
+import { currentOrganizationAuthService } from "@/lib/services/organizations/currentOrganization/currentOrganizationAuthService";
 
 /**
  * GET - Récupère tous les membres d'une organisation
@@ -20,16 +20,17 @@ export async function GET(request, { params }) {
 		const includeTags = searchParams.get("includeTags") === "true";
 
 		// Authentifier l'utilisateur et vérifier son appartenance à l'organisation
-		await organizationAuthService.authenticateForOrganization(
+		await currentOrganizationAuthService.authenticateForOrganization(
 			session,
 			organizationId
 		);
 
 		// Récupérer les membres avec ou sans leurs tags
-		const members = await memberService.getOrganizationMembers(
-			organizationId,
-			{ includeTags }
-		);
+		const members =
+			await currentOrganizationMemberService.getOrganizationMembers(
+				organizationId,
+				{ includeTags }
+			);
 
 		return NextResponse.json({ members });
 	} catch (error) {

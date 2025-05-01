@@ -1,4 +1,4 @@
-// lib/services/organizations/organization/memberService.jsx
+// lib/services/organizations/currentOrganization/currentOrganizationMemberService.jsx
 import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
@@ -6,7 +6,7 @@ const prisma = new PrismaClient();
 /**
  * Service pour gérer toutes les opérations liées aux membres d'une organisation
  */
-class MemberService {
+class CurrentOrganizationMemberService {
 	/**
 	 * Récupère tous les membres d'une organisation, avec ou sans leurs tags
 	 * @param {string} organizationId - ID de l'organisation
@@ -414,4 +414,5 @@ class MemberService {
 }
 
 // Export d'une instance unique du service
-export const memberService = new MemberService();
+export const currentOrganizationMemberService =
+	new CurrentOrganizationMemberService();

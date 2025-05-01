@@ -16,7 +16,7 @@ export function useCurrentOrganizationMembers(organizationId) {
 			setIsLoading(true);
 			setError(null);
 			const response = await axios.get(
-				`/api/organization/${organizationId}/members-with-tags`
+				`/api/organization/${organizationId}/members`
 			);
 
 			if (response.data.members) {
