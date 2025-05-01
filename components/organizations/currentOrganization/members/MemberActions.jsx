@@ -81,11 +81,6 @@ export default function MemberActions({
 					Membre
 				</DropdownMenuItem>
 
-				<DropdownMenuItem onClick={() => handleManageTags(member.id)}>
-					<Tag className="mr-2 h-4 w-4" />
-					Gérer les tags
-				</DropdownMenuItem>
-
 				{currentUserRole === "OWNER" && member.role !== "OWNER" && (
 					<>
 						<DropdownMenuSeparator />
