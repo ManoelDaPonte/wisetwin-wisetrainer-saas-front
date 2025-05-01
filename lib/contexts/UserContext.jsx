@@ -1,7 +1,7 @@
 // lib/contexts/UserContext.js
 "use client";
 import React, { createContext, useContext } from "react";
-import { useUser as useUserHook } from "@/lib/hooks/useUser";
+import { useUser as useUserHook } from "@/lib/hooks/auth/useUser";
 
 // Créer le contexte
 const UserContext = createContext(undefined);

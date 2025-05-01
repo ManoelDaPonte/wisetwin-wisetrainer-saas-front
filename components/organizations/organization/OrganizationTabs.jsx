@@ -1,16 +1,16 @@
-// components/organizations/organization/OrganizationTabs.jsx
+//components/organizations/organization/OrganizationTabs.jsx
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Users, Mail, Settings, BarChart, Tag } from "lucide-react";
 import { useToast } from "@/lib/hooks/useToast";
 
-// Importation des composants d'onglets
+// Importation des composants d'onglets refactorisés
 import MembersTab from "./members/MembersTab";
 import InvitationsTab from "./invitations/InvitationsTab";
 import SettingsTab from "./settings/SettingsTab";
 import DashboardTab from "./dashboard/DashboardTab";
-import TagsTab from "./tags/TagsTab"; // Nouvel import
+import TagsTab from "./tags/TagsTab";
 
 export default function OrganizationTabs({ organization, onDataChange }) {
 	const [activeTab, setActiveTab] = useState("members");
@@ -84,7 +84,7 @@ export default function OrganizationTabs({ organization, onDataChange }) {
 		}
 	};
 
-	// Gérer l'ajout d'un tag
+	// Gestionnaire pour l'ajout d'un tag
 	const handleAddTag = async (tagData) => {
 		try {
 			const response = await axios.post(
@@ -112,7 +112,7 @@ export default function OrganizationTabs({ organization, onDataChange }) {
 		}
 	};
 
-	// Gérer la modification d'un tag
+	// Gestionnaire de modification d'un tag
 	const handleEditTag = async (tagData) => {
 		try {
 			const response = await axios.put(
@@ -140,7 +140,7 @@ export default function OrganizationTabs({ organization, onDataChange }) {
 		}
 	};
 
-	// Gérer la suppression d'un tag
+	// Gestionnaire de suppression d'un tag
 	const handleDeleteTag = async (tagId) => {
 		try {
 			const response = await axios.delete(
@@ -162,94 +162,6 @@ export default function OrganizationTabs({ organization, onDataChange }) {
 				description:
 					error.response?.data?.error ||
 					"Impossible de supprimer le tag",
-				variant: "destructive",
-			});
-		}
-	};
-
-	// Gestionnaire pour le changement de rôle d'un membre
-	const handleChangeRole = async (memberId, newRole) => {
-		try {
-			const response = await axios.patch(
-				`/api/organization/${organization.id}/members/${memberId}`,
-				{
-					role: newRole,
-				}
-			);
-
-			if (response.data.success) {
-				toast({
-					title: "Rôle modifié",
-					description: "Le rôle du membre a été modifié avec succès",
-					variant: "success",
-				});
-				if (onDataChange) onDataChange();
-			}
-		} catch (error) {
-			console.error("Erreur lors de la modification du rôle:", error);
-			toast({
-				title: "Erreur",
-				description:
-					error.response?.data?.error ||
-					"Impossible de modifier le rôle",
-				variant: "destructive",
-			});
-		}
-	};
-
-	// Gestionnaire pour la suppression d'un membre
-	const handleRemoveMember = async (memberId) => {
-		try {
-			const response = await axios.delete(
-				`/api/organization/${organization.id}/members/${memberId}`
-			);
-
-			if (response.data.success) {
-				toast({
-					title: "Membre retiré",
-					description: "Le membre a été retiré de l'organisation",
-					variant: "success",
-				});
-				if (onDataChange) onDataChange();
-			}
-		} catch (error) {
-			console.error("Erreur lors du retrait du membre:", error);
-			toast({
-				title: "Erreur",
-				description:
-					error.response?.data?.error ||
-					"Impossible de retirer le membre",
-				variant: "destructive",
-			});
-		}
-	};
-
-	// Gestionnaire pour l'ajout d'un membre
-	const handleAddMember = async (memberData) => {
-		try {
-			const response = await axios.post(
-				`/api/organization/${organization.id}/invite`,
-				{
-					email: memberData.email,
-					role: memberData.role,
-				}
-			);
-
-			if (response.data.success) {
-				toast({
-					title: "Invitation envoyée",
-					description: `Invitation envoyée à ${memberData.email}`,
-					variant: "success",
-				});
-				await fetchInvitations();
-			}
-		} catch (error) {
-			console.error("Erreur lors de l'envoi de l'invitation:", error);
-			toast({
-				title: "Erreur",
-				description:
-					error.response?.data?.error ||
-					"Impossible d'envoyer l'invitation",
 				variant: "destructive",
 			});
 		}
@@ -374,9 +286,43 @@ export default function OrganizationTabs({ organization, onDataChange }) {
 		}
 	};
 
+	// Handler pour ajouter un membre (via une invitation)
+	const handleAddMember = async (memberData) => {
+		try {
+			const response = await axios.post(
+				`/api/organization/${organization.id}/invite`,
+				{
+					email: memberData.email,
+					role: memberData.role,
+				}
+			);
+
+			if (response.data.success) {
+				toast({
+					title: "Invitation envoyée",
+					description: `Invitation envoyée à ${memberData.email}`,
+					variant: "success",
+				});
+				await fetchInvitations();
+				return true;
+			}
+			return false;
+		} catch (error) {
+			console.error("Erreur lors de l'envoi de l'invitation:", error);
+			toast({
+				title: "Erreur",
+				description:
+					error.response?.data?.error ||
+					"Impossible d'envoyer l'invitation",
+				variant: "destructive",
+			});
+			return false;
+		}
+	};
+
 	return (
 		<Tabs
-			defaultValue="dashboard"
+			defaultValue="members"
 			className="w-full"
 			onValueChange={setActiveTab}
 			value={activeTab}
@@ -413,6 +359,11 @@ export default function OrganizationTabs({ organization, onDataChange }) {
 				)}
 			</TabsList>
 
+			{/* Contenu de l'onglet Membres (refactorisé) */}
+			<TabsContent value="members">
+				<MembersTab organization={organization} />
+			</TabsContent>
+
 			{/* Contenu de l'onglet Tags */}
 			<TabsContent value="tags">
 				<TagsTab
@@ -425,20 +376,12 @@ export default function OrganizationTabs({ organization, onDataChange }) {
 				/>
 			</TabsContent>
 
-			{/* Autres onglets existants */}
+			{/* Contenu de l'onglet Dashboard */}
 			<TabsContent value="dashboard">
 				<DashboardTab organization={organization} />
 			</TabsContent>
 
-			<TabsContent value="members">
-				<MembersTab
-					organization={organization}
-					onAddMember={handleAddMember}
-					onChangeRole={handleChangeRole}
-					onRemoveMember={handleRemoveMember}
-				/>
-			</TabsContent>
-
+			{/* Contenu de l'onglet Invitations */}
 			<TabsContent value="invitations">
 				<InvitationsTab
 					organization={organization}
@@ -450,6 +393,7 @@ export default function OrganizationTabs({ organization, onDataChange }) {
 				/>
 			</TabsContent>
 
+			{/* Contenu de l'onglet Paramètres */}
 			<TabsContent value="settings">
 				<SettingsTab
 					organization={organization}

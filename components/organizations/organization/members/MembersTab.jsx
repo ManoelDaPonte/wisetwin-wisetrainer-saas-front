@@ -1,5 +1,5 @@
 //components/organizations/organization/members/MembersTab.jsx
-import React, { useState, useEffect } from "react";
+import React from "react";
 import {
 	Card,
 	CardContent,
@@ -8,72 +8,22 @@ import {
 	CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { UserPlus, RefreshCw } from "lucide-react";
+import { RefreshCw } from "lucide-react";
 import MembersTable from "./MembersTable";
-import AddMemberModal from "./AddMemberModal";
-import axios from "axios";
-import { useToast } from "@/lib/hooks/useToast";
+import AddMemberButton from "./AddMemberButton";
+import { useOrganizationMembers } from "@/lib/hooks/organizations/useOrganizationMembers";
 
-export default function MembersTab({
-	organization,
-	onAddMember,
-	onChangeRole,
-	onRemoveMember,
-}) {
-	const [showAddMemberModal, setShowAddMemberModal] = useState(false);
-	const [membersWithTags, setMembersWithTags] = useState(
-		organization.members || []
-	);
-	const [isLoadingMembers, setIsLoadingMembers] = useState(false);
-	const { toast } = useToast();
+export default function MembersTab({ organization }) {
+	const {
+		members,
+		isLoading,
+		fetchMembers,
+		changeRole,
+		removeMember,
+		addMember,
+	} = useOrganizationMembers(organization.id);
 
-	// Charger les membres avec leurs tags au montage du composant
-	useEffect(() => {
-		fetchMembersWithTags();
-	}, [organization.id]);
-
-	// Récupérer les membres avec leurs tags
-	const fetchMembersWithTags = async () => {
-		try {
-			setIsLoadingMembers(true);
-			const response = await axios.get(
-				`/api/organization/${organization.id}/members-with-tags`
-			);
-
-			if (response.data.members) {
-				setMembersWithTags(response.data.members);
-			}
-		} catch (error) {
-			console.error("Erreur lors du chargement des membres:", error);
-			toast({
-				title: "Erreur",
-				description:
-					"Impossible de charger les membres avec leurs tags",
-				variant: "destructive",
-			});
-		} finally {
-			setIsLoadingMembers(false);
-		}
-	};
-
-	const handleAddMemberSubmit = async (memberData) => {
-		await onAddMember(memberData);
-		setShowAddMemberModal(false);
-		// Rafraîchir la liste des membres
-		fetchMembersWithTags();
-	};
-
-	const handleRoleChange = async (memberId, newRole) => {
-		await onChangeRole(memberId, newRole);
-		// Rafraîchir la liste des membres
-		fetchMembersWithTags();
-	};
-
-	const handleRemoveMember = async (memberId) => {
-		await onRemoveMember(memberId);
-		// Rafraîchir la liste des membres
-		fetchMembersWithTags();
-	};
+	const canManageMembers = ["OWNER", "ADMIN"].includes(organization.userRole);
 
 	return (
 		<Card>
@@ -88,45 +38,30 @@ export default function MembersTab({
 				<div className="flex gap-2">
 					<Button
 						variant="outline"
-						onClick={fetchMembersWithTags}
-						disabled={isLoadingMembers}
+						onClick={fetchMembers}
+						disabled={isLoading}
 					>
 						<RefreshCw
 							className={`w-4 h-4 mr-2 ${
-								isLoadingMembers ? "animate-spin" : ""
+								isLoading ? "animate-spin" : ""
 							}`}
 						/>
 						Actualiser
 					</Button>
-					{(organization.userRole === "OWNER" ||
-						organization.userRole === "ADMIN") && (
-						<Button
-							onClick={() => setShowAddMemberModal(true)}
-							className="bg-wisetwin-blue hover:bg-wisetwin-blue-light text-white"
-						>
-							<UserPlus className="w-4 h-4 mr-2" />
-							Inviter un membre
-						</Button>
+
+					{canManageMembers && (
+						<AddMemberButton onAddMember={addMember} />
 					)}
 				</div>
 			</CardHeader>
 			<CardContent>
 				<MembersTable
-					members={membersWithTags}
+					members={members}
 					currentUserRole={organization.userRole}
-					onChangeRole={handleRoleChange}
-					onRemoveMember={handleRemoveMember}
+					onChangeRole={changeRole}
+					onRemoveMember={removeMember}
 				/>
 			</CardContent>
-
-			{/* Modal d'invitation */}
-			{showAddMemberModal && (
-				<AddMemberModal
-					isOpen={showAddMemberModal}
-					onClose={() => setShowAddMemberModal(false)}
-					onSubmit={handleAddMemberSubmit}
-				/>
-			)}
 		</Card>
 	);
 }
