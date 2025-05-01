@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import { useToast } from "@/lib/hooks/useToast";
 
-export function useOrganizationMembers(organizationId) {
+export function useCurrentOrganizationMembers(organizationId) {
 	const [members, setMembers] = useState([]);
 	const [isLoading, setIsLoading] = useState(true);
 	const [error, setError] = useState(null);

@@ -1,56 +1,60 @@
-const handleSaveSettings = async (settingsData) => {
-	try {
-		const response = await axios.patch(
-			`/api/organization/${organization.id}`,
-			settingsData
-		);
+// lib/hooks/organizations/currentOrganization/useCurrentOrganization.jsx
+import { useState, useEffect, useCallback } from "react";
+import axios from "axios";
+import { useToast } from "@/lib/hooks/useToast";
 
-		if (response.data.success) {
+export function useCurrentOrganization(organizationId) {
+	const [organization, setOrganization] = useState(null);
+	const [isLoading, setIsLoading] = useState(true);
+	const [error, setError] = useState(null);
+	const { toast } = useToast();
+
+	const fetchOrganizationDetails = useCallback(async () => {
+		if (!organizationId) return;
+
+		try {
+			setIsLoading(true);
+			setError(null);
+			const response = await axios.get(
+				`/api/organization/${organizationId}`
+			);
+
+			if (response.data.organization) {
+				setOrganization(response.data.organization);
+			} else {
+				toast({
+					title: "Erreur",
+					description:
+						"Impossible de charger les détails de l'organisation",
+					variant: "destructive",
+				});
+			}
+		} catch (err) {
+			console.error("Erreur lors du chargement de l'organisation:", err);
+			setError(err);
 			toast({
-				title: "Paramètres enregistrés",
+				title: "Erreur",
 				description:
-					"Les paramètres de l'organisation ont été mis à jour",
-				variant: "success",
+					err.response?.data?.error ||
+					"Impossible d'accéder à cette organisation",
+				variant: "destructive",
 			});
-			if (onDataChange) onDataChange();
+		} finally {
+			setIsLoading(false);
 		}
-	} catch (error) {
-		console.error("Erreur lors de la mise à jour des paramètres:", error);
-		toast({
-			title: "Erreur",
-			description:
-				error.response?.data?.error ||
-				"Impossible de mettre à jour les paramètres",
-			variant: "destructive",
-		});
-	}
-};
+	}, [organizationId, toast]);
 
-const handleDeleteOrganization = async () => {
-	try {
-		const response = await axios.delete(
-			`/api/organization/${organization.id}`
-		);
-
-		if (response.data.success) {
-			toast({
-				title: "Organisation supprimée",
-				description: "L'organisation a été supprimée avec succès",
-				variant: "success",
-			});
-			window.location.href = "/organization";
+	// Charger les détails de l'organisation au montage
+	useEffect(() => {
+		if (organizationId) {
+			fetchOrganizationDetails();
 		}
-	} catch (error) {
-		console.error(
-			"Erreur lors de la suppression de l'organisation:",
-			error
-		);
-		toast({
-			title: "Erreur",
-			description:
-				error.response?.data?.error ||
-				"Impossible de supprimer l'organisation",
-			variant: "destructive",
-		});
-	}
-};
+	}, [organizationId, fetchOrganizationDetails]);
+
+	return {
+		organization,
+		isLoading,
+		error,
+		fetchOrganizationDetails,
+	};
+}

@@ -1,4 +1,4 @@
-// components/organizations/organization/invitations/InvitationsTab.jsx
+//components/organizations/organization/invitations/InvitationsTab.jsx
 import React, { useState } from "react";
 import {
 	Card,
@@ -11,20 +11,25 @@ import { Button } from "@/components/ui/button";
 import { UserPlus } from "lucide-react";
 import InvitationsTable from "./InvitationsTable";
 import AddMemberModal from "../members/AddMemberModal";
+import { useCurrentOrganizationInvitations } from "@/lib/hooks/organizations/currentOrganization/useCurrentOrganizationInvitations";
 
-export default function InvitationsTab({
-	organization,
-	invitations,
-	isLoading,
-	onAddMember,
-	onCancel,
-	onResend,
-}) {
+export default function InvitationsTab({ organization }) {
 	const [showAddMemberModal, setShowAddMemberModal] = useState(false);
 
+	// Utiliser le hook directement dans le composant
+	const {
+		invitations,
+		isLoading,
+		addMember,
+		cancelInvitation,
+		resendInvitation,
+	} = useCurrentOrganizationInvitations(organization.id);
+
 	const handleAddMemberSubmit = async (memberData) => {
-		await onAddMember(memberData);
-		setShowAddMemberModal(false);
+		const success = await addMember(memberData);
+		if (success) {
+			setShowAddMemberModal(false);
+		}
 	};
 
 	return (
@@ -49,8 +54,8 @@ export default function InvitationsTab({
 				<InvitationsTable
 					invitations={invitations}
 					isLoading={isLoading}
-					onCancel={onCancel}
-					onResend={onResend}
+					onCancel={cancelInvitation}
+					onResend={resendInvitation}
 				/>
 			</CardContent>
 

@@ -1,4 +1,4 @@
-// components/organizations/organization/settings/SettingsTab.jsx
+//components/organizations/organization/settings/SettingsTab.jsx
 import React from "react";
 import {
 	Card,
@@ -8,8 +8,13 @@ import {
 	CardTitle,
 } from "@/components/ui/card";
 import OrganizationSettingsForm from "./OrganizationSettingsForm";
+import { useCurrentOrganizationParameters } from "@/lib/hooks/organizations/currentOrganization/useCurrentOrganizationParameters";
 
-export default function SettingsTab({ organization, onSave, onDelete }) {
+export default function SettingsTab({ organization, onDataChange }) {
+	// Utiliser le hook directement dans le composant
+	const { handleSaveSettings, handleDeleteOrganization } =
+		useCurrentOrganizationParameters(organization.id, onDataChange);
+
 	return (
 		<Card>
 			<CardHeader>
@@ -22,8 +27,8 @@ export default function SettingsTab({ organization, onSave, onDelete }) {
 			<CardContent>
 				<OrganizationSettingsForm
 					organization={organization}
-					onSave={onSave}
-					onDelete={onDelete}
+					onSave={handleSaveSettings}
+					onDelete={handleDeleteOrganization}
 				/>
 			</CardContent>
 		</Card>

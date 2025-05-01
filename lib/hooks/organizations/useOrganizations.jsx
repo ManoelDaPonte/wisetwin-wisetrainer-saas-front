@@ -74,7 +74,7 @@ export function useOrganizations() {
 	};
 
 	const navigateToOrganization = (organizationId) => {
-		router.push(`/organization/${organizationId}`);
+		router.push(`/organizations/${organizationId}`);
 	};
 
 	// Charger les organisations au montage du composant

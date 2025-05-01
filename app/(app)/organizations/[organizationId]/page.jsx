@@ -1,61 +1,21 @@
 // app/(app)/organization/[organizationId]/page.jsx
 "use client";
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { useRouter, useParams } from "next/navigation";
-import axios from "axios";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Users } from "lucide-react";
 import Image from "next/image";
-import { useToast } from "@/lib/hooks/useToast";
 import OrganizationTabs from "@/components/organizations/organization/OrganizationTabs";
+import { useCurrentOrganization } from "@/lib/hooks/organizations/currentOrganization/useCurrentOrganization";
 
 export default function OrganizationManagementPage() {
 	const router = useRouter();
 	const params = useParams();
-	const { toast } = useToast();
-	const [organization, setOrganization] = useState(null);
-	const [isLoading, setIsLoading] = useState(true);
 	const organizationId = params?.organizationId;
 
-	useEffect(() => {
-		if (organizationId) {
-			fetchOrganizationDetails();
-		}
-	}, [organizationId]);
-
-	const fetchOrganizationDetails = async () => {
-		try {
-			setIsLoading(true);
-			const response = await axios.get(
-				`/api/organization/${organizationId}`
-			);
-
-			if (response.data.organization) {
-				setOrganization(response.data.organization);
-			} else {
-				toast({
-					title: "Erreur",
-					description:
-						"Impossible de charger les détails de l'organisation",
-					variant: "destructive",
-				});
-			}
-		} catch (error) {
-			console.error(
-				"Erreur lors du chargement de l'organisation:",
-				error
-			);
-			toast({
-				title: "Erreur",
-				description:
-					error.response?.data?.error ||
-					"Impossible d'accéder à cette organisation",
-				variant: "destructive",
-			});
-		} finally {
-			setIsLoading(false);
-		}
-	};
+	// Utilisation du hook pour gérer les données de l'organisation
+	const { organization, isLoading, error, fetchOrganizationDetails } =
+		useCurrentOrganization(organizationId);
 
 	const handleBack = () => {
 		router.push("/organization");
@@ -144,7 +104,7 @@ export default function OrganizationManagementPage() {
 				</div>
 			</div>
 
-			{/* Utiliser le composant OrganizationTabs pour gérer les onglets */}
+			{/* Utiliser le composant OrganizationTabs avec la fonction fetchOrganization du hook */}
 			<OrganizationTabs
 				organization={organization}
 				onDataChange={fetchOrganizationDetails}

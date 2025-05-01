@@ -98,8 +98,8 @@ export const navigationItems = {
 	],
 	otherItems: [
 		{
-			id: "organization",
-			label: "Organisation",
+			id: "organizations",
+			label: "Organisations",
 			icon: Users,
 			disabled: false,
 		},

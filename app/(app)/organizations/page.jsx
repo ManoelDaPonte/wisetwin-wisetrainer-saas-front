@@ -1,4 +1,4 @@
-// app/(app)/organization/page.jsx
+// app/(app)/organizations/page.jsx
 "use client";
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -19,7 +19,6 @@ export default function OrganizationPage() {
 	const {
 		organizations,
 		isLoading,
-		fetchOrganizations,
 		createOrganization,
 		navigateToOrganization,
 	} = useOrganizations();
@@ -70,8 +69,6 @@ export default function OrganizationPage() {
 						organizations={organizations}
 						isLoading={isLoading}
 						onManage={navigateToOrganization}
-						onRefresh={fetchOrganizations}
-						showRefreshButton={true}
 					/>
 				</CardContent>
 			</Card>

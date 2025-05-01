@@ -1,10 +1,9 @@
 //components/organizations/organization/OrganizationTabs.jsx
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Users, Mail, Settings, BarChart, Tag } from "lucide-react";
-import { useToast } from "@/lib/hooks/useToast";
 
-// Importation des composants d'onglets refactorisés
+// Importation des composants d'onglets
 import MembersTab from "./members/MembersTab";
 import InvitationsTab from "./invitations/InvitationsTab";
 import SettingsTab from "./settings/SettingsTab";
@@ -13,10 +12,6 @@ import TagsTab from "./tags/TagsTab";
 
 export default function OrganizationTabs({ organization, onDataChange }) {
 	const [activeTab, setActiveTab] = useState("members");
-	const [invitations, setInvitations] = useState([]);
-	const [isLoadingInvitations, setIsLoadingInvitations] = useState(false);
-	const [tags, setTags] = useState([]);
-	const [isLoadingTags, setIsLoadingTags] = useState(false);
 
 	return (
 		<Tabs
@@ -57,21 +52,14 @@ export default function OrganizationTabs({ organization, onDataChange }) {
 				)}
 			</TabsList>
 
-			{/* Contenu de l'onglet Membres (refactorisé) */}
+			{/* Contenu de l'onglet Membres */}
 			<TabsContent value="members">
 				<MembersTab organization={organization} />
 			</TabsContent>
 
 			{/* Contenu de l'onglet Tags */}
 			<TabsContent value="tags">
-				<TagsTab
-					organization={organization}
-					tags={tags}
-					isLoading={isLoadingTags}
-					onAddTag={handleAddTag}
-					onEditTag={handleEditTag}
-					onDeleteTag={handleDeleteTag}
-				/>
+				<TagsTab organization={organization} />
 			</TabsContent>
 
 			{/* Contenu de l'onglet Dashboard */}
@@ -81,22 +69,14 @@ export default function OrganizationTabs({ organization, onDataChange }) {
 
 			{/* Contenu de l'onglet Invitations */}
 			<TabsContent value="invitations">
-				<InvitationsTab
-					organization={organization}
-					invitations={invitations}
-					isLoading={isLoadingInvitations}
-					onAddMember={handleAddMember}
-					onCancel={handleCancelInvitation}
-					onResend={handleResendInvitation}
-				/>
+				<InvitationsTab organization={organization} />
 			</TabsContent>
 
 			{/* Contenu de l'onglet Paramètres */}
 			<TabsContent value="settings">
 				<SettingsTab
 					organization={organization}
-					onSave={handleSaveSettings}
-					onDelete={handleDeleteOrganization}
+					onDataChange={onDataChange}
 				/>
 			</TabsContent>
 		</Tabs>

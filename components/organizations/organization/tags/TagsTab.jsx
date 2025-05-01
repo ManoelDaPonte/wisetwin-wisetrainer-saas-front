@@ -10,31 +10,43 @@ import {
 import { Button } from "@/components/ui/button";
 import { Plus, Tag, Users } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
+// Importation des composants d'onglets
 import TagsTable from "./TagsTable";
 import AddTagModal from "./AddTagModal";
 import TagsTrainingAssociations from "./TagsTrainingAssociations";
 import TagsUserAssociations from "./TagsUserAssociations";
 
-export default function TagsTab({
-	organization,
-	tags = [],
-	isLoading,
-	onAddTag,
-	onEditTag,
-	onDeleteTag,
-}) {
+// Importation du hook personnalisé pour gérer les tags
+import { useCurrentOrganizationTags } from "@/lib/hooks/organizations/currentOrganization/useCurrentOrganizationTags";
+
+export default function TagsTab({ organization }) {
 	const [showAddTagModal, setShowAddTagModal] = useState(false);
 	const [editingTag, setEditingTag] = useState(null);
 	const [activeTab, setActiveTab] = useState("tags");
 
+	// Utiliser le hook directement dans le composant
+	const { tags, isLoading, addTag, editTag, deleteTag } =
+		useCurrentOrganizationTags(organization.id);
+
 	const handleAddTagSubmit = async (tagData) => {
-		await onAddTag(tagData);
-		setShowAddTagModal(false);
+		const success = await addTag(tagData);
+		if (success) {
+			setShowAddTagModal(false);
+		}
 	};
 
 	const handleEditTag = (tag) => {
 		setEditingTag(tag);
 		setShowAddTagModal(true);
+	};
+
+	const handleEditTagSubmit = async (tagData) => {
+		const success = await editTag(tagData);
+		if (success) {
+			setEditingTag(null);
+			setShowAddTagModal(false);
+		}
 	};
 
 	const handleModalClose = () => {
@@ -91,7 +103,7 @@ export default function TagsTab({
 							tags={tags}
 							isLoading={isLoading}
 							onEditTag={handleEditTag}
-							onDeleteTag={onDeleteTag}
+							onDeleteTag={deleteTag}
 							userRole={organization.userRole}
 						/>
 					</TabsContent>
@@ -111,7 +123,9 @@ export default function TagsTab({
 				<AddTagModal
 					isOpen={showAddTagModal}
 					onClose={handleModalClose}
-					onSubmit={editingTag ? onEditTag : handleAddTagSubmit}
+					onSubmit={
+						editingTag ? handleEditTagSubmit : handleAddTagSubmit
+					}
 					tag={editingTag}
 				/>
 			)}

@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { RefreshCw } from "lucide-react";
 import MembersTable from "./MembersTable";
 import AddMemberButton from "./AddMemberButton";
-import { useOrganizationMembers } from "@/lib/hooks/organizations/organization/useOrganizationMembers";
+import { useCurrentOrganizationMembers } from "@/lib/hooks/organizations/currentOrganization/useCurrentOrganizationMembers";
 
 export default function MembersTab({ organization }) {
 	const {
@@ -21,7 +21,7 @@ export default function MembersTab({ organization }) {
 		changeRole,
 		removeMember,
 		addMember,
-	} = useOrganizationMembers(organization.id);
+	} = useCurrentOrganizationMembers(organization.id);
 
 	const canManageMembers = ["OWNER", "ADMIN"].includes(organization.userRole);
 

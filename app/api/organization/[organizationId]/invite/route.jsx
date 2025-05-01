@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 import { auth0 } from "@/lib/auth0";
 import { v4 as uuidv4 } from "uuid";
-import { sendInvitationEmail } from "@/lib/services/mailService";
+import { sendInvitationEmail } from "@/lib/services/organizations/currentOrganization/invitationMailService";
 
 const prisma = new PrismaClient();
 

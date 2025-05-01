@@ -1,99 +1,142 @@
-const fetchTags = async () => {
-	if (!organization?.id) return;
+// lib/hooks/organizations/currentOrganization/useCurrentOrganizationTags.jsx
+import { useState, useEffect, useCallback } from "react";
+import axios from "axios";
+import { useToast } from "@/lib/hooks/useToast";
 
-	try {
-		setIsLoadingTags(true);
-		const response = await axios.get(
-			`/api/organization/${organization.id}/tags`
-		);
-		if (response.data.tags) {
-			setTags(response.data.tags);
-		}
-	} catch (error) {
-		console.error("Erreur lors du chargement des tags:", error);
-		toast({
-			title: "Erreur",
-			description: "Impossible de charger les tags",
-			variant: "destructive",
-		});
-	} finally {
-		setIsLoadingTags(false);
-	}
-};
+export function useCurrentOrganizationTags(organizationId) {
+	const [tags, setTags] = useState([]);
+	const [isLoading, setIsLoading] = useState(true);
+	const [error, setError] = useState(null);
+	const { toast } = useToast();
 
-const handleAddTag = async (tagData) => {
-	try {
-		const response = await axios.post(
-			`/api/organization/${organization.id}/tags`,
-			tagData
-		);
+	const fetchTags = useCallback(async () => {
+		if (!organizationId) return;
 
-		if (response.data.success) {
+		try {
+			setIsLoading(true);
+			setError(null);
+			const response = await axios.get(
+				`/api/organization/${organizationId}/tags`
+			);
+
+			if (response.data.tags) {
+				setTags(response.data.tags);
+			}
+		} catch (err) {
+			console.error("Erreur lors du chargement des tags:", err);
+			setError(err);
 			toast({
-				title: "Tag ajouté",
-				description: "Le tag a été ajouté avec succès",
-				variant: "success",
+				title: "Erreur",
+				description: "Impossible de charger les tags",
+				variant: "destructive",
 			});
+		} finally {
+			setIsLoading(false);
+		}
+	}, [organizationId, toast]);
+
+	const addTag = async (tagData) => {
+		try {
+			const response = await axios.post(
+				`/api/organization/${organizationId}/tags`,
+				tagData
+			);
+
+			if (response.data.success) {
+				toast({
+					title: "Tag ajouté",
+					description: "Le tag a été ajouté avec succès",
+					variant: "success",
+				});
+				await fetchTags();
+				return true;
+			}
+			return false;
+		} catch (err) {
+			console.error("Erreur lors de l'ajout du tag:", err);
+			toast({
+				title: "Erreur",
+				description:
+					err.response?.data?.error || "Impossible d'ajouter le tag",
+				variant: "destructive",
+			});
+			return false;
+		}
+	};
+
+	const editTag = async (tagData) => {
+		try {
+			const response = await axios.put(
+				`/api/organization/${organizationId}/tags/${tagData.id}`,
+				tagData
+			);
+
+			if (response.data.success) {
+				toast({
+					title: "Tag modifié",
+					description: "Le tag a été modifié avec succès",
+					variant: "success",
+				});
+				await fetchTags();
+				return true;
+			}
+			return false;
+		} catch (err) {
+			console.error("Erreur lors de la modification du tag:", err);
+			toast({
+				title: "Erreur",
+				description:
+					err.response?.data?.error ||
+					"Impossible de modifier le tag",
+				variant: "destructive",
+			});
+			return false;
+		}
+	};
+
+	const deleteTag = async (tagId) => {
+		try {
+			const response = await axios.delete(
+				`/api/organization/${organizationId}/tags/${tagId}`
+			);
+
+			if (response.data.success) {
+				toast({
+					title: "Tag supprimé",
+					description: "Le tag a été supprimé avec succès",
+					variant: "success",
+				});
+				await fetchTags();
+				return true;
+			}
+			return false;
+		} catch (err) {
+			console.error("Erreur lors de la suppression du tag:", err);
+			toast({
+				title: "Erreur",
+				description:
+					err.response?.data?.error ||
+					"Impossible de supprimer le tag",
+				variant: "destructive",
+			});
+			return false;
+		}
+	};
+
+	// Charger les tags au montage du composant
+	useEffect(() => {
+		if (organizationId) {
 			fetchTags();
 		}
-	} catch (error) {
-		console.error("Erreur lors de l'ajout du tag:", error);
-		toast({
-			title: "Erreur",
-			description:
-				error.response?.data?.error || "Impossible d'ajouter le tag",
-			variant: "destructive",
-		});
-	}
-};
+	}, [organizationId, fetchTags]);
 
-const handleEditTag = async (tagData) => {
-	try {
-		const response = await axios.put(
-			`/api/organization/${organization.id}/tags/${tagData.id}`,
-			tagData
-		);
-
-		if (response.data.success) {
-			toast({
-				title: "Tag modifié",
-				description: "Le tag a été modifié avec succès",
-				variant: "success",
-			});
-			fetchTags();
-		}
-	} catch (error) {
-		console.error("Erreur lors de la modification du tag:", error);
-		toast({
-			title: "Erreur",
-			description:
-				error.response?.data?.error || "Impossible de modifier le tag",
-			variant: "destructive",
-		});
-	}
-};
-
-const handleDeleteTag = async (tagId) => {
-	try {
-		const response = await axios.delete(
-			`/api/organization/${organization.id}/tags/${tagId}`
-		);
-
-		if (response.data.success) {
-			toast({
-				title: "Tag supprimé",
-				description: "Le tag a été supprimé avec succès",
-				variant: "success",
-			});
-			fetchTags();
-		}
-	} catch (error) {
-		console.error("Erreur lors de la suppression du tag:", error);
-		toast({
-			title: "Erreur",
-			description:
-				error.response?.data?.error || "Impossible de supprimer le tag",
-			variant: "destructive",
-		});
-	}
-};
+	return {
+		tags,
+		isLoading,
+		error,
+		fetchTags,
+		addTag,
+		editTag,
+		deleteTag,
+	};
+}
