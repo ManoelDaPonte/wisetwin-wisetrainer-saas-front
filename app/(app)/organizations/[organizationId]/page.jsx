@@ -5,7 +5,7 @@ import { useRouter, useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Users } from "lucide-react";
 import Image from "next/image";
-import OrganizationTabs from "@/components/organizations/organization/OrganizationTabs";
+import OrganizationTabs from "@/components/organizations/currentOrganization/OrganizationTabs";
 import { useCurrentOrganization } from "@/lib/hooks/organizations/currentOrganization/useCurrentOrganization";
 
 export default function OrganizationManagementPage() {
@@ -18,7 +18,7 @@ export default function OrganizationManagementPage() {
 		useCurrentOrganization(organizationId);
 
 	const handleBack = () => {
-		router.push("/organization");
+		router.push("/organizations");
 	};
 
 	// Afficher un état de chargement
