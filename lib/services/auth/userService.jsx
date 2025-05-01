@@ -1,4 +1,4 @@
-// lib/services/userService.js
+// lib/services/auth/userService.js
 import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();

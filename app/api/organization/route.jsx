@@ -1,7 +1,7 @@
 // app/api/organization/route.jsx
 import { NextResponse } from "next/server";
 import { auth0 } from "@/lib/auth0";
-import { findUserByAuth0Id } from "@/lib/services/userService";
+import { findUserByAuth0Id } from "@/lib/services/auth/userService";
 import {
 	getUserOrganizations,
 	createOrganization,

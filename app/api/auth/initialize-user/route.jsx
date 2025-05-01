@@ -1,7 +1,7 @@
 // app/api/auth/initialize-user/route.jsx
 import { NextResponse } from "next/server";
 import { auth0 } from "@/lib/auth0";
-import { initializeUser } from "@/lib/services/userService";
+import { initializeUser } from "@/lib/services/auth/userService";
 
 export async function POST(request) {
 	try {
