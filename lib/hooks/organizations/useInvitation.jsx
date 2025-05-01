@@ -24,7 +24,7 @@ export function useInvitation(inviteCode) {
 			setIsLoading(true);
 			setError(null);
 			const response = await axios.get(
-				`/api/organizations/invitations/${inviteCode}`
+				`/api/organization/invitations/${inviteCode}`
 			);
 
 			if (response.data.invitation) {
@@ -56,7 +56,9 @@ export function useInvitation(inviteCode) {
 			setIsProcessing(true);
 			setProcessingStatus("Traitement de l'invitation en cours...");
 
-			const response = await axios.post(`/api/invitations/${inviteCode}`);
+			const response = await axios.post(
+				`/api/organization/invitations/${inviteCode}`
+			);
 
 			if (response.data.success) {
 				setProcessingStatus("Invitation acceptée avec succès!");
@@ -69,7 +71,7 @@ export function useInvitation(inviteCode) {
 				// Rediriger vers la page de l'organisation après un court délai
 				setTimeout(() => {
 					router.push(
-						`/organization/${response.data.organizationId}`
+						`/organizations/${response.data.organizationId}`
 					);
 				}, 2000);
 			} else {
@@ -102,7 +104,7 @@ export function useInvitation(inviteCode) {
 
 	// Refuser l'invitation (simplement rediriger vers la page des organisations)
 	const declineInvitation = () => {
-		router.push("/organization");
+		router.push("/organizations");
 	};
 
 	// Charger les détails de l'invitation au montage

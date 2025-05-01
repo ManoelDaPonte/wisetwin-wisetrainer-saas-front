@@ -1,7 +1,7 @@
 // app/api/invitations/[inviteCode]/route.jsx
 import { NextResponse } from "next/server";
 import { auth0 } from "@/lib/auth0";
-import { invitationService } from "@/lib/services/invitations/invitationService";
+import { invitationService } from "@/lib/services/organizations/invitations/invitationService";
 import { findUserByAuth0Id } from "@/lib/services/auth/userService";
 
 // GET pour récupérer les détails d'une invitation
