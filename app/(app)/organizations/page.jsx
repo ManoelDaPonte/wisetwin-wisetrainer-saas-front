@@ -1,8 +1,6 @@
-// app/(app)/organizations/page.jsx
+//app/(app)/organizations/page.jsx
 "use client";
 import React, { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
 import {
 	Card,
 	CardContent,
@@ -12,6 +10,7 @@ import {
 } from "@/components/ui/card";
 import OrganizationsTable from "@/components/organizations/OrganizationsTable";
 import CreateOrganizationModal from "@/components/organizations/CreateOrganizationModal";
+import OrganizationsHeader from "@/components/organizations/OrganizationsHeader";
 import { useOrganizations } from "@/lib/hooks/organizations/useOrganizations";
 
 export default function OrganizationPage() {
@@ -36,25 +35,14 @@ export default function OrganizationPage() {
 		}
 	};
 
+	const handleCreateClick = () => {
+		setShowCreateModal(true);
+	};
+
 	return (
 		<div className="container mx-auto py-8">
-			<div className="flex justify-between items-center mb-6">
-				<div>
-					<h1 className="text-3xl font-bold text-wisetwin-darkblue dark:text-white mb-2">
-						Vos organisations
-					</h1>
-					<p className="text-gray-600 dark:text-gray-300">
-						Gérez les organisations auxquelles vous appartenez
-					</p>
-				</div>
-				<Button
-					onClick={() => setShowCreateModal(true)}
-					className="bg-wisetwin-blue hover:bg-wisetwin-blue-light text-white"
-				>
-					<Plus className="mr-2 h-4 w-4" />
-					Créer une organisation
-				</Button>
-			</div>
+			{/* Utilisation du composant d'en-tête */}
+			<OrganizationsHeader onCreateClick={handleCreateClick} />
 
 			<Card>
 				<CardHeader>

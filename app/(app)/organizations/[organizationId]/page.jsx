@@ -1,11 +1,9 @@
-// app/(app)/organization/[organizationId]/page.jsx
+//app/(app)/organizations/[organizationId]/page.jsx
 "use client";
 import React from "react";
 import { useRouter, useParams } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { ArrowLeft, Users } from "lucide-react";
-import Image from "next/image";
-import OrganizationTabs from "@/components/organizations/currentOrganization/OrganizationTabs";
+import CurrentOrganizationHeader from "@/components/organizations/currentOrganization/CurrentOrganizationHeader";
+import CurrentOrganizationTabs from "@/components/organizations/currentOrganization/CurrentOrganizationTabs";
 import { useCurrentOrganization } from "@/lib/hooks/organizations/currentOrganization/useCurrentOrganization";
 
 export default function OrganizationManagementPage() {
@@ -61,51 +59,14 @@ export default function OrganizationManagementPage() {
 
 	return (
 		<div className="container mx-auto py-8">
-			{/* En-tête avec informations sur l'organisation */}
-			<div className="mb-6">
-				<Button variant="outline" onClick={handleBack} className="mb-4">
-					<ArrowLeft className="w-4 h-4 mr-2" />
-					Retour aux organisations
-				</Button>
-
-				<div className="flex items-center gap-6 mb-6">
-					<div className="relative w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden flex-shrink-0">
-						{organization.logoUrl ? (
-							<Image
-								src={organization.logoUrl}
-								alt={organization.name}
-								fill
-								className="object-cover"
-								onError={(e) => {
-									e.target.src =
-										"/images/png/placeholder.png";
-								}}
-							/>
-						) : (
-							<div className="flex items-center justify-center h-full">
-								<span className="text-2xl font-bold text-wisetwin-blue">
-									{organization.name.charAt(0).toUpperCase()}
-								</span>
-							</div>
-						)}
-					</div>
-					<div>
-						<h1 className="text-3xl font-bold text-wisetwin-darkblue dark:text-white">
-							{organization.name}
-						</h1>
-						<p className="text-gray-600 dark:text-gray-300 mt-1">
-							{organization.description || "Aucune description"}
-						</p>
-						<div className="flex items-center mt-2 text-sm text-gray-500 dark:text-gray-400">
-							<Users className="w-4 h-4 mr-1" />
-							{organization.membersCount} membres
-						</div>
-					</div>
-				</div>
-			</div>
+			{/* Utilisation du composant OrganizationHeader */}
+			<CurrentOrganizationHeader
+				organization={organization}
+				onBackClick={handleBack}
+			/>
 
 			{/* Utiliser le composant OrganizationTabs avec la fonction fetchOrganization du hook */}
-			<OrganizationTabs
+			<CurrentOrganizationTabs
 				organization={organization}
 				onDataChange={fetchOrganizationDetails}
 			/>

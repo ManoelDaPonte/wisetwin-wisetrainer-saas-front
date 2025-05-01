@@ -1,8 +1,8 @@
 // app/api/organization/[organizationId]/members/[memberId]/route.jsx
 import { NextResponse } from "next/server";
 import { auth0 } from "@/lib/auth0";
-import { memberService } from "@/lib/services/organizations/organization/memberService";
-import { organizationAuthService } from "@/lib/services/organizations/organization/authService";
+import { currentOrganizationMemberService } from "@/lib/services/organizations/currentOrganization/currentOrganizationMemberService";
+import { currentOrganizationAuthService } from "@/lib/services/organizations/currentOrganization/currentOrganizationAuthService";
 
 /**
  * PATCH - Modifie le rôle d'un membre
@@ -27,18 +27,19 @@ export async function PATCH(request, { params }) {
 
 		// Authentifier l'utilisateur et vérifier son appartenance à l'organisation
 		const { user } =
-			await organizationAuthService.authenticateForOrganization(
+			await currentOrganizationAuthService.authenticateForOrganization(
 				session,
 				organizationId
 			);
 
 		// Modifier le rôle du membre
-		const updatedMember = await memberService.changeMemberRole(
-			organizationId,
-			memberId,
-			role,
-			user.id
-		);
+		const updatedMember =
+			await currentOrganizationMemberService.changeMemberRole(
+				organizationId,
+				memberId,
+				role,
+				user.id
+			);
 
 		return NextResponse.json({
 			success: true,
@@ -78,13 +79,17 @@ export async function DELETE(request, { params }) {
 
 		// Authentifier l'utilisateur et vérifier son appartenance à l'organisation
 		const { user } =
-			await organizationAuthService.authenticateForOrganization(
+			await currentOrganizationAuthService.authenticateForOrganization(
 				session,
 				organizationId
 			);
 
 		// Supprimer le membre
-		await memberService.removeMember(organizationId, memberId, user.id);
+		await currentOrganizationMemberService.removeMember(
+			organizationId,
+			memberId,
+			user.id
+		);
 
 		return NextResponse.json({
 			success: true,
