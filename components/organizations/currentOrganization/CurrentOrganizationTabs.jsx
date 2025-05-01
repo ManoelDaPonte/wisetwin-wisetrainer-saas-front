@@ -1,7 +1,7 @@
-//components/organizations/organization/OrganizationTabs.jsx
+//components/organizations/currentOrganization/CurrentOrganizationTabs.jsx
 import React, { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Users, Mail, Settings, BarChart, Tag } from "lucide-react";
+import { Users, Mail, Settings, BarChart, Tag, Book } from "lucide-react";
 
 // Importation des composants d'onglets
 import MembersTab from "./members/MembersTab";
@@ -9,6 +9,7 @@ import InvitationsTab from "./invitations/InvitationsTab";
 import SettingsTab from "./settings/SettingsTab";
 import DashboardTab from "./dashboard/DashboardTab";
 import TagsTab from "./tags/TagsTab";
+import TrainingsTab from "./trainings/TrainingsTab"; // Nouveau composant
 
 export default function OrganizationTabs({ organization, onDataChange }) {
 	const [activeTab, setActiveTab] = useState("members");
@@ -39,6 +40,11 @@ export default function OrganizationTabs({ organization, onDataChange }) {
 							Tags
 						</TabsTrigger>
 
+						<TabsTrigger value="trainings" className="px-6">
+							<Book className="w-4 h-4 mr-2" />
+							Formations
+						</TabsTrigger>
+
 						<TabsTrigger value="dashboard" className="px-6">
 							<BarChart className="w-4 h-4 mr-2" />
 							Dashboard
@@ -60,6 +66,11 @@ export default function OrganizationTabs({ organization, onDataChange }) {
 			{/* Contenu de l'onglet Tags */}
 			<TabsContent value="tags">
 				<TagsTab organization={organization} />
+			</TabsContent>
+
+			{/* Contenu de l'onglet Formations */}
+			<TabsContent value="trainings">
+				<TrainingsTab organization={organization} />
 			</TabsContent>
 
 			{/* Contenu de l'onglet Dashboard */}
