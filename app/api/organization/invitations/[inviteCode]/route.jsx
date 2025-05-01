@@ -1,9 +1,8 @@
 // app/api/invitations/[inviteCode]/route.jsx
 import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
 import { auth0 } from "@/lib/auth0";
-
-const prisma = new PrismaClient();
+import { invitationService } from "@/lib/services/invitations/invitationService";
+import { findUserByAuth0Id } from "@/lib/services/auth/userService";
 
 // GET pour récupérer les détails d'une invitation
 export async function GET(request, { params }) {
@@ -11,51 +10,17 @@ export async function GET(request, { params }) {
 		const resolvedParams = await params;
 		const { inviteCode } = resolvedParams;
 
-		// Récupérer l'invitation
-		const invitation = await prisma.organizationInvitation.findUnique({
-			where: { inviteCode },
-			include: { organization: true },
-		});
+		// Utiliser le service pour récupérer les détails de l'invitation
+		const result = await invitationService.getInvitationDetails(inviteCode);
 
-		if (!invitation) {
+		if (!result.success) {
 			return NextResponse.json(
-				{ error: "Invitation non trouvée ou déjà utilisée" },
-				{ status: 404 }
+				{ error: result.error },
+				{ status: result.statusCode }
 			);
 		}
 
-		// Vérifier si l'invitation est expirée
-		if (
-			new Date() > invitation.expiresAt &&
-			invitation.status === "PENDING"
-		) {
-			await prisma.organizationInvitation.update({
-				where: { id: invitation.id },
-				data: { status: "EXPIRED" },
-			});
-
-			return NextResponse.json(
-				{ error: "Cette invitation a expiré" },
-				{ status: 400 }
-			);
-		}
-
-		// Retourner les informations sur l'invitation pour affichage
-		return NextResponse.json({
-			invitation: {
-				id: invitation.id,
-				email: invitation.email,
-				organization: {
-					id: invitation.organization.id,
-					name: invitation.organization.name,
-					description: invitation.organization.description,
-					logoUrl: invitation.organization.logoUrl,
-				},
-				role: invitation.role,
-				status: invitation.status,
-				expiresAt: invitation.expiresAt,
-			},
-		});
+		return NextResponse.json({ invitation: result.invitation });
 	} catch (error) {
 		console.error("Erreur lors de la récupération de l'invitation:", error);
 		return NextResponse.json(
@@ -83,10 +48,8 @@ export async function POST(request, { params }) {
 			);
 		}
 
-		// Récupérer l'utilisateur actuel
-		const currentUser = await prisma.user.findUnique({
-			where: { auth0Id: session.user.sub },
-		});
+		// Récupérer l'utilisateur actuel en utilisant le userService
+		const currentUser = await findUserByAuth0Id(session.user.sub);
 
 		if (!currentUser) {
 			return NextResponse.json(
@@ -95,93 +58,24 @@ export async function POST(request, { params }) {
 			);
 		}
 
-		// Récupérer l'invitation
-		const invitation = await prisma.organizationInvitation.findUnique({
-			where: { inviteCode },
-		});
+		// Utiliser le service pour accepter l'invitation
+		const result = await invitationService.acceptInvitation(
+			inviteCode,
+			currentUser
+		);
 
-		if (!invitation) {
+		if (!result.success) {
 			return NextResponse.json(
-				{ error: "Invitation non trouvée ou déjà utilisée" },
-				{ status: 404 }
+				{ error: result.error },
+				{ status: result.statusCode }
 			);
 		}
-
-		if (invitation.status !== "PENDING") {
-			return NextResponse.json(
-				{ error: "Cette invitation a déjà été traitée" },
-				{ status: 400 }
-			);
-		}
-
-		if (new Date() > invitation.expiresAt) {
-			await prisma.organizationInvitation.update({
-				where: { id: invitation.id },
-				data: { status: "EXPIRED" },
-			});
-
-			return NextResponse.json(
-				{ error: "Cette invitation a expiré" },
-				{ status: 400 }
-			);
-		}
-
-		// Vérifier que l'email de l'invitation correspond à celui de l'utilisateur
-		if (
-			invitation.email.toLowerCase() !== currentUser.email.toLowerCase()
-		) {
-			return NextResponse.json(
-				{
-					error: "Cette invitation est destinée à une autre adresse email",
-				},
-				{ status: 403 }
-			);
-		}
-
-		// Vérifier si l'utilisateur est déjà membre de l'organisation
-		const existingMembership = await prisma.organizationMember.findFirst({
-			where: {
-				organizationId: invitation.organizationId,
-				userId: currentUser.id,
-			},
-		});
-
-		if (existingMembership) {
-			// Mettre à jour l'invitation
-			await prisma.organizationInvitation.update({
-				where: { id: invitation.id },
-				data: { status: "ACCEPTED" },
-			});
-
-			return NextResponse.json(
-				{ error: "Vous êtes déjà membre de cette organisation" },
-				{ status: 400 }
-			);
-		}
-
-		// Ajouter l'utilisateur à l'organisation
-		const membership = await prisma.organizationMember.create({
-			data: {
-				organizationId: invitation.organizationId,
-				userId: currentUser.id,
-				role: invitation.role,
-			},
-		});
-
-		// Mettre à jour l'invitation
-		await prisma.organizationInvitation.update({
-			where: { id: invitation.id },
-			data: { status: "ACCEPTED" },
-		});
 
 		return NextResponse.json({
 			success: true,
-			message: "Vous avez rejoint l'organisation avec succès",
-			membership: {
-				id: membership.id,
-				role: membership.role,
-				joinedAt: membership.joinedAt,
-			},
+			message: result.message,
+			membership: result.membership,
+			organizationId: result.organizationId,
 		});
 	} catch (error) {
 		console.error("Erreur lors de l'acceptation de l'invitation:", error);
