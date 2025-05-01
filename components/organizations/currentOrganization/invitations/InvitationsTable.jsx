@@ -1,5 +1,5 @@
-// components/organization/InvitationsTable.jsx
-import React, { useState } from "react";
+//components/organizations/currentOrganization/invitations/InvitationsTable.jsx
+import React from "react";
 import {
 	Table,
 	TableBody,
@@ -9,16 +9,20 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Mail, X, RotateCw, Shield, User, Clock } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { Mail, X, RefreshCw } from "lucide-react";
+
+import MemberRoleBadge from "../members/MemberRoleBadge";
+import InvitationStatusBadge from "./InvitationStatusBadge";
 import ConfirmationModal from "@/components/common/ConfirmationModal";
+import { useState } from "react";
 
 export default function InvitationsTable({
 	invitations = [],
-	onCancel,
-	onResend,
+	isLoading = false,
+	onCancelInvitation,
+	onResendInvitation,
 }) {
-	const [confirmationModal, setConfirmationModal] = useState({
+	const [confirmAction, setConfirmAction] = useState({
 		isOpen: false,
 		type: null,
 		invitation: null,
@@ -29,99 +33,64 @@ export default function InvitationsTable({
 			day: "numeric",
 			month: "long",
 			year: "numeric",
+			hour: "2-digit",
+			minute: "2-digit",
 		});
 	};
 
-	const getStatusBadge = (status, expiresAt) => {
-		// Vérifier si l'invitation a expiré
-		const isExpired = new Date() > new Date(expiresAt);
-
-		if (isExpired && status === "PENDING") {
-			return (
-				<Badge className="bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-200">
-					Expirée
-				</Badge>
-			);
-		}
-
-		switch (status) {
-			case "PENDING":
-				return (
-					<Badge
-						variant="noHover"
-						className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-200"
-					>
-						En attente
-					</Badge>
-				);
-			case "ACCEPTED":
-				return (
-					<Badge
-						variant="noHover"
-						className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-200"
-					>
-						Acceptée
-					</Badge>
-				);
-			case "REJECTED":
-				return (
-					<Badge
-						variant="noHover"
-						className="bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-200"
-					>
-						Refusée
-					</Badge>
-				);
-			case "EXPIRED":
-				return (
-					<Badge
-						variant="noHover"
-						className="bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-200"
-					>
-						Expirée
-					</Badge>
-				);
-			default:
-				return <Badge>Inconnu</Badge>;
-		}
-	};
-
 	const handleCancelInvitation = (invitation) => {
-		setConfirmationModal({
+		setConfirmAction({
 			isOpen: true,
 			type: "cancel",
 			invitation,
 		});
 	};
 
-	const confirmAction = () => {
-		const { type, invitation } = confirmationModal;
+	const handleResendInvitation = (invitation) => {
+		setConfirmAction({
+			isOpen: true,
+			type: "resend",
+			invitation,
+		});
+	};
 
-		if (type === "cancel" && invitation) {
-			onCancel(invitation.id);
+	const executeAction = async () => {
+		const { type, invitation } = confirmAction;
+
+		if (type === "cancel") {
+			await onCancelInvitation(invitation.id);
+		} else if (type === "resend") {
+			await onResendInvitation(invitation.id);
 		}
 
-		// Fermer la modal
-		setConfirmationModal({
+		setConfirmAction({
 			isOpen: false,
 			type: null,
 			invitation: null,
 		});
 	};
 
+	// Si chargement en cours, afficher une indication
+	if (isLoading) {
+		return (
+			<div className="text-center py-10 text-gray-400">
+				<div className="animate-spin mb-2 mx-auto">
+					<RefreshCw className="h-10 w-10" />
+				</div>
+				<p>Chargement des invitations...</p>
+			</div>
+		);
+	}
+
 	// Si aucune invitation, afficher un message
 	if (invitations.length === 0) {
 		return (
-			<div className="text-center py-8">
-				<div className="inline-flex items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/20 p-6 mb-4">
-					<Mail className="w-8 h-8 text-wisetwin-blue" />
-				</div>
-				<h3 className="text-lg font-medium mb-2">
-					Aucune invitation en attente
-				</h3>
-				<p className="text-gray-500 dark:text-gray-400 mb-6 max-w-md mx-auto">
-					Il n'y a actuellement aucune invitation en attente pour
-					cette organisation.
+			<div className="text-center py-10 text-gray-500">
+				<Mail className="h-10 w-10 mb-2 mx-auto opacity-40" />
+				<p>Aucune invitation en cours</p>
+				<p className="text-sm">
+					Utilisez le bouton "Inviter un membre" pour envoyer des
+					invitations.
 				</p>
 			</div>
 		);
@@ -133,10 +102,11 @@ export default function InvitationsTable({
 				<TableHeader>
 					<TableRow>
 						<TableHead>Email</TableHead>
-						{/* <TableHead>Rôle</TableHead> */}
+						<TableHead>Rôle</TableHead>
 						<TableHead>Statut</TableHead>
-						<TableHead>Date d'invitation</TableHead>
+						<TableHead>Date d'envoi</TableHead>
 						<TableHead>Expire le</TableHead>
+						<TableHead>Invité par</TableHead>
 						<TableHead className="text-right">Actions</TableHead>
 					</TableRow>
 				</TableHeader>
@@ -146,52 +116,53 @@ export default function InvitationsTable({
 							<TableCell className="font-medium">
 								{invitation.email}
 							</TableCell>
-							{/* <TableCell>
-								{getRoleBadge(invitation.role)}
-							</TableCell> */}
 							<TableCell>
-								{getStatusBadge(
-									invitation.status,
-									invitation.expiresAt
-								)}
+								<MemberRoleBadge role={invitation.role} />
+							</TableCell>
+							<TableCell>
+								<InvitationStatusBadge
+									status={invitation.status}
+								/>
 							</TableCell>
 							<TableCell>
 								{formatDate(invitation.invitedAt)}
 							</TableCell>
 							<TableCell>
-								<div className="flex items-center">
-									<Clock className="w-4 h-4 mr-1 text-gray-400" />
-									{formatDate(invitation.expiresAt)}
-								</div>
+								{formatDate(invitation.expiresAt)}
 							</TableCell>
+							<TableCell>{invitation.inviterName}</TableCell>
 							<TableCell className="text-right">
-								{invitation.status === "PENDING" && (
-									<div className="flex justify-end space-x-2">
-										<Button
-											variant="ghost"
-											size="sm"
-											onClick={() =>
-												onResend(invitation.id)
-											}
-											title="Renvoyer l'invitation"
-										>
-											<RotateCw className="h-4 w-4" />
-										</Button>
-										<Button
-											variant="ghost"
-											size="sm"
-											onClick={() =>
-												handleCancelInvitation(
-													invitation
-												)
-											}
-											title="Annuler l'invitation"
-											className="text-red-500 hover:text-red-700"
-										>
-											<X className="h-4 w-4" />
-										</Button>
-									</div>
-								)}
+								<div className="flex justify-end gap-2">
+									{invitation.status === "PENDING" && (
+										<>
+											<Button
+												size="sm"
+												variant="outline"
+												onClick={() =>
+													handleResendInvitation(
+														invitation
+													)
+												}
+											>
+												<Mail className="h-4 w-4 mr-1" />{" "}
+												Renvoyer
+											</Button>
+											<Button
+												size="sm"
+												variant="outline"
+												className="text-red-600 hover:text-red-700 hover:bg-red-50"
+												onClick={() =>
+													handleCancelInvitation(
+														invitation
+													)
+												}
+											>
+												<X className="h-4 w-4 mr-1" />{" "}
+												Annuler
+											</Button>
+										</>
+									)}
+								</div>
 							</TableCell>
 						</TableRow>
 					))}
@@ -199,24 +170,38 @@ export default function InvitationsTable({
 			</Table>
 
 			{/* Modal de confirmation */}
-			{confirmationModal.isOpen && (
-				<ConfirmationModal
-					title="Annuler l'invitation"
-					message={`Êtes-vous sûr de vouloir annuler l'invitation envoyée à ${confirmationModal.invitation?.email} ?`}
-					isVisible={confirmationModal.isOpen}
-					onConfirm={confirmAction}
-					onCancel={() =>
-						setConfirmationModal({
-							isOpen: false,
-							type: null,
-							invitation: null,
-						})
-					}
-					confirmText="Annuler l'invitation"
-					cancelText="Retour"
-					isDanger={true}
-				/>
-			)}
+			<ConfirmationModal
+				isVisible={confirmAction.isOpen}
+				title={
+					confirmAction.type === "cancel"
+						? "Annuler l'invitation"
+						: "Renvoyer l'invitation"
+				}
+				message={
+					confirmAction.type === "cancel"
+						? `Êtes-vous sûr de vouloir annuler l'invitation envoyée à ${
+								confirmAction.invitation?.email || ""
+						  } ?`
+						: `Souhaitez-vous renvoyer l'invitation à ${
+								confirmAction.invitation?.email || ""
+						  } ? La date d'expiration sera prolongée de 7 jours.`
+				}
+				confirmText={
+					confirmAction.type === "cancel"
+						? "Annuler l'invitation"
+						: "Renvoyer"
+				}
+				cancelText="Fermer"
+				isDanger={confirmAction.type === "cancel"}
+				onConfirm={executeAction}
+				onCancel={() =>
+					setConfirmAction({
+						isOpen: false,
+						type: null,
+						invitation: null,
+					})
+				}
+			/>
 		</div>
 	);
 }

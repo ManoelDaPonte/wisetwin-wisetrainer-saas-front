@@ -1,7 +1,9 @@
 // app/api/organization/[organizationId]/invitations/route.jsx
 import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
 import { auth0 } from "@/lib/auth0";
+import { getOrganizationInvitations } from "@/lib/services/organizations/currentOrganization/currentOrganizationInvitationService";
+import { currentOrganizationAuthService } from "@/lib/services/organizations/currentOrganization/currentOrganizationAuthService";
+import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
@@ -11,78 +13,49 @@ export async function GET(request, { params }) {
 		const resolvedParams = await params;
 		const { organizationId } = resolvedParams;
 
-		// Vérifier si l'utilisateur est authentifié
-		if (!session || !session.user) {
-			return NextResponse.json(
-				{ error: "Non autorisé" },
-				{ status: 401 }
-			);
-		}
+		// Authentifier l'utilisateur et vérifier qu'il a un rôle d'admin ou de propriétaire
+		await currentOrganizationAuthService.authenticateWithRole(
+			session,
+			organizationId,
+			["OWNER", "ADMIN"]
+		);
 
-		// Récupérer l'utilisateur depuis la base de données
-		const user = await prisma.user.findUnique({
-			where: {
-				auth0Id: session.user.sub,
-			},
-		});
+		// Récupérer toutes les invitations
+		const invitations = await getOrganizationInvitations(organizationId);
 
-		if (!user) {
-			return NextResponse.json(
-				{ error: "Utilisateur non trouvé" },
-				{ status: 404 }
-			);
-		}
+		// Récupérer les détails des utilisateurs qui ont envoyé les invitations
+		const invitationsWithDetails = await Promise.all(
+			invitations.map(async (invitation) => {
+				const inviter = await prisma.user.findUnique({
+					where: { id: invitation.invitedBy },
+					select: { name: true, email: true },
+				});
 
-		// Vérifier que l'utilisateur est membre de l'organisation avec des droits d'administration
-		const membership = await prisma.organizationMember.findFirst({
-			where: {
-				organizationId: organizationId,
-				userId: user.id,
-				role: {
-					in: ["OWNER", "ADMIN"],
-				},
-			},
-		});
+				return {
+					...invitation,
+					inviterName: inviter
+						? inviter.name || inviter.email.split("@")[0]
+						: "Inconnu",
+				};
+			})
+		);
 
-		if (!membership) {
-			return NextResponse.json(
-				{
-					error: "Vous n'avez pas les droits pour voir les invitations",
-				},
-				{ status: 403 }
-			);
-		}
-
-		// Récupérer toutes les invitations de l'organisation
-		const invitations = await prisma.organizationInvitation.findMany({
-			where: {
-				organizationId: organizationId,
-			},
-			orderBy: [
-				{ status: "asc" }, // PENDING en premier
-				{ invitedAt: "desc" }, // Plus récentes en premier
-			],
-		});
-
-		return NextResponse.json({
-			invitations: invitations.map((invitation) => ({
-				id: invitation.id,
-				email: invitation.email,
-				role: invitation.role,
-				status: invitation.status,
-				invitedAt: invitation.invitedAt,
-				expiresAt: invitation.expiresAt,
-				invitedBy: invitation.invitedBy,
-			})),
-		});
+		return NextResponse.json({ invitations: invitationsWithDetails });
 	} catch (error) {
 		console.error("Erreur lors de la récupération des invitations:", error);
+
+		// Déterminer le code d'état approprié
+		let statusCode = 500;
+		if (error.message === "Non autorisé") statusCode = 401;
+		else if (error.message === "Utilisateur non trouvé") statusCode = 404;
+		else if (error.message.includes("droits")) statusCode = 403;
+
 		return NextResponse.json(
 			{
 				error: "Échec de la récupération des invitations",
 				details: error.message,
 			},
-			{ status: 500 }
+			{ status: statusCode }
 		);
 	}
 }

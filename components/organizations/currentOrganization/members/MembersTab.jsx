@@ -1,4 +1,4 @@
-//components/organizations/organization/members/MembersTab.jsx
+//components/organizations/currentOrganization/members/MembersTab.jsx
 import React from "react";
 import {
 	Card,
@@ -10,20 +10,11 @@ import {
 import { Button } from "@/components/ui/button";
 import { RefreshCw } from "lucide-react";
 import MembersTable from "./MembersTable";
-import AddMemberButton from "./AddMemberButton";
 import { useCurrentOrganizationMembers } from "@/lib/hooks/organizations/currentOrganization/useCurrentOrganizationMembers";
 
 export default function MembersTab({ organization }) {
-	const {
-		members,
-		isLoading,
-		fetchMembers,
-		changeRole,
-		removeMember,
-		addMember,
-	} = useCurrentOrganizationMembers(organization.id);
-
-	const canManageMembers = ["OWNER", "ADMIN"].includes(organization.userRole);
+	const { members, isLoading, fetchMembers, changeRole, removeMember } =
+		useCurrentOrganizationMembers(organization.id);
 
 	return (
 		<Card>
@@ -48,10 +39,6 @@ export default function MembersTab({ organization }) {
 						/>
 						Actualiser
 					</Button>
-
-					{canManageMembers && (
-						<AddMemberButton onAddMember={addMember} />
-					)}
 				</div>
 			</CardHeader>
 			<CardContent>

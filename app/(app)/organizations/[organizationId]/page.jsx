@@ -5,6 +5,7 @@ import { useRouter, useParams } from "next/navigation";
 import CurrentOrganizationHeader from "@/components/organizations/currentOrganization/CurrentOrganizationHeader";
 import CurrentOrganizationTabs from "@/components/organizations/currentOrganization/CurrentOrganizationTabs";
 import { useCurrentOrganization } from "@/lib/hooks/organizations/currentOrganization/useCurrentOrganization";
+import { Button } from "@/components/ui/button";
 
 export default function OrganizationManagementPage() {
 	const router = useRouter();
