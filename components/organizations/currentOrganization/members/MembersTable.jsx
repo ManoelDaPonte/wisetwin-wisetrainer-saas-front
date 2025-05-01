@@ -8,7 +8,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import MemberRoleBadge from "./MemberRoleBadge";
+import MemberRoleBadge from "../common/RoleBadge";
 import MemberTagsDisplay from "./MemberTagsDisplay";
 import MemberActions from "./MemberActions";
 import MemberConfirmationModal from "./MemberConfirmationModal";

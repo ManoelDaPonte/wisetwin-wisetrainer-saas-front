@@ -1,10 +1,8 @@
 // app/api/organization/[organizationId]/invite/route.jsx
 import { NextResponse } from "next/server";
 import { auth0 } from "@/lib/auth0";
-import {
-	createInvitation,
-	sendInvitationEmail,
-} from "@/lib/services/organizations/currentOrganization/currentOrganizationInvitationService";
+import { createInvitation } from "@/lib/services/organizations/currentOrganization/currentOrganizationInvitationService";
+import { sendInvitationEmail } from "@/lib/services/organizations/currentOrganization/currentOrganizationInvitationMailService";
 import { currentOrganizationAuthService } from "@/lib/services/organizations/currentOrganization/currentOrganizationAuthService";
 import { currentOrganizationService } from "@/lib/services/organizations/currentOrganization/currentOrganizationService";
 
