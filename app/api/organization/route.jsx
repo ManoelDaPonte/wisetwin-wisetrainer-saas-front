@@ -5,7 +5,7 @@ import { findUserByAuth0Id } from "@/lib/services/auth/userService";
 import {
 	getUserOrganizations,
 	createOrganization,
-} from "@/lib/services/organisation/organizationService";
+} from "@/lib/services/organization/organizationService";
 
 // GET pour récupérer toutes les organisations d'un utilisateur
 export async function GET(request) {

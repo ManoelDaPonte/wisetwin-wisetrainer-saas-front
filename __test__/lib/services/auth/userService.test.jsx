@@ -4,7 +4,7 @@ import {
 	createUser,
 	initializeUser,
 	updateUser,
-} from "./userService";
+} from "@/lib/services/auth/userService";
 
 // Mock pour PrismaClient
 jest.mock("@prisma/client", () => {

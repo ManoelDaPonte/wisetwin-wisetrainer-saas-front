@@ -1,4 +1,4 @@
-// lib/services/organisation/organizationService.jsx
+// lib/services/organization/organizationService.jsx
 import { v4 as uuidv4 } from "uuid";
 import { BlobServiceClient } from "@azure/storage-blob";
 import { PrismaClient } from "@prisma/client";

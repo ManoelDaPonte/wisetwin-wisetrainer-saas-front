@@ -1,0 +1,10 @@
+# Ignorer les tests et la configuration de test lors du déploiement
+__tests__
+*.test.js
+*.test.jsx
+*.spec.js
+*.spec.jsx
+jest.config.js
+jest.setup.js
+coverage
+.github
