@@ -47,8 +47,9 @@ model Organization {
     updatedAt      DateTime @updatedAt
 
     // Relations
-    members    OrganizationMember[]
-    formations Formation[]
+    members                OrganizationMember[]
+    formations             Formation[]
+    OrganizationInvitation OrganizationInvitation[]
 }
 
 model OrganizationMember {
@@ -63,6 +64,24 @@ model OrganizationMember {
     organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
     @@unique([userId, organizationId])
+}
+
+model OrganizationInvitation {
+    id         String   @id @default(uuid())
+    email      String
+    inviteCode String   @unique
+    status     String   @default("PENDING") // PENDING, ACCEPTED, DECLINED, EXPIRED
+    role       String // ADMIN, MEMBER
+    invitedBy  String // ID de l'utilisateur qui a envoyé l'invitation
+    invitedAt  DateTime @default(now())
+    expiresAt  DateTime
+
+    // Relations
+    organizationId String
+    organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+    @@index([email])
+    @@index([organizationId])
 }
 
 // ========================================================
