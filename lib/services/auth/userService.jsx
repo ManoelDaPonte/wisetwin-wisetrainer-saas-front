@@ -39,7 +39,6 @@ export async function updateUser(userId, userData) {
 		data: {
 			email,
 			name: name || nickname || email.split("@")[0],
-			// Autres champs à mettre à jour
 		},
 	});
 }
