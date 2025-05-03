@@ -104,8 +104,8 @@ model Formation {
     updatedAt   DateTime @updatedAt
 
     // Relations
-    organizationId String
-    organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+    organizationId String?
+    organization   Organization? @relation(fields: [organizationId], references: [id])
 
     // Composants de formation (tous optionnels)
     builds3D      Build3D[]
