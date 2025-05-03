@@ -16,7 +16,7 @@ export function useCurrentOrganizationMembers(organizationId) {
 			setIsLoading(true);
 			setError(null);
 			const response = await axios.get(
-				`/api/organization/${organizationId}/members`
+				`/api/organizations/${organizationId}/members`
 			);
 
 			if (response.data.members) {
@@ -39,7 +39,7 @@ export function useCurrentOrganizationMembers(organizationId) {
 	const changeRole = async (memberId, newRole) => {
 		try {
 			const response = await axios.patch(
-				`/api/organization/${organizationId}/members/${memberId}`,
+				`/api/organizations/${organizationId}/members/${memberId}`,
 				{ role: newRole }
 			);
 
@@ -69,7 +69,7 @@ export function useCurrentOrganizationMembers(organizationId) {
 	const removeMember = async (memberId) => {
 		try {
 			const response = await axios.delete(
-				`/api/organization/${organizationId}/members/${memberId}`
+				`/api/organizations/${organizationId}/members/${memberId}`
 			);
 
 			if (response.data.success) {
@@ -98,7 +98,7 @@ export function useCurrentOrganizationMembers(organizationId) {
 	const addMember = async (memberData) => {
 		try {
 			const response = await axios.post(
-				`/api/organization/${organizationId}/invite`,
+				`/api/organizations/${organizationId}/invite`,
 				{
 					email: memberData.email,
 					role: memberData.role,

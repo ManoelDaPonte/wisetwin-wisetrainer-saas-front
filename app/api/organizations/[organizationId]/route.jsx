@@ -1,4 +1,4 @@
-// app/api/organization/[organizationId]/route.jsx
+// app/api/organizations/[organizationId]/route.jsx
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 import { auth0 } from "@/lib/auth0";

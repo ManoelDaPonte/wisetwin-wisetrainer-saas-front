@@ -1,4 +1,4 @@
-// app/api/organization/[organizationId]/members/[memberId]/tags/route.jsx
+// app/api/organizations/[organizationId]/members/[memberId]/tags/route.jsx
 import { NextResponse } from "next/server";
 import { auth0 } from "@/lib/auth0";
 import { memberService } from "@/lib/services/organizations/organization/memberService";

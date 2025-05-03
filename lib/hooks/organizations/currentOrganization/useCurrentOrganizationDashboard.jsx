@@ -20,7 +20,7 @@ export function useCurrentOrganizationDashboard(organizationId) {
 			setIsLoading(true);
 			setError(null);
 			const response = await axios.get(
-				`/api/organization/${organizationId}/dashboard`
+				`/api/organizations/${organizationId}/dashboard`
 			);
 
 			if (response.data) {

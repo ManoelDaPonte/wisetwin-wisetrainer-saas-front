@@ -16,7 +16,7 @@ export function useCurrentOrganization(organizationId) {
 			setIsLoading(true);
 			setError(null);
 			const response = await axios.get(
-				`/api/organization/${organizationId}`
+				`/api/organizations/${organizationId}`
 			);
 
 			if (response.data.organization) {

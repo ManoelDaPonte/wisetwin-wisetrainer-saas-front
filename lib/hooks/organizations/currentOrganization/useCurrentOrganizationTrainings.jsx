@@ -16,7 +16,7 @@ export function useCurrentOrganizationTrainings(organizationId) {
 			setIsLoading(true);
 			setError(null);
 			const response = await axios.get(
-				`/api/organization/${organizationId}/trainings`
+				`/api/organizations/${organizationId}/trainings`
 			);
 
 			if (response.data.trainings) {

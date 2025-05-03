@@ -22,7 +22,7 @@ export function useWiseTwinOrganization(organizationId, userId) {
 					`Récupération des environnements 3D pour l'organisation ${organizationId}`
 				);
 				const response = await axios.get(
-					`/api/organization/${organizationId}/wisetwin-builds`
+					`/api/organizations/${organizationId}/wisetwin-builds`
 				);
 
 				if (response.data) {
@@ -37,7 +37,7 @@ export function useWiseTwinOrganization(organizationId, userId) {
 					let organizationObj = null;
 					try {
 						const orgResponse = await axios.get(
-							`/api/organization/${organizationId}`
+							`/api/organizations/${organizationId}`
 						);
 						if (orgResponse.data && orgResponse.data.organization) {
 							organizationName =

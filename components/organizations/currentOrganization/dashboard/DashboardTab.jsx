@@ -38,7 +38,7 @@
 
 // 				// Charger les tags de l'organisation
 // 				const tagsResponse = await axios.get(
-// 					`/api/organization/${organization.id}/tags`
+// 					`/api/organizations/${organization.id}/tags`
 // 				);
 // 				setOrganizationTags(tagsResponse.data.tags || []);
 

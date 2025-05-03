@@ -1,21 +1,33 @@
-// app/api/formations/enroll/route.js
+//app/api/formations/enroll/route.jsx
 import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import prisma from "@/lib/prisma";
+import { auth0 } from "@/lib/auth0";
+import { PrismaClient } from "@prisma/client";
+import { findUserByAuth0Id } from "@/lib/services/auth/userService";
+
+const prisma = new PrismaClient();
 
 export async function POST(request) {
 	try {
-		// Récupérer l'utilisateur authentifié
-		const session = await auth();
+		// Récupérer la session Auth0 de l'utilisateur
+		const session = await auth0.getSession();
 
-		if (!session?.user) {
+		// Vérifier si l'utilisateur est authentifié
+		if (!session || !session.user) {
 			return NextResponse.json(
 				{ error: "Non autorisé" },
 				{ status: 401 }
 			);
 		}
 
-		const userId = session.user.id;
+		// Récupérer l'utilisateur depuis la base de données
+		const user = await findUserByAuth0Id(session.user.sub);
+
+		if (!user) {
+			return NextResponse.json(
+				{ error: "Utilisateur non trouvé" },
+				{ status: 404 }
+			);
+		}
 
 		// Récupérer les données de la requête
 		const data = await request.json();
@@ -46,7 +58,7 @@ export async function POST(request) {
 		if (sourceType === "organization" && sourceOrganizationId) {
 			const membership = await prisma.organizationMember.findFirst({
 				where: {
-					userId: userId,
+					userId: user.id,
 					organizationId: sourceOrganizationId,
 				},
 			});
@@ -60,13 +72,10 @@ export async function POST(request) {
 		}
 
 		// Vérifier si l'utilisateur est déjà inscrit à cette formation
-		const existingEnrollment = await prisma.userFormation.findFirst({
+		const existingEnrollment = await prisma.formationEnrollment.findFirst({
 			where: {
-				userId: userId,
+				userId: user.id,
 				formationId: courseId,
-				...(sourceType === "organization" && sourceOrganizationId
-					? { organizationId: sourceOrganizationId }
-					: {}),
 			},
 		});
 
@@ -81,27 +90,28 @@ export async function POST(request) {
 		}
 
 		// Inscrire l'utilisateur à la formation
-		const userFormation = await prisma.userFormation.create({
+		const enrollment = await prisma.formationEnrollment.create({
 			data: {
-				userId: userId,
+				userId: user.id,
 				formationId: courseId,
-				progress: 0,
-				enrolledAt: new Date(),
-				...(sourceType === "organization" && sourceOrganizationId
-					? { organizationId: sourceOrganizationId }
-					: {}),
+				startedAt: new Date(),
+				lastAccessedAt: new Date(),
+				currentStatus: "in_progress",
 			},
 		});
 
 		return NextResponse.json({
 			success: true,
 			message: "Inscription réussie",
-			enrollment: userFormation,
+			enrollment: enrollment,
 		});
 	} catch (error) {
 		console.error("Erreur lors de l'inscription à la formation:", error);
 		return NextResponse.json(
-			{ error: "Erreur serveur lors de l'inscription à la formation" },
+			{
+				error: "Erreur serveur lors de l'inscription à la formation",
+				details: error.message,
+			},
 			{ status: 500 }
 		);
 	}

@@ -40,17 +40,17 @@ export default function TagsTrainingAssociations({ organization }) {
 
 			// Charger les formations
 			const trainingsResponse = await axios.get(
-				`/api/organization/${organization.id}/builds`
+				`/api/organizations/${organization.id}/builds`
 			);
 
 			// Charger les tags
 			const tagsResponse = await axios.get(
-				`/api/organization/${organization.id}/tags`
+				`/api/organizations/${organization.id}/tags`
 			);
 
 			// Charger les associations
 			const associationsResponse = await axios.get(
-				`/api/organization/${organization.id}/tags/training-associations`
+				`/api/organizations/${organization.id}/tags/training-associations`
 			);
 
 			const trainingsList = trainingsResponse.data.builds || [];
@@ -87,7 +87,7 @@ export default function TagsTrainingAssociations({ organization }) {
 			if (isChecked) {
 				// Ajouter l'association
 				await axios.post(
-					`/api/organization/${organization.id}/tags/${tagId}/training/${trainingDbId}`
+					`/api/organizations/${organization.id}/tags/${tagId}/training/${trainingDbId}`
 				);
 
 				// Mettre à jour l'état local des associations
@@ -107,7 +107,7 @@ export default function TagsTrainingAssociations({ organization }) {
 			} else {
 				// Supprimer l'association
 				await axios.delete(
-					`/api/organization/${organization.id}/tags/${tagId}/training/${trainingDbId}`
+					`/api/organizations/${organization.id}/tags/${tagId}/training/${trainingDbId}`
 				);
 
 				// Mettre à jour l'état local des associations

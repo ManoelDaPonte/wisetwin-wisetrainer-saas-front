@@ -24,7 +24,7 @@ export function useInvitation(inviteCode) {
 			setIsLoading(true);
 			setError(null);
 			const response = await axios.get(
-				`/api/organization/invitations/${inviteCode}`
+				`/api/organizations/invitations/${inviteCode}`
 			);
 
 			if (response.data.invitation) {
@@ -57,7 +57,7 @@ export function useInvitation(inviteCode) {
 			setProcessingStatus("Traitement de l'invitation en cours...");
 
 			const response = await axios.post(
-				`/api/organization/invitations/${inviteCode}`
+				`/api/organizations/invitations/${inviteCode}`
 			);
 
 			if (response.data.success) {

@@ -24,7 +24,7 @@ export function useTrainingOrganization(organizationId, containerName) {
 				`Récupération des formations pour l'organisation ${organizationId}`
 			);
 			const response = await axios.get(
-				`/api/organization/${organizationId}/builds`
+				`/api/organizations/${organizationId}/builds`
 			);
 
 			if (response.data) {
@@ -39,7 +39,7 @@ export function useTrainingOrganization(organizationId, containerName) {
 				let organizationObj = null;
 				try {
 					const orgResponse = await axios.get(
-						`/api/organization/${organizationId}`
+						`/api/organizations/${organizationId}`
 					);
 					if (orgResponse.data && orgResponse.data.organization) {
 						organizationName = orgResponse.data.organization.name;

@@ -23,7 +23,7 @@ export default function OrganizationCourseDetailPage() {
 			try {
 				// Vérifier si l'utilisateur est membre de l'organisation
 				const response = await axios.get(
-					`/api/organization/${params.organizationId}/check-membership`
+					`/api/organizations/${params.organizationId}/check-membership`
 				);
 
 				if (response.data.isMember) {

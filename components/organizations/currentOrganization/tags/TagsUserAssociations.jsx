@@ -42,12 +42,12 @@ export default function TagsUserAssociations({ organization }) {
 
 			// Charger les tags
 			const tagsResponse = await axios.get(
-				`/api/organization/${organization.id}/tags`
+				`/api/organizations/${organization.id}/tags`
 			);
 
 			// Charger les membres
 			const membersResponse = await axios.get(
-				`/api/organization/${organization.id}/members-with-tags`
+				`/api/organizations/${organization.id}/members-with-tags`
 			);
 
 			const tagsList = tagsResponse.data.tags || [];
@@ -98,7 +98,7 @@ export default function TagsUserAssociations({ organization }) {
 
 			// Envoyer les changements au serveur
 			await axios.put(
-				`/api/organization/${organization.id}/members/${memberId}/tags`,
+				`/api/organizations/${organization.id}/members/${memberId}/tags`,
 				{ tagIds: newTags }
 			);
 

@@ -16,7 +16,7 @@ export function useCurrentOrganizationInvitations(organizationId) {
 			setIsLoading(true);
 			setError(null);
 			const response = await axios.get(
-				`/api/organization/${organizationId}/invitations`
+				`/api/organizations/${organizationId}/invitations`
 			);
 
 			if (response.data.invitations) {
@@ -38,7 +38,7 @@ export function useCurrentOrganizationInvitations(organizationId) {
 	const addMember = async (memberData) => {
 		try {
 			const response = await axios.post(
-				`/api/organization/${organizationId}/invite`,
+				`/api/organizations/${organizationId}/invite`,
 				{
 					email: memberData.email,
 					role: memberData.role,
@@ -71,7 +71,7 @@ export function useCurrentOrganizationInvitations(organizationId) {
 	const cancelInvitation = async (invitationId) => {
 		try {
 			const response = await axios.delete(
-				`/api/organization/${organizationId}/invitations/${invitationId}`
+				`/api/organizations/${organizationId}/invitations/${invitationId}`
 			);
 
 			if (response.data.success) {
@@ -100,7 +100,7 @@ export function useCurrentOrganizationInvitations(organizationId) {
 	const resendInvitation = async (invitationId) => {
 		try {
 			const response = await axios.post(
-				`/api/organization/${organizationId}/invitations/${invitationId}/resend`
+				`/api/organizations/${organizationId}/invitations/${invitationId}/resend`
 			);
 
 			if (response.data.success) {

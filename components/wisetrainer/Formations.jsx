@@ -117,6 +117,8 @@ export default function Formations() {
 		setFlippedCardId(flippedCardId === courseId ? null : courseId);
 	};
 
+	console.log("Organizations dans le composant parent:", userOrganizations);
+
 	return (
 		<div className="container mx-auto">
 			<Tabs

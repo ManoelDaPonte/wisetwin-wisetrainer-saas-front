@@ -1,4 +1,4 @@
-//app/api/organization/[organizationId]/tags/[tagId]/training/[trainingId]/route.jsx
+//app/api/organizations/[organizationId]/tags/[tagId]/training/[trainingId]/route.jsx
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 import { auth0 } from "@/lib/auth0";

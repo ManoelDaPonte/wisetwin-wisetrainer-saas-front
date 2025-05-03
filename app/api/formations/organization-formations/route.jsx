@@ -1,7 +1,10 @@
-// app/api/formations/organization-formations/route.jsx// app/api/formations/organization-formations/route.js
+//app/api/formations/organization-formations/route.jsx
 import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import prisma from "@/lib/prisma";
+import { auth0 } from "@/lib/auth0";
+import { PrismaClient } from "@prisma/client";
+import { findUserByAuth0Id } from "@/lib/services/auth/userService";
+
+const prisma = new PrismaClient();
 
 export async function GET(request) {
 	// Récupérer l'ID de l'organisation depuis les paramètres de requête
@@ -16,22 +19,31 @@ export async function GET(request) {
 	}
 
 	try {
-		// Récupérer l'utilisateur authentifié
-		const session = await auth();
+		// Récupérer la session Auth0 de l'utilisateur
+		const session = await auth0.getSession();
 
-		if (!session?.user) {
+		// Vérifier si l'utilisateur est authentifié
+		if (!session || !session.user) {
 			return NextResponse.json(
 				{ error: "Non autorisé" },
 				{ status: 401 }
 			);
 		}
 
-		const userId = session.user.id;
+		// Récupérer l'utilisateur depuis la base de données
+		const user = await findUserByAuth0Id(session.user.sub);
+
+		if (!user) {
+			return NextResponse.json(
+				{ error: "Utilisateur non trouvé" },
+				{ status: 404 }
+			);
+		}
 
 		// Vérifier si l'utilisateur est membre de l'organisation
 		const membership = await prisma.organizationMember.findFirst({
 			where: {
-				userId: userId,
+				userId: user.id,
 				organizationId: organizationId,
 			},
 		});
@@ -50,9 +62,6 @@ export async function GET(request) {
 			},
 			orderBy: {
 				createdAt: "desc",
-			},
-			include: {
-				organization: true,
 			},
 		});
 
@@ -76,12 +85,12 @@ export async function GET(request) {
 				id: formation.id,
 				name: formation.name,
 				description: formation.description,
-				imageUrl: formation.imageUrl,
-				duration: formation.duration,
-				level: formation.level,
-				category: formation.category,
-				certification: formation.certification,
-				objectives: formation.objectives,
+				imageUrl: formation.imageUrl || null,
+				duration: formation.duration || "Non spécifié",
+				level: formation.difficulty || "Intermédiaire",
+				category: formation.category || "Formation",
+				certification: false, // À adapter selon votre schéma
+				objectives: formation.description, // À adapter selon votre schéma
 				source: {
 					type: "organization",
 					name: organization.name,
@@ -99,6 +108,7 @@ export async function GET(request) {
 		return NextResponse.json(
 			{
 				error: "Erreur serveur lors de la récupération des formations de l'organisation",
+				details: error.message,
 			},
 			{ status: 500 }
 		);

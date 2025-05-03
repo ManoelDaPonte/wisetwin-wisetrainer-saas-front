@@ -16,7 +16,7 @@ export function useCurrentOrganizationTags(organizationId) {
 			setIsLoading(true);
 			setError(null);
 			const response = await axios.get(
-				`/api/organization/${organizationId}/tags`
+				`/api/organizations/${organizationId}/tags`
 			);
 
 			if (response.data.tags) {
@@ -38,7 +38,7 @@ export function useCurrentOrganizationTags(organizationId) {
 	const addTag = async (tagData) => {
 		try {
 			const response = await axios.post(
-				`/api/organization/${organizationId}/tags`,
+				`/api/organizations/${organizationId}/tags`,
 				tagData
 			);
 
@@ -67,7 +67,7 @@ export function useCurrentOrganizationTags(organizationId) {
 	const editTag = async (tagData) => {
 		try {
 			const response = await axios.put(
-				`/api/organization/${organizationId}/tags/${tagData.id}`,
+				`/api/organizations/${organizationId}/tags/${tagData.id}`,
 				tagData
 			);
 
@@ -97,7 +97,7 @@ export function useCurrentOrganizationTags(organizationId) {
 	const deleteTag = async (tagId) => {
 		try {
 			const response = await axios.delete(
-				`/api/organization/${organizationId}/tags/${tagId}`
+				`/api/organizations/${organizationId}/tags/${tagId}`
 			);
 
 			if (response.data.success) {

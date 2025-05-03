@@ -1,196 +1,112 @@
-// components/wisetrainer/tabs/UserFormation.jsx
-import React from "react";
-import { motion } from "framer-motion";
+// components/wisetrainer/tabs/MesFormations.jsx
+import React, { useState } from "react";
+import { useRouter } from "next/navigation";
+import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import {
-	Card,
-	CardContent,
-	CardFooter,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
-import { Clock, BookOpen, Award, BookX } from "lucide-react";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Search, SlidersHorizontal } from "lucide-react";
+import FormationCard from "@/components/wisetrainer/common/FormationCard";
 
-export default function UserFormation({
-	formations,
-	isLoading,
-	onCourseSelect,
-	onUnenroll,
-	onBrowseCatalog,
-	containerVariants,
-	itemVariants,
-}) {
-	// Fonction pour formater la durée (minutes -> heures et minutes)
-	const formatDuration = (minutes) => {
-		if (!minutes) return "Durée non spécifiée";
+const UserFormation = ({ formations, isLoading, onUnenroll }) => {
+	const router = useRouter();
+	const [searchTerm, setSearchTerm] = useState("");
 
-		const hours = Math.floor(minutes / 60);
-		const mins = minutes % 60;
+	// Filtrer les formations en fonction du terme de recherche
+	const filteredFormations = formations.filter(
+		(formation) =>
+			formation.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+			formation.description
+				.toLowerCase()
+				.includes(searchTerm.toLowerCase()) ||
+			formation.category.toLowerCase().includes(searchTerm.toLowerCase())
+	);
 
-		if (hours === 0) return `${mins} min`;
-		if (mins === 0) return `${hours} h`;
-		return `${hours} h ${mins} min`;
+	const handleViewFormation = (formation) => {
+		// Déterminer la route en fonction de la source de la formation
+		if (formation.source && formation.source.type === "organization") {
+			router.push(
+				`/wisetrainer/organization/${formation.source.organizationId}/${formation.id}`
+			);
+		} else {
+			router.push(`/wisetrainer/${formation.id}`);
+		}
 	};
 
-	// Afficher un état de chargement
 	if (isLoading) {
 		return (
-			<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-				{[1, 2, 3, 4, 5, 6].map((item) => (
-					<Card
-						key={item}
-						className="border border-gray-200 dark:border-gray-700"
-					>
-						<CardHeader className="pb-2">
-							<Skeleton className="h-6 w-3/4 mb-2" />
-							<Skeleton className="h-4 w-1/2" />
-						</CardHeader>
-						<CardContent>
-							<Skeleton className="h-4 w-full mb-2" />
-							<Skeleton className="h-32 w-full rounded-md mb-4" />
-							<Skeleton className="h-4 w-3/4 mb-2" />
-							<Skeleton className="h-4 w-1/2" />
-						</CardContent>
-						<CardFooter>
-							<Skeleton className="h-10 w-full rounded-md" />
-						</CardFooter>
-					</Card>
-				))}
+			<div className="space-y-4">
+				<div className="flex justify-between">
+					<div className="w-64 h-10 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+					<div className="w-32 h-10 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+				</div>
+				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+					{[...Array(6)].map((_, index) => (
+						<div
+							key={index}
+							className="bg-gray-200 dark:bg-gray-700 h-80 rounded animate-pulse"
+						></div>
+					))}
+				</div>
 			</div>
 		);
 	}
 
-	// Si aucune formation n'est disponible, afficher un message et un bouton pour explorer le catalogue
-	if (!formations || formations.length === 0) {
-		return (
-			<motion.div
-				className="text-center py-12"
-				initial={{ opacity: 0 }}
-				animate={{ opacity: 1 }}
-				transition={{ duration: 0.5 }}
-			>
-				<div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-8 max-w-2xl mx-auto">
-					<BookX className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-					<h3 className="text-xl font-medium mb-2">
-						Aucune formation
-					</h3>
-					<p className="text-gray-600 dark:text-gray-300 mb-6">
-						Vous n'êtes inscrit à aucune formation pour le moment.
-						Explorez notre catalogue pour découvrir des formations
-						qui correspondent à vos besoins.
-					</p>
-					<Button
-						onClick={onBrowseCatalog}
-						className="bg-wisetwin-blue hover:bg-wisetwin-blue-light text-white"
-					>
-						Explorer le catalogue
-						<BookOpen className="ml-2 h-4 w-4" />
-					</Button>
-				</div>
-			</motion.div>
-		);
-	}
-
 	return (
-		<motion.div
-			variants={containerVariants}
-			initial="hidden"
-			animate="visible"
-			className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-		>
-			{formations.map((formation, index) => (
-				<motion.div
-					key={
-						formation.id + (formation.source?.organizationId || "")
-					}
-					variants={itemVariants}
-					custom={index}
-				>
-					<Card className="h-full flex flex-col border-gray-200 dark:border-gray-700 hover:border-wisetwin-blue dark:hover:border-wisetwin-blue transition-all duration-300">
-						<CardHeader className="pb-2">
-							<CardTitle className="text-lg font-semibold">
-								{formation.name}
-							</CardTitle>
-							{formation.source?.type === "organization" && (
-								<div className="flex items-center mt-1">
-									<span className="text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 rounded-full px-2 py-0.5">
-										{formation.source.name}
-									</span>
-								</div>
-							)}
-						</CardHeader>
+		<div className="space-y-6">
+			{/* Barre de recherche */}
+			<div className="flex flex-col md:flex-row gap-4 justify-between">
+				<div className="relative flex-1">
+					<Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+					<Input
+						placeholder="Rechercher une formation..."
+						value={searchTerm}
+						onChange={(e) => setSearchTerm(e.target.value)}
+						className="pl-10"
+					/>
+				</div>
+				<Button variant="outline" className="flex gap-2 items-center">
+					<SlidersHorizontal className="w-4 h-4" />
+					Filtres
+				</Button>
+			</div>
 
-						<CardContent className="flex-grow">
-							{/* Image ou placeholder */}
-							<div className="mb-4 bg-gray-100 dark:bg-gray-800 rounded-md h-32 flex items-center justify-center">
-								{formation.imageUrl ? (
-									<img
-										src={formation.imageUrl}
-										alt={formation.name}
-										className="h-full w-full object-cover rounded-md"
-									/>
-								) : (
-									<BookOpen className="h-12 w-12 text-gray-400" />
-								)}
-							</div>
+			{/* Message si aucune formation n'est trouvée */}
+			{filteredFormations.length === 0 && (
+				<div className="text-center py-10">
+					<p className="text-gray-500 dark:text-gray-400">
+						{searchTerm
+							? `Aucune formation trouvée pour "${searchTerm}".`
+							: "Vous n'êtes inscrit à aucune formation pour le moment."}
+					</p>
+					{!searchTerm && (
+						<Button
+							className="mt-4 bg-wisetwin-blue hover:bg-wisetwin-blue-light"
+							onClick={() =>
+								router.push("/wisetrainer?tab=public")
+							}
+						>
+							Parcourir le catalogue
+						</Button>
+					)}
+				</div>
+			)}
 
-							{/* Progression */}
-							<div className="mb-4">
-								<div className="flex justify-between items-center mb-1">
-									<span className="text-sm text-gray-600 dark:text-gray-300">
-										Progression
-									</span>
-									<span className="text-sm font-medium">
-										{formation.progress || 0}%
-									</span>
-								</div>
-								<Progress
-									value={formation.progress || 0}
-									className="h-2"
-								/>
-							</div>
-
-							{/* Détails */}
-							<div className="space-y-2 text-sm text-gray-600 dark:text-gray-300">
-								<div className="flex items-center">
-									<Clock className="h-4 w-4 mr-2" />
-									<span>
-										{formatDuration(formation.duration)}
-									</span>
-								</div>
-								{formation.certification && (
-									<div className="flex items-center">
-										<Award className="h-4 w-4 mr-2 text-yellow-500" />
-										<span>Certification disponible</span>
-									</div>
-								)}
-							</div>
-						</CardContent>
-
-						<CardFooter className="pt-2">
-							<div className="flex w-full gap-2">
-								<Button
-									className="flex-1 bg-wisetwin-blue hover:bg-wisetwin-blue-light text-white"
-									onClick={() => onCourseSelect(formation)}
-								>
-									{formation.progress > 0
-										? "Continuer"
-										: "Commencer"}
-								</Button>
-								<Button
-									variant="outline"
-									className="flex-shrink-0 text-red-500 border-red-200 hover:bg-red-50 hover:text-red-600 dark:text-red-400 dark:border-red-900 dark:hover:bg-red-950/30"
-									onClick={() => onUnenroll(formation)}
-								>
-									Supprimer
-								</Button>
-							</div>
-						</CardFooter>
-					</Card>
-				</motion.div>
-			))}
-		</motion.div>
+			{/* Affichage des formations */}
+			{filteredFormations.length > 0 && (
+				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+					{filteredFormations.map((formation) => (
+						<FormationCard
+							key={formation.compositeId || formation.id}
+							formation={formation}
+							isEnrolled={true}
+							onEnroll={() => {}} // Non utilisé ici
+							onView={handleViewFormation}
+							showProgress={true}
+						/>
+					))}
+				</div>
+			)}
+		</div>
 	);
-}
+};
+
+export default UserFormation;

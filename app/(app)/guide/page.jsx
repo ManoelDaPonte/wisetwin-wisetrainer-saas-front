@@ -54,7 +54,7 @@
 // 					try {
 // 						// Récupérer les tags de l'utilisateur pour cette organisation
 // 						const membersResponse = await axios.get(
-// 							`/api/organization/${org.id}/members-with-tags`
+// 							`/api/organizations/${org.id}/members-with-tags`
 // 						);
 
 // 						let userTags = [];
@@ -94,7 +94,7 @@
 // 								for (const tag of userTags) {
 // 									try {
 // 										const trainingRes = await axios.get(
-// 											`/api/organization/${org.id}/tags/${tag.id}/training`
+// 											`/api/organizations/${org.id}/tags/${tag.id}/training`
 // 										);
 
 // 										if (
@@ -156,7 +156,7 @@
 
 // 						// Récupérer toutes les formations de l'organisation
 // 						const buildsRes = await axios.get(
-// 							`/api/organization/${org.id}/builds`
+// 							`/api/organizations/${org.id}/builds`
 // 						);
 
 // 						let orgTrainings = [];

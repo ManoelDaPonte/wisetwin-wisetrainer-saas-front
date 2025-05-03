@@ -1,12 +1,21 @@
-// app/api/formations/public-formations/route.js
+//app/api/formations/public-formations/route.jsx
 import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import prisma from "@/lib/prisma";
+import { auth0 } from "@/lib/auth0";
+import { PrismaClient } from "@prisma/client";
+import { findUserByAuth0Id } from "@/lib/services/auth/userService";
+
+const prisma = new PrismaClient();
 
 export async function GET(request) {
 	try {
-		// Récupérer l'utilisateur authentifié (optionnel pour les formations publiques)
-		const session = await auth();
+		// Récupérer la session Auth0 de l'utilisateur (facultatif pour les formations publiques)
+		const session = await auth0.getSession();
+		let user = null;
+
+		if (session && session.user) {
+			// Récupérer l'utilisateur depuis la base de données si authentifié
+			user = await findUserByAuth0Id(session.user.sub);
+		}
 
 		// Récupérer toutes les formations publiques
 		const publicFormations = await prisma.formation.findMany({
@@ -24,12 +33,11 @@ export async function GET(request) {
 				id: formation.id,
 				name: formation.name,
 				description: formation.description,
-				imageUrl: formation.imageUrl,
-				duration: formation.duration,
-				level: formation.level,
-				category: formation.category,
-				certification: formation.certification,
-				objectives: formation.objectives,
+				imageUrl: formation.imageUrl || null,
+				duration: formation.duration || "Non spécifié",
+				level: formation.difficulty || "Intermédiaire",
+				category: formation.category || "Formation",
+				certification: false, // À adapter selon votre schéma
 				source: {
 					type: "wisetwin",
 					name: "WiseTwin",
@@ -46,6 +54,7 @@ export async function GET(request) {
 		return NextResponse.json(
 			{
 				error: "Erreur serveur lors de la récupération des formations publiques",
+				details: error.message,
 			},
 			{ status: 500 }
 		);

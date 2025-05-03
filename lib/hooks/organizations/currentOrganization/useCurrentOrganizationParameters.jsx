@@ -10,7 +10,7 @@ export function useCurrentOrganizationParameters(organizationId, onDataChange) {
 	const handleSaveSettings = async (settingsData) => {
 		try {
 			const response = await axios.patch(
-				`/api/organization/${organizationId}`,
+				`/api/organizations/${organizationId}`,
 				settingsData
 			);
 
@@ -43,7 +43,7 @@ export function useCurrentOrganizationParameters(organizationId, onDataChange) {
 	const handleDeleteOrganization = async () => {
 		try {
 			const response = await axios.delete(
-				`/api/organization/${organizationId}`
+				`/api/organizations/${organizationId}`
 			);
 
 			if (response.data.success) {

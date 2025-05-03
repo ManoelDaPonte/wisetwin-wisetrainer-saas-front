@@ -18,11 +18,41 @@ export const useFormations = () => {
 	const [isLoadingOrgs, setIsLoadingOrgs] = useState(true);
 	const [isLoadingOrgFormations, setIsLoadingOrgFormations] = useState(true);
 
-	// Fonction pour générer un ID composite pour un cours
-	const generateCompositeId = (course) => {
-		const sourceType = course.source?.type || "wisetwin";
-		const orgId = course.source?.organizationId || "wisetwin";
-		return `${course.id}__${sourceType}__${orgId}`;
+	// Fonction pour standardiser le format d'une formation
+	const standardizeFormation = (formation) => {
+		// S'assurer que la source est correctement définie
+		const source = formation.source || {};
+		const isWiseTwin =
+			!source.type ||
+			source.type === "wisetwin" ||
+			!source.organizationId;
+
+		// Format standardisé de la source
+		const standardizedSource = isWiseTwin
+			? { type: "wisetwin", name: "WiseTwin" }
+			: {
+					type: "organization",
+					name: source.name || "Organisation",
+					organizationId: source.organizationId,
+			  };
+
+		// Créer un ID composite unique
+		const compositeId = `${formation.id}__${standardizedSource.type}__${
+			standardizedSource.organizationId || "wisetwin"
+		}`;
+
+		// Retourner la formation standardisée
+		return {
+			...formation,
+			source: standardizedSource,
+			compositeId: compositeId,
+			// Valeurs par défaut pour les champs manquants
+			imageUrl: formation.imageUrl || null,
+			duration: formation.duration || "Non spécifié",
+			level: formation.level || formation.difficulty || "Intermédiaire",
+			category: formation.category || "Formation",
+			certification: !!formation.certification,
+		};
 	};
 
 	// Charger les formations de l'utilisateur
@@ -37,13 +67,10 @@ export const useFormations = () => {
 			}
 
 			if (data.trainings) {
-				// Ajouter un compositeId à chaque formation
-				const enrichedFormations = data.trainings.map((formation) => ({
-					...formation,
-					compositeId: generateCompositeId(formation),
-				}));
-
-				setUserFormations(enrichedFormations);
+				// Standardiser le format des formations
+				const standardizedFormations =
+					data.trainings.map(standardizeFormation);
+				setUserFormations(standardizedFormations);
 			}
 		} catch (error) {
 			console.error(
@@ -72,13 +99,10 @@ export const useFormations = () => {
 			}
 
 			if (data.trainings) {
-				// Enrichir les formations avec des informations sources et compositeId
-				const enrichedFormations = data.trainings.map((formation) => ({
-					...formation,
-					compositeId: generateCompositeId(formation),
-				}));
-
-				setPublicFormations(enrichedFormations);
+				// Standardiser le format des formations
+				const standardizedFormations =
+					data.trainings.map(standardizeFormation);
+				setPublicFormations(standardizedFormations);
 			}
 		} catch (error) {
 			console.error(
@@ -99,20 +123,30 @@ export const useFormations = () => {
 	const fetchUserOrganizations = async () => {
 		setIsLoadingOrgs(true);
 		try {
+			console.log("Tentative de récupération des organisations...");
 			const response = await fetch("/api/organization");
+			console.log("Réponse de l'API:", response.status);
 			const data = await response.json();
+			console.log("Données reçues:", data);
 
 			if (!response.ok) {
 				throw new Error(data.error || "Une erreur est survenue");
 			}
 
 			if (data.organizations) {
+				console.log(
+					"Organisations trouvées:",
+					data.organizations.length
+				);
 				setUserOrganizations(data.organizations);
 
 				// Sélectionner automatiquement la première organisation si elle existe
 				if (data.organizations.length > 0 && !selectedOrgId) {
 					setSelectedOrgId(data.organizations[0].id);
 				}
+			} else {
+				console.log("Pas d'organisations dans la réponse");
+				setUserOrganizations([]);
 			}
 		} catch (error) {
 			console.error(
@@ -141,18 +175,10 @@ export const useFormations = () => {
 			}
 
 			if (data.trainings) {
-				// Trouver l'organisation sélectionnée
-				const selectedOrg = userOrganizations.find(
-					(org) => org.id === orgId
-				);
-
-				// Enrichir les formations avec compositeId
-				const enrichedFormations = data.trainings.map((formation) => ({
-					...formation,
-					compositeId: `${formation.id}__organization__${orgId}`,
-				}));
-
-				setOrganizationFormations(enrichedFormations);
+				// Standardiser le format des formations
+				const standardizedFormations =
+					data.trainings.map(standardizeFormation);
+				setOrganizationFormations(standardizedFormations);
 			}
 		} catch (error) {
 			console.error(
@@ -176,23 +202,10 @@ export const useFormations = () => {
 			return false;
 		}
 
-		// Récupérer les informations de source du cours
-		const sourceType = course.source?.type || "wisetwin";
-		const orgId = course.source?.organizationId || null;
-
-		// Vérifier si le cours existe déjà dans les formations de l'utilisateur
-		return userFormations.some((userCourse) => {
-			const userSourceType = userCourse.source?.type || "wisetwin";
-			const userOrgId = userCourse.source?.organizationId || null;
-
-			// Vérifier l'ID du cours ET sa source
-			return (
-				userCourse.id === course.id &&
-				userSourceType === sourceType &&
-				// Si les deux sont null, c'est égal. Sinon, comparer les valeurs
-				((userOrgId === null && orgId === null) || userOrgId === orgId)
-			);
-		});
+		// Utiliser compositeId pour une vérification plus simple
+		return userFormations.some(
+			(userCourse) => userCourse.compositeId === course.compositeId
+		);
 	};
 
 	// S'inscrire à une formation

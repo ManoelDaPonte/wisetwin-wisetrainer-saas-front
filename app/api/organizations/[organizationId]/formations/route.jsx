@@ -1,23 +1,17 @@
-// app/api/organization/[organizationId]/members/route.jsx
+//app/api/organizations/[organizationId]/trainings/route.jsx
 import { NextResponse } from "next/server";
 import { auth0 } from "@/lib/auth0";
-import { currentOrganizationMemberService } from "@/lib/services/organizations/currentOrganization/currentOrganizationMemberService";
+import { currentOrganizationTrainingService } from "@/lib/services/organizations/currentOrganization/currentOrganizationTrainingService";
 import { currentOrganizationAuthService } from "@/lib/services/organizations/currentOrganization/currentOrganizationAuthService";
 
 /**
- * GET - Récupère tous les membres d'une organisation
- * Paramètres de requête optionnels:
- * - includeTags: boolean - Inclure les tags des membres (par défaut: false)
+ * GET - Récupère toutes les formations d'une organisation
  */
 export async function GET(request, { params }) {
 	try {
 		const session = await auth0.getSession();
 		const resolvedParams = await params;
 		const { organizationId } = resolvedParams;
-		const { searchParams } = new URL(request.url);
-
-		// Options
-		const includeTags = searchParams.get("includeTags") === "true";
 
 		// Authentifier l'utilisateur et vérifier son appartenance à l'organisation
 		await currentOrganizationAuthService.authenticateForOrganization(
@@ -25,16 +19,15 @@ export async function GET(request, { params }) {
 			organizationId
 		);
 
-		// Récupérer les membres avec ou sans leurs tags
-		const members =
-			await currentOrganizationMemberService.getOrganizationMembers(
-				organizationId,
-				{ includeTags }
+		// Récupérer les formations
+		const trainings =
+			await currentOrganizationTrainingService.getOrganizationTrainings(
+				organizationId
 			);
 
-		return NextResponse.json({ members });
+		return NextResponse.json({ trainings });
 	} catch (error) {
-		console.error("Erreur lors de la récupération des membres:", error);
+		console.error("Erreur lors de la récupération des formations:", error);
 
 		// Déterminer le code d'état approprié
 		let statusCode = 500;
@@ -44,7 +37,7 @@ export async function GET(request, { params }) {
 
 		return NextResponse.json(
 			{
-				error: "Échec de la récupération des membres",
+				error: "Échec de la récupération des formations",
 				details: error.message,
 			},
 			{ status: statusCode }

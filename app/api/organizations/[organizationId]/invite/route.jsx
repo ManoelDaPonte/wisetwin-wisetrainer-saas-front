@@ -1,4 +1,4 @@
-// app/api/organization/[organizationId]/invite/route.jsx
+// app/api/organizations/[organizationId]/invite/route.jsx
 import { NextResponse } from "next/server";
 import { auth0 } from "@/lib/auth0";
 import { createInvitation } from "@/lib/services/organizations/currentOrganization/currentOrganizationInvitationService";
