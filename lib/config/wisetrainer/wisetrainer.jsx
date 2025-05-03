@@ -26,8 +26,8 @@ const WISETRAINER_CONFIG = {
 		WISETWIN_TRAININGS: "/api/db/wisetrainer/wisetwin-trainings",
 
 		// Routes pour les organisations
-		ORGANIZATION_BUILDS: "/api/organization",
-		IMPORT_ORG_BUILD: "/api/organization",
+		ORGANIZATION_BUILDS: "/api/organizations",
+		IMPORT_ORG_BUILD: "/api/organizations",
 
 		ORGANIZATION_COURSE_DETAILS:
 			"/api/db/wisetrainer/course-details/organization",

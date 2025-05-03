@@ -171,17 +171,13 @@ export default function Formations() {
 
 				<TabsContent value="catalogueOrganizations">
 					<CatalogueOrganizations
-						organizations={userOrganizations}
-						selectedOrganizationId={selectedOrgId}
-						onSelectOrganization={setSelectedOrgId}
 						formations={organizationFormations}
 						isLoading={isLoadingOrgs || isLoadingOrgFormations}
+						userOrganizations={userOrganizations} // S'assurer que c'est toujours un tableau
+						selectedOrgId={selectedOrgId}
+						onSelectOrg={setSelectedOrgId} // Corriger le nom de la prop
 						isUserEnrolled={isUserEnrolled}
 						onEnroll={handleEnroll}
-						onToggleInfo={toggleCardFlip}
-						flippedCardId={flippedCardId}
-						containerVariants={containerVariants}
-						itemVariants={itemVariants}
 					/>
 				</TabsContent>
 			</Tabs>

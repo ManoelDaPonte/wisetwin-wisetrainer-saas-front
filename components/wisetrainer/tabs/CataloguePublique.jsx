@@ -61,10 +61,6 @@ const CataloguePublique = ({
 						className="pl-10"
 					/>
 				</div>
-				<Button variant="outline" className="flex gap-2 items-center">
-					<Filter className="w-4 h-4" />
-					Filtres
-				</Button>
 			</div>
 
 			{/* Affichage des formations */}

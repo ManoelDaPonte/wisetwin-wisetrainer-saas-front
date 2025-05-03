@@ -124,8 +124,49 @@ export const useFormations = () => {
 		setIsLoadingOrgs(true);
 		try {
 			console.log("Tentative de récupération des organisations...");
-			const response = await fetch("/api/organization");
-			console.log("Réponse de l'API:", response.status);
+
+			// Vérifier si la session utilisateur est valide avant d'effectuer la requête
+			const checkSessionResponse = await fetch(
+				"/api/auth/check-session",
+				{
+					method: "GET",
+					credentials: "include", // Important pour inclure les cookies de session
+				}
+			);
+
+			if (!checkSessionResponse.ok) {
+				console.log(
+					"Session utilisateur invalide, impossible de récupérer les organisations"
+				);
+				setUserOrganizations([]);
+				return;
+			}
+
+			// Ajouter des en-têtes pour éviter la mise en cache
+			const response = await fetch("/api/organizations", {
+				headers: {
+					"Cache-Control": "no-cache",
+					Pragma: "no-cache",
+					"X-Requested-With": "XMLHttpRequest", // Pour indiquer que c'est une requête AJAX
+				},
+				credentials: "include",
+			});
+
+			console.log("Statut de la réponse API:", response.status);
+
+			if (!response.ok) {
+				// Lire le contenu de la réponse pour le débogage
+				const textResponse = await response.text();
+				console.error(
+					"Réponse d'erreur non-JSON:",
+					textResponse.substring(0, 200) + "..."
+				);
+				throw new Error(
+					`Réponse serveur invalide: ${response.status} ${response.statusText}`
+				);
+			}
+
+			// Convertir en JSON uniquement si la réponse est OK
 			const data = await response.json();
 			console.log("Données reçues:", data);
 
@@ -153,6 +194,7 @@ export const useFormations = () => {
 				"Erreur lors de la récupération des organisations:",
 				error
 			);
+			// Initialiser avec un tableau vide en cas d'erreur
 			setUserOrganizations([]);
 		} finally {
 			setIsLoadingOrgs(false);

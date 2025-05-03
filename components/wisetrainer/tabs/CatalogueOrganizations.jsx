@@ -16,7 +16,7 @@ import {
 const CatalogueOrganizations = ({
 	formations = [],
 	isLoading = false,
-	userOrganizations = [], // Valeur par défaut pour éviter l'erreur
+	userOrganizations = [], // Recevoir correctement userOrganizations comme prop
 	selectedOrgId,
 	onSelectOrg,
 	isUserEnrolled,
@@ -92,11 +92,6 @@ const CatalogueOrganizations = ({
 						/>
 					</div>
 				</div>
-
-				<Button variant="outline" className="flex gap-2 items-center">
-					<Filter className="w-4 h-4" />
-					Filtres
-				</Button>
 			</div>
 
 			{/* Message si aucune organisation n'est disponible */}
