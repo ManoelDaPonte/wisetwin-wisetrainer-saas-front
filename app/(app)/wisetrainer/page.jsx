@@ -1,13 +1,22 @@
+//app/(app)/wisetrainer/page.jsx
 "use client";
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import WiseTrainerCourses from "@/components/wisetrainer/WiseTrainerCourses";
-import { useAzureContainer } from "@/lib/hooks/useAzureContainer";
-import { GraduationCap, BookOpen } from "lucide-react";
+import Formations from "@/components/wisetrainer/Formations";
+import { GraduationCap } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function WiseTrainerPage() {
-	const { isLoading } = useAzureContainer();
+	const [isLoading, setIsLoading] = useState(true);
+
+	// Simuler un temps de chargement initial pour l'interface
+	useEffect(() => {
+		const timer = setTimeout(() => {
+			setIsLoading(false);
+		}, 1000);
+
+		return () => clearTimeout(timer);
+	}, []);
 
 	const containerVariants = {
 		hidden: { opacity: 0 },
@@ -62,7 +71,7 @@ export default function WiseTrainerPage() {
 					</div>
 				</div>
 			) : (
-				<WiseTrainerCourses />
+				<Formations />
 			)}
 		</motion.div>
 	);
