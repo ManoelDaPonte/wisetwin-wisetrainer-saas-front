@@ -17,7 +17,7 @@ const WISETWIN_CONFIG = {
 		BUILD_DETAILS: "/api/db/wisetwin/build-details",
 
 		// Routes pour les organisations
-		ORGANIZATION_BUILDS: "/api/organization",
+		ORGANIZATION_BUILDS: "/api/organizations",
 	},
 };
 
