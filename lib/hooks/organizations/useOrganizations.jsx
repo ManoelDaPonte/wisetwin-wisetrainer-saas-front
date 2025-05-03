@@ -15,7 +15,7 @@ export function useOrganizations() {
 		try {
 			setIsLoading(true);
 			setError(null);
-			const response = await axios.get("/api/organization");
+			const response = await axios.get("/api/organizations");
 
 			if (response.data.organizations) {
 				setOrganizations(response.data.organizations);
@@ -39,7 +39,7 @@ export function useOrganizations() {
 	const createOrganization = async (organizationData) => {
 		try {
 			const response = await axios.post(
-				"/api/organization",
+				"/api/organizations",
 				organizationData
 			);
 

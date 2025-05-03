@@ -1,17 +1,33 @@
-// components/wisetrainer/formation/FormationTabs.jsx
-import React, { useState } from "react";
+// components/wisetrainer/formation/FormationTabs.jsx (mise à jour)
+import React, { useState, useEffect } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Book, FileText, Box, Info } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
 import OverviewContent from "@/components/wisetrainer/formation/content/OverviewContent";
+import Build3DContent from "@/components/wisetrainer/formation/content/Build3DContent";
 
 const FormationTabs = ({ formation }) => {
-	const [activeTab, setActiveTab] = useState("overview");
+	const router = useRouter();
+	const searchParams = useSearchParams();
+	const defaultTab = searchParams.get("tab") || "overview";
+	const [activeTab, setActiveTab] = useState(defaultTab);
+
+	// Mettre à jour l'URL quand l'onglet change
+	useEffect(() => {
+		const url = new URL(window.location.href);
+		if (activeTab === "overview") {
+			url.searchParams.delete("tab");
+		} else {
+			url.searchParams.set("tab", activeTab);
+		}
+		window.history.replaceState({}, "", url.toString());
+	}, [activeTab]);
 
 	if (!formation) return null;
 
 	return (
 		<Tabs
-			defaultValue="overview"
+			defaultValue={defaultTab}
 			value={activeTab}
 			onValueChange={setActiveTab}
 			className="w-full"
@@ -42,7 +58,7 @@ const FormationTabs = ({ formation }) => {
 				{formation.components.hasBuilds3D && (
 					<TabsTrigger value="builds3d" className="flex items-center">
 						<Box className="mr-2 h-4 w-4" />
-						Environnements 3D
+						Environnement 3D
 					</TabsTrigger>
 				)}
 			</TabsList>
@@ -64,9 +80,7 @@ const FormationTabs = ({ formation }) => {
 			</TabsContent>
 
 			<TabsContent value="builds3d">
-				<div className="text-center py-12 text-gray-500">
-					Contenu des environnements 3D en cours de développement...
-				</div>
+				<Build3DContent formation={formation} />
 			</TabsContent>
 		</Tabs>
 	);

@@ -1,0 +1,252 @@
+{
+  "id": "9edca9fb-366e-4632-81e0-cedf9d42ac25",
+  "externalId": "1231231",
+  "name": "Wisetwin - Sécurité industrielle et prévention des risques",
+  "description": "formation publique",
+  "imageUrl": "",
+  "category": "Sécurité",
+  "difficulty": "Expert",
+  "duration": "3 heures+",
+  "version": "1.0",
+  "isActive": true,
+  "isPublic": true,
+  "createdAt": "2025-05-02T20:11:41.859Z",
+  "updatedAt": "2025-05-02T21:18:49.555Z",
+  "organizationId": null,
+  "organization": null,
+  "builds3D": [
+    {
+      "id": "c147a420-74bd-46f9-a8d8-79f8ba7d9599",
+      "name": "WiseTrainer_01",
+      "version": "1.0",
+      "description": "Build pour la formation: manoel",
+      "containerName": "wisetwin",
+      "azureUrl": "https://wisetwindev.blob.core.windows.net/wisetwin/wisetrainer/WiseTrainer_01.loader.js",
+      "status": "available",
+      "objectMapping": {
+        "worker_1": "pressure-risk",
+        "worker_2": "chemical-hazard",
+        "worker_3": "smoking-worker"
+      },
+      "createdAt": "2025-05-02T21:08:15.403Z",
+      "updatedAt": "2025-05-02T21:17:10.104Z",
+      "formationId": "9edca9fb-366e-4632-81e0-cedf9d42ac25",
+      "modules3D": [
+        {
+          "id": "e359c0a2-82c5-4c2d-8348-7ec90d212546",
+          "moduleId": "pressure-risk",
+          "title": "Risque de projection sous pression",
+          "description": "Apprenez à gérer les interventions de maintenance dans un environnement à risques spécifiques liés à la pression",
+          "type": "quiz",
+          "order": 1,
+          "content": {
+            "steps": [],
+            "questions": [
+              {
+                "id": "pressure-risk-q1",
+                "text": "De quel risque principal s'agit-il dans ce scénario ?",
+                "type": "SINGLE",
+                "image": "/images/png/Criterios-para-prevenir-accidentes-oculares-1.webp",
+                "options": [
+                  {
+                    "id": "pr-q1-o1",
+                    "text": "Risque de chute de plain pied",
+                    "isCorrect": false
+                  },
+                  {
+                    "id": "pr-q1-o2",
+                    "text": "Risque de pression temporelle",
+                    "isCorrect": false
+                  },
+                  {
+                    "id": "pr-q1-o3",
+                    "text": "Risque de projection de liquide sous pression",
+                    "isCorrect": true
+                  }
+                ]
+              },
+              {
+                "id": "pressure-risk-q2",
+                "text": "Choisissez les mesures de prévention adaptées pour ce risque.",
+                "type": "MULTIPLE",
+                "options": [
+                  {
+                    "id": "pr-q2-o1",
+                    "text": "Privilégier les procédés utilisant des basses pressions",
+                    "isCorrect": true
+                  },
+                  {
+                    "id": "pr-q2-o2",
+                    "text": "Organiser une alternance des activités pour limiter les postures contraignantes",
+                    "isCorrect": false
+                  },
+                  {
+                    "id": "pr-q2-o3",
+                    "text": "Intervenir sur la canalisation sans connaître les produits véhiculés dans les tuyaux",
+                    "isCorrect": false
+                  },
+                  {
+                    "id": "pr-q2-o4",
+                    "text": "Mettre en place des dispositifs d'échappement en cas de surpression",
+                    "isCorrect": true
+                  }
+                ]
+              }
+            ],
+            "educational": {
+              "title": "",
+              "content": {
+                "intro": "",
+                "sections": []
+              },
+              "imageUrl": ""
+            },
+            "sequenceButtons": []
+          },
+          "isActive": true,
+          "createdAt": "2025-05-02T21:17:10.020Z",
+          "updatedAt": "2025-05-02T21:17:10.020Z",
+          "build3DId": "c147a420-74bd-46f9-a8d8-79f8ba7d9599"
+        },
+        {
+          "id": "41386069-bf57-4da1-a084-689970cce07a",
+          "moduleId": "chemical-hazard",
+          "title": "Risques chimiques",
+          "description": "Apprenez à identifier les dangers liés aux projections chimiques et à appliquer les protocoles de sécurité adaptés",
+          "type": "quiz",
+          "order": 2,
+          "content": {
+            "steps": [],
+            "questions": [
+              {
+                "id": "chemical-hazard-q1",
+                "text": "De quel risque principal s'agit-il dans ce scénario ?",
+                "type": "SINGLE",
+                "options": [
+                  {
+                    "id": "pr-q1-o1",
+                    "text": "Risque de chute de plain pied",
+                    "isCorrect": false
+                  },
+                  {
+                    "id": "pr-q1-o2",
+                    "text": "Risque de pression temporelle",
+                    "isCorrect": false
+                  },
+                  {
+                    "id": "pr-q1-o3",
+                    "text": "Risque de projection de liquide sous pression",
+                    "isCorrect": true
+                  }
+                ]
+              },
+              {
+                "id": "chemical-hazard-q2",
+                "text": "Choisissez les mesures de prévention adaptées pour ce risque",
+                "type": "MULTIPLE",
+                "options": [
+                  {
+                    "id": "ch-q2-o1",
+                    "text": "Chauffer la canalisation avant intervention",
+                    "isCorrect": false
+                  },
+                  {
+                    "id": "ch-q2-o2",
+                    "text": "Évacuer les pressions résiduelles en cas d’arrêt des installations",
+                    "isCorrect": true
+                  },
+                  {
+                    "id": "ch-q2-o3",
+                    "text": "Former les personnels à la prévention des risques liés à l’activité physique",
+                    "isCorrect": false
+                  },
+                  {
+                    "id": "ch-q2-o4",
+                    "text": "Porter des EPI adaptés (gant, masque, casque, visière, chaussures) et des vêtements qui protègent l’ensemble du corps",
+                    "isCorrect": true
+                  }
+                ]
+              }
+            ],
+            "educational": {},
+            "sequenceButtons": []
+          },
+          "isActive": true,
+          "createdAt": "2025-05-02T21:17:10.049Z",
+          "updatedAt": "2025-05-02T21:17:10.049Z",
+          "build3DId": "c147a420-74bd-46f9-a8d8-79f8ba7d9599"
+        },
+        {
+          "id": "a678b89e-99d6-42c0-b2e2-a115043292a1",
+          "moduleId": "smoking-worker",
+          "title": "Risque d'incendie",
+          "description": "Comprenez les dangers liés au tabagisme en milieu industriel et les mesures de prévention essentielles",
+          "type": "quiz",
+          "order": 3,
+          "content": {
+            "steps": [],
+            "questions": [
+              {
+                "id": "smoking-worker-q1",
+                "text": "Quel est le principal risque associé à un travailleur qui fume dans un environnement industriel?",
+                "type": "SINGLE",
+                "options": [
+                  {
+                    "id": "sw-q1-o1",
+                    "text": "Risque de chute",
+                    "isCorrect": false
+                  },
+                  {
+                    "id": "sw-q1-o2",
+                    "text": "Risque d'incendie et d'explosion",
+                    "isCorrect": true
+                  },
+                  {
+                    "id": "sw-q1-o3",
+                    "text": "Risque de troubles musculosquelettiques",
+                    "isCorrect": false
+                  }
+                ]
+              },
+              {
+                "id": "smoking-worker-q2",
+                "text": "Quelles mesures de prévention sont appropriées face au risque d'incendie en milieu industriel?",
+                "type": "MULTIPLE",
+                "options": [
+                  {
+                    "id": "sw-q2-o1",
+                    "text": "Interdire de fumer dans toutes les zones de travail",
+                    "isCorrect": false
+                  },
+                  {
+                    "id": "sw-q2-o2",
+                    "text": "Mettre en place des zones fumeurs éloignées des matières inflammables",
+                    "isCorrect": true
+                  },
+                  {
+                    "id": "sw-q2-o3",
+                    "text": "Permettre de fumer pendant les pauses uniquement",
+                    "isCorrect": false
+                  },
+                  {
+                    "id": "sw-q2-o4",
+                    "text": "Sensibiliser le personnel aux risques d'incendie et d'explosion",
+                    "isCorrect": true
+                  }
+                ]
+              }
+            ],
+            "educational": {},
+            "sequenceButtons": []
+          },
+          "isActive": true,
+          "createdAt": "2025-05-02T21:17:10.075Z",
+          "updatedAt": "2025-05-02T21:17:10.075Z",
+          "build3DId": "c147a420-74bd-46f9-a8d8-79f8ba7d9599"
+        }
+      ]
+    }
+  ],
+  "courses": [],
+  "documentation": []
+}
