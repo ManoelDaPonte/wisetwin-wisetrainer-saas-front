@@ -22,31 +22,45 @@ const UnityBuild = forwardRef(
 
 		// Préfixe des blobs
 		const blobPrefix = WISETRAINER_CONFIG.BLOB_PREFIXES.WISETRAINER;
-		
-		// Utiliser l'API fetch-blob-data mise à jour qui fonctionne correctement
+
+		// ⚠️ IMPORTANT: Pour Unity WebGL, NE PAS utiliser l'extension .gz dans les URLs
+		// même si les fichiers sont stockés avec .gz dans Azure
+		// Unity s'attend à recevoir les URLs sans .gz mais avec Content-Encoding: gzip
+		// Ajouter un timestamp pour éviter les problèmes de cache
+		const timestamp = Date.now();
 		const loaderUrl = `/api/azure/fetch-blob-data/${containerName}/${blobPrefix}${courseId}.loader.js`;
 		const dataUrl = `/api/azure/fetch-blob-data/${containerName}/${blobPrefix}${courseId}.data.gz`;
 		const frameworkUrl = `/api/azure/fetch-blob-data/${containerName}/${blobPrefix}${courseId}.framework.js.gz`;
 		const codeUrl = `/api/azure/fetch-blob-data/${containerName}/${blobPrefix}${courseId}.wasm.gz`;
-		
+
 		// Log des URLs pour debug
 		useEffect(() => {
 			if (!containerName || !courseId) return;
-			
-			console.log("URLs de chargement configurées (API fetch-blob-data):", {
-				loaderUrl,
-				dataUrl,
-				frameworkUrl,
-				codeUrl,
-				containerName,
-				blobPrefix
-			});
-			
+
+			console.log(
+				"URLs de chargement configurées (API fetch-blob-data):",
+				{
+					loaderUrl,
+					dataUrl,
+					frameworkUrl,
+					codeUrl,
+					containerName,
+					blobPrefix,
+				}
+			);
+
 			// Définir l'état ready directement
 			setBuildStatus("ready");
 			setManualLoadingProgress(50);
-			
-		}, [containerName, courseId, loaderUrl, dataUrl, frameworkUrl, codeUrl, blobPrefix]);
+		}, [
+			containerName,
+			courseId,
+			loaderUrl,
+			dataUrl,
+			frameworkUrl,
+			codeUrl,
+			blobPrefix,
+		]);
 
 		// Initialiser le contexte Unity avec les nouvelles URLs
 		const {
@@ -71,7 +85,7 @@ const UnityBuild = forwardRef(
 			},
 			// Options avancées pour améliorer la compatibilité
 			fetchTimeout: 300000, // 5 minutes de timeout
-			disableWebAssemblyStreaming: false, // Activer le streaming pour améliorer la performance
+			disableWebAssemblyStreaming: true, // Désactiver le streaming pour contourner les problèmes liés à gzip
 			cacheControl: false, // Désactiver le cache
 			maxRetries: 5, // Réessayer jusqu'à 5 fois en cas d'échec
 		});

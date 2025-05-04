@@ -37,11 +37,37 @@ export async function GET(request, { params }) {
 		const containerClient =
 			blobServiceClient.getContainerClient(containerName);
 
-		// Récupération du client du blob
-		const blobClient = containerClient.getBlobClient(fullBlobPath);
+		// ⚠️ IMPORTANT : Adaptation pour Unity WebGL
+		// Si le fichier demandé correspond à un des types Unity WebGL (.data, .framework.js, .wasm)
+		// et qu'il n'existe pas, essayer avec l'extension .gz
+		let blobClient = containerClient.getBlobClient(fullBlobPath);
+		let exists = await blobClient.exists();
+		let actualBlobPath = fullBlobPath;
+		let isCompressed = false;
 
-		// Vérifier si le blob existe
-		const exists = await blobClient.exists();
+		// Si le fichier n'existe pas et qu'il semble être un fichier Unity WebGL
+		if (!exists && (
+			fullBlobPath.endsWith(".data") ||
+			fullBlobPath.endsWith(".framework.js") ||
+			fullBlobPath.endsWith(".wasm")
+		)) {
+			// Essayer avec l'extension .gz
+			const compressedPath = `${fullBlobPath}.gz`;
+			console.log(`[FETCH-BLOB] Fichier non trouvé, essai avec: ${containerName}/${compressedPath}`);
+			
+			const compressedBlobClient = containerClient.getBlobClient(compressedPath);
+			const compressedExists = await compressedBlobClient.exists();
+			
+			if (compressedExists) {
+				console.log(`[FETCH-BLOB] Fichier compressé trouvé: ${containerName}/${compressedPath}`);
+				blobClient = compressedBlobClient;
+				exists = true;
+				actualBlobPath = compressedPath;
+				isCompressed = true;
+			}
+		}
+
+		// Vérifier si le blob existe après les tentatives
 		if (!exists) {
 			console.log(
 				`[FETCH-BLOB] Le fichier n'existe pas: ${containerName}/${fullBlobPath}`
@@ -53,14 +79,8 @@ export async function GET(request, { params }) {
 		}
 
 		console.log(
-			`[FETCH-BLOB] Le fichier existe: ${containerName}/${fullBlobPath}`
+			`[FETCH-BLOB] Le fichier existe: ${containerName}/${actualBlobPath}`
 		);
-
-		// Récupérer les propriétés du blob
-		const properties = await blobClient.getProperties();
-
-		// Extraire le nom du fichier
-		const filename = fullBlobPath.split("/").pop();
 
 		// Télécharger le contenu du blob
 		const downloadResponse = await blobClient.download();
@@ -72,26 +92,47 @@ export async function GET(request, { params }) {
 			`[FETCH-BLOB] Contenu téléchargé: ${content.length} octets`
 		);
 
-		// Déterminer les en-têtes pour Unity WebGL en suivant les recommandations Unity
-		const { contentType, contentEncoding } = getUnityWebGLHeaders(filename);
-
-		// Préparer les en-têtes de réponse
+		// Configuration des en-têtes de base
 		const headers = {
-			"Content-Type": contentType,
-			"Cache-Control": "public, max-age=3600",
+			"Cache-Control": "no-cache, no-store, must-revalidate", // Désactiver le cache
+			"Pragma": "no-cache",
+			"Expires": "0",
 			"Access-Control-Allow-Origin": "*",
-			"Access-Control-Expose-Headers":
-				"Content-Length,Content-Type,Content-Encoding",
+			"Access-Control-Allow-Methods": "GET, OPTIONS",
+			"Access-Control-Expose-Headers": "Content-Length, Content-Type, Content-Encoding, Accept-Ranges",
 			"Content-Length": content.length.toString(),
 		};
 
-		// IMPORTANT: Ajouter l'en-tête Content-Encoding pour les fichiers compressés
-		if (contentEncoding) {
-			headers["Content-Encoding"] = contentEncoding;
+		// Ajouter le Content-Range pour permettre le téléchargement partiel
+		headers["Accept-Ranges"] = "bytes";
+
+		// Déterminer le type MIME basé sur le nom du fichier original demandé, pas sur le chemin réel
+		let contentType = "application/octet-stream"; // Type par défaut
+		
+		if (fullBlobPath.endsWith(".framework.js") || fullBlobPath.endsWith(".js")) {
+			contentType = "application/javascript";
+		} else if (fullBlobPath.endsWith(".wasm")) {
+			contentType = "application/wasm";
+		} else if (fullBlobPath.endsWith(".data")) {
+			contentType = "application/octet-stream";
+		} else if (fullBlobPath.endsWith(".json")) {
+			contentType = "application/json";
+		} else if (fullBlobPath.endsWith(".png")) {
+			contentType = "image/png";
+		} else if (fullBlobPath.endsWith(".jpg") || fullBlobPath.endsWith(".jpeg")) {
+			contentType = "image/jpeg";
+		}
+		
+		headers["Content-Type"] = contentType;
+
+		// Pour les fichiers compressés, ajouter l'en-tête Content-Encoding
+		if (isCompressed) {
+			headers["Content-Encoding"] = "gzip";
+			console.log(`[FETCH-BLOB] Fichier compressé: Ajout de Content-Encoding: gzip`);
 		}
 
 		console.log(`[FETCH-BLOB] En-têtes de réponse:`, headers);
-		console.log(`[FETCH-BLOB] Envoi du fichier au client`);
+		console.log(`[FETCH-BLOB] Envoi du fichier au client, taille: ${content.length} octets, type: ${contentType}`);
 
 		// Retourner les données avec les en-têtes appropriés
 		return new NextResponse(content, { headers });
@@ -120,71 +161,4 @@ async function streamToBuffer(readableStream) {
 		});
 		readableStream.on("error", reject);
 	});
-}
-
-// Configuration spécifique pour Unity WebGL
-function getUnityWebGLHeaders(filename) {
-	let contentType = "application/octet-stream";
-	let contentEncoding = null;
-
-	// Pour les fichiers compressés avec gzip
-	if (filename.endsWith(".gz")) {
-		contentEncoding = "gzip";
-
-		// Déterminer le type MIME en fonction du nom de base
-		const baseFilename = filename.slice(0, -3);
-
-		if (
-			baseFilename.endsWith(".framework.js") ||
-			baseFilename.endsWith(".js")
-		) {
-			contentType = "application/javascript";
-		} else if (baseFilename.endsWith(".wasm")) {
-			contentType = "application/wasm";
-		} else if (baseFilename.endsWith(".data")) {
-			contentType = "application/octet-stream";
-		}
-	}
-	// Pour les fichiers compressés avec brotli
-	else if (filename.endsWith(".br")) {
-		contentEncoding = "br";
-
-		// Déterminer le type MIME en fonction du nom de base
-		const baseFilename = filename.slice(0, -3);
-
-		if (
-			baseFilename.endsWith(".framework.js") ||
-			baseFilename.endsWith(".js")
-		) {
-			contentType = "application/javascript";
-		} else if (baseFilename.endsWith(".wasm")) {
-			contentType = "application/wasm";
-		} else if (baseFilename.endsWith(".data")) {
-			contentType = "application/octet-stream";
-		}
-	}
-	// Pour les fichiers non compressés
-	else {
-		if (filename.endsWith(".js")) {
-			contentType = "application/javascript";
-		} else if (filename.endsWith(".wasm")) {
-			contentType = "application/wasm";
-		} else if (filename.endsWith(".data")) {
-			contentType = "application/octet-stream";
-		} else if (filename.endsWith(".json")) {
-			contentType = "application/json";
-		} else if (filename.endsWith(".html")) {
-			contentType = "text/html";
-		} else if (filename.endsWith(".css")) {
-			contentType = "text/css";
-		}
-	}
-
-	console.log(
-		`[FETCH-BLOB] Type de contenu détecté pour ${filename}: ${contentType}${
-			contentEncoding ? ", encodage: " + contentEncoding : ""
-		}`
-	);
-
-	return { contentType, contentEncoding };
 }
