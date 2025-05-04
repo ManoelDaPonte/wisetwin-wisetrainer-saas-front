@@ -248,9 +248,19 @@ export default function CourseDetail({ params }) {
 					"Fichiers de formation non trouvés, tentative d'importation"
 				);
 
+				// Déterminer le conteneur source selon le type de formation
+				const sourceContainer = organizationId 
+					? course?.source?.containerName  // Utiliser le container de l'organisation
+					: WISETRAINER_CONFIG.CONTAINER_NAMES.SOURCE; // Ou le container par défaut pour les formations WiseTwin
+				
+				console.log(`Importation depuis le conteneur source: ${sourceContainer}`);
+				
 				// Importer depuis le container source
 				await axios.post(
-					`${WISETRAINER_CONFIG.API_ROUTES.IMPORT_BUILD}/${containerName}/${courseId}`
+					`${WISETRAINER_CONFIG.API_ROUTES.IMPORT_BUILD}/${containerName}/${courseId}`,
+					{
+						sourceContainer: sourceContainer
+					}
 				);
 
 				console.log("Importation terminée");
