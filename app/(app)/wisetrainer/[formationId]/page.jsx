@@ -1,38 +1,116 @@
 // app/(app)/wisetrainer/[formationId]/page.jsx
 "use client";
-import React, { useState } from "react";
-import { useRouter } from "next/navigation";
-import { useParams } from "next/navigation";
+import React, { useState, useEffect, useRef } from "react";
+import { useRouter, useParams, useSearchParams } from "next/navigation";
 import { useCurrentFormation } from "@/lib/hooks/formations/currentFormation/useCurrentFormation";
 import { useFormations } from "@/lib/hooks/formations/useFormations";
 import FormationHeader from "@/components/wisetrainer/formation/FormationHeader";
 import FormationTabs from "@/components/wisetrainer/formation/FormationTabs";
 import UnenrollModal from "@/components/wisetrainer/modals/UnenrollModal";
 import { Skeleton } from "@/components/ui/skeleton";
+import axios from "axios";
+import { useToast } from "@/lib/hooks/useToast";
 
 export default function FormationDetailPage() {
 	const router = useRouter();
 	const params = useParams();
+	const searchParams = useSearchParams();
 	const formationId = params?.formationId;
+	const organizationId = searchParams.get("organizationId");
+
+	// Références pour éviter les vérifications multiples
+	const accessCheckRef = useRef(false);
+	const formationLoadedRef = useRef(false);
 
 	const [showUnenrollModal, setShowUnenrollModal] = useState(false);
+	const [isCheckingAccess, setIsCheckingAccess] = useState(!!organizationId);
+	const [accessError, setAccessError] = useState(null);
+	const { toast } = useToast();
 
-	// Utiliser le hook pour charger les détails de la formation
-	const { formation, isLoading, error } = useCurrentFormation(formationId);
+	// Source pour le hook useCurrentFormation
+	const source = organizationId
+		? {
+				type: "organization",
+				organizationId: organizationId,
+		  }
+		: null;
 
-	// Utiliser le hook des formations pour les actions d'inscription/désinscription
+	const { formation, isLoading, error } = useCurrentFormation(
+		formationId,
+		source
+	);
 	const { enrollFormation, unenrollFormation } = useFormations();
+
+	// Effet pour vérifier l'accès à l'organisation si nécessaire
+	useEffect(() => {
+		// Ne vérifier l'accès qu'une seule fois
+		if (!organizationId || accessCheckRef.current) {
+			setIsCheckingAccess(false);
+			return;
+		}
+
+		const checkAccess = async () => {
+			try {
+				const response = await axios.get(
+					`/api/organizations/${organizationId}/check-membership`
+				);
+
+				accessCheckRef.current = true;
+
+				if (!response.data.isMember) {
+					setAccessError(
+						"Vous n'êtes pas autorisé à accéder à cette formation"
+					);
+					toast({
+						title: "Accès refusé",
+						description:
+							"Vous n'êtes pas membre de cette organisation",
+						variant: "destructive",
+					});
+
+					// Rediriger après un court délai
+					setTimeout(() => {
+						router.push("/wisetrainer");
+					}, 2000);
+				}
+			} catch (error) {
+				console.error("Erreur lors de la vérification d'accès:", error);
+				accessCheckRef.current = true;
+				setAccessError(
+					"Erreur lors de la vérification des droits d'accès"
+				);
+				toast({
+					title: "Erreur",
+					description: "Impossible de vérifier vos droits d'accès",
+					variant: "destructive",
+				});
+			} finally {
+				setIsCheckingAccess(false);
+			}
+		};
+
+		checkAccess();
+	}, [organizationId, router, toast]);
 
 	// Fonctions de navigation
 	const handleBack = () => {
-		router.push("/wisetrainer");
+		if (organizationId) {
+			router.push("/wisetrainer?tab=catalogueOrganizations");
+		} else {
+			router.push("/wisetrainer");
+		}
 	};
 
 	// Gérer l'inscription
 	const handleEnroll = async () => {
 		if (!formation) return;
 
-		const result = await enrollFormation(formation);
+		const formationWithSource = {
+			...formation,
+			source: source || formation.source,
+		};
+
+		const result = await enrollFormation(formationWithSource);
 		if (result.success) {
 			// Recharger la page pour voir les mises à jour
 			window.location.reload();
@@ -47,15 +125,20 @@ export default function FormationDetailPage() {
 	const confirmUnenroll = async () => {
 		if (!formation) return;
 
-		const result = await unenrollFormation(formation);
+		const formationWithSource = {
+			...formation,
+			source: source || formation.source,
+		};
+
+		const result = await unenrollFormation(formationWithSource);
 		if (result.success) {
 			setShowUnenrollModal(false);
-			router.push("/wisetrainer");
+			router.push("/wisetrainer?tab=mesFormations");
 		}
 	};
 
 	// Afficher un état de chargement
-	if (isLoading) {
+	if (isCheckingAccess || isLoading) {
 		return (
 			<div className="container mx-auto py-8">
 				<Skeleton className="h-10 w-32 mb-4" />
@@ -81,16 +164,15 @@ export default function FormationDetailPage() {
 	}
 
 	// Afficher un message d'erreur
-	if (error || !formation) {
+	if (accessError || error || !formation) {
 		return (
 			<div className="container mx-auto py-8">
 				<div className="text-center py-12">
 					<div className="text-red-500 text-xl mb-4">
-						{error || "Formation non trouvée"}
+						{accessError || error || "Formation non trouvée"}
 					</div>
 					<p className="text-gray-600 dark:text-gray-300 mb-4">
-						Impossible de charger cette formation. Veuillez
-						réessayer plus tard.
+						Impossible d'accéder à cette formation.
 					</p>
 					<button
 						className="bg-wisetwin-blue hover:bg-wisetwin-blue-light text-white px-4 py-2 rounded-md"
@@ -101,6 +183,11 @@ export default function FormationDetailPage() {
 				</div>
 			</div>
 		);
+	}
+
+	// Éviter de montrer le contenu si des toasts d'erreur sont déjà affichés
+	if (accessError || error) {
+		return null;
 	}
 
 	return (
@@ -114,7 +201,10 @@ export default function FormationDetailPage() {
 			/>
 
 			{/* Onglets de la formation */}
-			<FormationTabs formation={formation} />
+			<FormationTabs
+				formation={formation}
+				organizationId={organizationId}
+			/>
 
 			{/* Modal de désinscription */}
 			<UnenrollModal

@@ -81,7 +81,6 @@ export default function Formations() {
 		setCourseToUnenroll(null);
 	};
 
-	// Fonction pour gérer la sélection d'un cours
 	const handleCourseSelect = (course) => {
 		// Vérifier si le cours a des informations de source
 		if (
@@ -89,12 +88,12 @@ export default function Formations() {
 			course.source.type === "organization" &&
 			course.source.organizationId
 		) {
-			// Rediriger vers la version organisation du cours
+			// Rediriger vers la page unique avec l'organizationId en paramètre
 			router.push(
-				`/wisetrainer/organization/${course.source.organizationId}/${course.id}`
+				`/wisetrainer/${course.id}?organizationId=${course.source.organizationId}`
 			);
 		} else {
-			// Rediriger vers la version standard du cours
+			// Rediriger vers la page standard
 			router.push(`/wisetrainer/${course.id}`);
 		}
 	};

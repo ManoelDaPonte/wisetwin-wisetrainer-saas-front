@@ -40,7 +40,7 @@ const CatalogueOrganizations = ({
 
 	const handleViewFormation = (formation) => {
 		router.push(
-			`/wisetrainer/organization/${formation.source.organizationId}/${formation.id}`
+			`/wisetrainer/${formation.id}?organizationId=${formation.source.organizationId}`
 		);
 	};
 

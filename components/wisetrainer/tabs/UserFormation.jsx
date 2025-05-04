@@ -1,4 +1,4 @@
-// components/wisetrainer/tabs/MesFormations.jsx
+// components/wisetrainer/tabs/UserFormation.jsx
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
@@ -24,13 +24,12 @@ const UserFormation = ({ formations, isLoading, onUnenroll }) => {
 		// Déterminer la route en fonction de la source de la formation
 		if (formation.source && formation.source.type === "organization") {
 			router.push(
-				`/wisetrainer/organization/${formation.source.organizationId}/${formation.id}`
+				`/wisetrainer/${formation.id}?organizationId=${formation.source.organizationId}`
 			);
 		} else {
 			router.push(`/wisetrainer/${formation.id}`);
 		}
 	};
-
 	if (isLoading) {
 		return (
 			<div className="space-y-4">
