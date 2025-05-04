@@ -25,6 +25,16 @@ const nextConfig = {
         },
         {
           protocol: 'https',
+          hostname: 'wisetwin.blob.core.windows.net',
+          pathname: '/**',
+        },
+        {
+          protocol: 'https',
+          hostname: 'wisetwindev.blob.core.windows.net',
+          pathname: '/**',
+        },
+        {
+          protocol: 'https',
           hostname: 'asset.cloudinary.com',
           pathname: '/**',
         },
