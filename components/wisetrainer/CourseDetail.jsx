@@ -248,10 +248,24 @@ export default function CourseDetail({ params }) {
 					"Fichiers de formation non trouvés, tentative d'importation"
 				);
 
-				// Déterminer le conteneur source selon le type de formation
-				const sourceContainer = organizationId 
-					? course?.source?.containerName  // Utiliser le container de l'organisation
-					: WISETRAINER_CONFIG.CONTAINER_NAMES.SOURCE; // Ou le container par défaut pour les formations WiseTwin
+				// Si nous n'avons pas encore d'informations sur le cours, les récupérer
+				let sourceContainer = WISETRAINER_CONFIG.CONTAINER_NAMES.SOURCE; // Valeur par défaut
+				
+				if (organizationId) {
+					try {
+						console.log(`Formation d'organisation détectée, ID: ${organizationId}, récupération du container...`);
+						// Récupérer les informations de l'organisation directement
+						const orgResponse = await axios.get(`/api/organization/${organizationId}`);
+						if (orgResponse.data && orgResponse.data.organization && orgResponse.data.organization.azureContainer) {
+							sourceContainer = orgResponse.data.organization.azureContainer;
+							console.log(`Container de l'organisation trouvé: ${sourceContainer}`);
+						} else {
+							console.warn("Container de l'organisation non trouvé, utilisation du container par défaut");
+						}
+					} catch (orgError) {
+						console.error("Erreur lors de la récupération du container de l'organisation:", orgError);
+					}
+				}
 				
 				console.log(`Importation depuis le conteneur source: ${sourceContainer}`);
 				

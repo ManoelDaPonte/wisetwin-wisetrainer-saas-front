@@ -27,14 +27,9 @@ export async function POST(request, { params }) {
 		}
 
 		// Paramètres de configuration - UTILISEZ LE CONTENEUR SOURCE SPÉCIFIÉ OU CONTENEUR PAR DÉFAUT
-		const sourceContainer = requestData.sourceContainer || null;
+		const sourceContainer = requestData.sourceContainer || WISETRAINER_CONFIG.CONTAINER_NAMES.SOURCE;
 		
-		if (!sourceContainer) {
-			return NextResponse.json(
-				{ error: "Le paramètre sourceContainer est requis pour l'importation" },
-				{ status: 400 }
-			);
-		}
+		console.log(`Conteneur source utilisé pour l'importation: ${sourceContainer}`);
 		
 		const destContainer = userId;
 		const destPrefix = WISETRAINER_CONFIG.BLOB_PREFIXES.WISETRAINER;
