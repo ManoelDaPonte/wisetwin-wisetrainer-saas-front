@@ -1,6 +1,6 @@
 const WISETRAINER_CONFIG = {
 	CONTAINER_NAMES: {
-		SOURCE: "wisetrainer-training-build", // Container source pour les formations officielles WiseTwin
+		SOURCE: "wisetwin", // Container source pour les formations officielles WiseTwin
 	},
 	BLOB_PREFIXES: {
 		WISETRAINER: "wisetrainer/", // Préfixe pour les formations dans le container
@@ -10,8 +10,10 @@ const WISETRAINER_CONFIG = {
 		// Routes pour les API Azure Blob Storage
 		LIST_BUILDS: "/api/azure/wisetrainer/builds",
 		IMPORT_BUILD: "/api/azure/wisetrainer/import",
-		UNENROLL_COURSE: "/api/db/wisetrainer/unenroll-course", // Nouvelle route pour désinscrire l'utilisateur
-		ENROLL_COURSE: "/api/db/wisetrainer/enroll-course", // Nouvelle route pour inscrire l'utilisateur
+		COPY_TRAINING_FILES: "/api/azure/wisetrainer/copy-training-files", // Nouvelle route pour copier les fichiers de formation
+		UNENROLL_COURSE: "/api/db/wisetrainer/unenroll-course", // Route pour désinscrire l'utilisateur
+		UNENROLL_AZURE: "/api/azure/wisetrainer/unenroll", // Route pour supprimer les fichiers dans Azure
+		ENROLL_COURSE: "/api/db/wisetrainer/enroll-course", // Route pour inscrire l'utilisateur
 		CHECK_BLOB: "/api/azure/check-blob-exists",
 
 		// Routes pour les API de la base de données

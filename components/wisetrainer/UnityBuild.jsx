@@ -20,76 +20,35 @@ const UnityBuild = forwardRef(
 		const [buildStatus, setBuildStatus] = useState("checking");
 		const [manualLoadingProgress, setManualLoadingProgress] = useState(10);
 
-		// Construire les URLs pour les fichiers Unity avec le bon préfixe
+		// Préfixe des blobs
 		const blobPrefix = WISETRAINER_CONFIG.BLOB_PREFIXES.WISETRAINER;
+		
+		// Utiliser l'API fetch-blob-data mise à jour qui fonctionne correctement
 		const loaderUrl = `/api/azure/fetch-blob-data/${containerName}/${blobPrefix}${courseId}.loader.js`;
 		const dataUrl = `/api/azure/fetch-blob-data/${containerName}/${blobPrefix}${courseId}.data.gz`;
 		const frameworkUrl = `/api/azure/fetch-blob-data/${containerName}/${blobPrefix}${courseId}.framework.js.gz`;
 		const codeUrl = `/api/azure/fetch-blob-data/${containerName}/${blobPrefix}${courseId}.wasm.gz`;
-
-		// Vérifier que tous les fichiers de build existent
+		
+		// Log des URLs pour debug
 		useEffect(() => {
-			const checkBuildFiles = async () => {
-				if (!containerName || !courseId) return;
+			if (!containerName || !courseId) return;
+			
+			console.log("URLs de chargement configurées (API fetch-blob-data):", {
+				loaderUrl,
+				dataUrl,
+				frameworkUrl,
+				codeUrl,
+				containerName,
+				blobPrefix
+			});
+			
+			// Définir l'état ready directement
+			setBuildStatus("ready");
+			setManualLoadingProgress(50);
+			
+		}, [containerName, courseId, loaderUrl, dataUrl, frameworkUrl, codeUrl, blobPrefix]);
 
-				try {
-					setBuildStatus("checking");
-					setManualLoadingProgress(10);
-					console.log("Vérification des fichiers de build...");
-
-					// Liste des extensions à vérifier
-					const extensions = [
-						"loader.js",
-						"data.gz",
-						"framework.js.gz",
-						"wasm.gz",
-					];
-
-					// Vérifier chaque fichier
-					for (const ext of extensions) {
-						const blobName = `${blobPrefix}${courseId}.${ext}`;
-						console.log(`Vérification de ${blobName}...`);
-
-						const response = await axios.get(
-							`/api/azure/check-blob-exists`,
-							{
-								params: {
-									container: containerName,
-									blob: blobName,
-								},
-							}
-						);
-
-						if (!response.data.exists) {
-							setBuildError(
-								`Le fichier ${courseId}.${ext} est manquant. Veuillez contacter l'administrateur.`
-							);
-							setBuildStatus("error");
-							return;
-						}
-
-						// Incrémenter la progression
-						setManualLoadingProgress((prev) => prev + 15);
-					}
-
-					console.log("Tous les fichiers de build sont présents.");
-					setBuildStatus("ready");
-					setManualLoadingProgress(70);
-				} catch (error) {
-					console.error(
-						"Erreur lors de la vérification des fichiers de build:",
-						error
-					);
-					setBuildError(
-						"Erreur lors de la vérification des fichiers de build. Veuillez réessayer plus tard."
-					);
-					setBuildStatus("error");
-				}
-			};
-
-			checkBuildFiles();
-		}, [containerName, courseId, blobPrefix]);
-
+		// Initialiser le contexte Unity avec les nouvelles URLs
 		const {
 			unityProvider,
 			loadingProgression,
@@ -101,13 +60,20 @@ const UnityBuild = forwardRef(
 			sendMessage,
 			error: unityError,
 		} = useUnityContext({
-			loaderUrl,
-			dataUrl,
-			frameworkUrl,
-			codeUrl,
+			loaderUrl: loaderUrl,
+			dataUrl: dataUrl,
+			frameworkUrl: frameworkUrl,
+			codeUrl: codeUrl,
 			webGLContextAttributes: {
 				preserveDrawingBuffer: true,
+				powerPreference: "high-performance",
+				failIfMajorPerformanceCaveat: false,
 			},
+			// Options avancées pour améliorer la compatibilité
+			fetchTimeout: 300000, // 5 minutes de timeout
+			disableWebAssemblyStreaming: false, // Activer le streaming pour améliorer la performance
+			cacheControl: false, // Désactiver le cache
+			maxRetries: 5, // Réessayer jusqu'à 5 fois en cas d'échec
 		});
 
 		// Mettre à jour la progression du chargement

@@ -242,42 +242,68 @@ export default function CourseDetail({ params }) {
 				}
 			);
 
-			// Si les fichiers n'existent pas, essayer de les importer d'abord
+			// Si les fichiers n'existent pas, essayer de les copier d'abord
 			if (!checkResponse.data.exists) {
 				console.log(
-					"Fichiers de formation non trouvés, tentative d'importation"
+					"Fichiers de formation non trouvés, tentative de copie des fichiers"
 				);
-
-				// Si nous n'avons pas encore d'informations sur le cours, les récupérer
-				let sourceContainer = WISETRAINER_CONFIG.CONTAINER_NAMES.SOURCE; // Valeur par défaut
 				
-				if (organizationId) {
-					try {
-						console.log(`Formation d'organisation détectée, ID: ${organizationId}, récupération du container...`);
-						// Récupérer les informations de l'organisation directement
-						const orgResponse = await axios.get(`/api/organization/${organizationId}`);
-						if (orgResponse.data && orgResponse.data.organization && orgResponse.data.organization.azureContainer) {
-							sourceContainer = orgResponse.data.organization.azureContainer;
-							console.log(`Container de l'organisation trouvé: ${sourceContainer}`);
-						} else {
-							console.warn("Container de l'organisation non trouvé, utilisation du container par défaut");
+				// Utiliser la nouvelle API pour copier les fichiers depuis le container source approprié
+				try {
+					console.log(`Copie des fichiers de formation pour le cours ${courseId}`);
+					
+					// Appeler la nouvelle API pour copier les fichiers
+					const copyResponse = await axios.post(
+						WISETRAINER_CONFIG.API_ROUTES.COPY_TRAINING_FILES,
+						{
+							userId: containerName,
+							courseId: courseId,
+							organizationId: organizationId,
 						}
-					} catch (orgError) {
-						console.error("Erreur lors de la récupération du container de l'organisation:", orgError);
+					);
+					
+					if (copyResponse.data.success) {
+						console.log("Copie des fichiers réussie:", copyResponse.data);
+					} else {
+						console.warn("Copie partielle des fichiers:", copyResponse.data);
 					}
+				} catch (copyError) {
+					console.error("Erreur lors de la copie des fichiers:", copyError);
+					
+					// En cas d'échec, essayer l'ancienne méthode d'importation comme fallback
+					console.log("Tentative d'utilisation de l'ancienne méthode d'importation...");
+					
+					// Si nous n'avons pas encore d'informations sur le cours, les récupérer
+					let sourceContainer = WISETRAINER_CONFIG.CONTAINER_NAMES.SOURCE; // Valeur par défaut
+					
+					if (organizationId) {
+						try {
+							console.log(`Formation d'organisation détectée, ID: ${organizationId}, récupération du container...`);
+							// Récupérer les informations de l'organisation directement
+							const orgResponse = await axios.get(`/api/organization/${organizationId}`);
+							if (orgResponse.data && orgResponse.data.organization && orgResponse.data.organization.azureContainer) {
+								sourceContainer = orgResponse.data.organization.azureContainer;
+								console.log(`Container de l'organisation trouvé: ${sourceContainer}`);
+							} else {
+								console.warn("Container de l'organisation non trouvé, utilisation du container par défaut");
+							}
+						} catch (orgError) {
+							console.error("Erreur lors de la récupération du container de l'organisation:", orgError);
+						}
+					}
+					
+					console.log(`Importation depuis le conteneur source: ${sourceContainer}`);
+					
+					// Importer depuis le container source
+					await axios.post(
+						`${WISETRAINER_CONFIG.API_ROUTES.IMPORT_BUILD}/${containerName}/${courseId}`,
+						{
+							sourceContainer: sourceContainer
+						}
+					);
 				}
-				
-				console.log(`Importation depuis le conteneur source: ${sourceContainer}`);
-				
-				// Importer depuis le container source
-				await axios.post(
-					`${WISETRAINER_CONFIG.API_ROUTES.IMPORT_BUILD}/${containerName}/${courseId}`,
-					{
-						sourceContainer: sourceContainer
-					}
-				);
 
-				console.log("Importation terminée");
+				console.log("Opération de copie/importation terminée");
 			}
 
 			// Déterminer la source correcte en fonction des paramètres
@@ -340,7 +366,7 @@ export default function CourseDetail({ params }) {
 	// const handleScenarioComplete = async (results) => {
 	// 	try {
 	// 		if (!currentScenario) return;
-
+	//
 	// 		// Gérer les différents formats de résultats possibles
 	// 		let score;
 	// 		if (Array.isArray(results)) {

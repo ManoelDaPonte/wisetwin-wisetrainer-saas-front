@@ -31,8 +31,8 @@ const UnenrollModal = ({ isOpen, onClose, onConfirm, courseName }) => {
 				<div className="py-4">
 					<p>
 						Votre progression sera conservée, mais la formation ne
-						sera plus visible dans "Mes Formations". Vous pourrez la
-						réajouter à tout moment depuis le catalogue.
+						sera plus visible dans "Mes Formations" et les fichiers seront supprimés 
+						de votre espace de stockage. Vous pourrez la réajouter à tout moment depuis le catalogue.
 					</p>
 				</div>
 				<DialogFooter className="sm:justify-between">
