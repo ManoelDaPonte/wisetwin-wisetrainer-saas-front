@@ -56,6 +56,12 @@ export async function GET(request, { params }) {
 			`[FETCH-BLOB] Le fichier existe: ${containerName}/${fullBlobPath}`
 		);
 
+		// Récupérer les propriétés du blob
+		const properties = await blobClient.getProperties();
+
+		// Extraire le nom du fichier
+		const filename = fullBlobPath.split("/").pop();
+
 		// Télécharger le contenu du blob
 		const downloadResponse = await blobClient.download();
 		const content = await streamToBuffer(
@@ -66,43 +72,26 @@ export async function GET(request, { params }) {
 			`[FETCH-BLOB] Contenu téléchargé: ${content.length} octets`
 		);
 
-		// Configuration des en-têtes pour Unity WebGL
+		// Déterminer les en-têtes pour Unity WebGL en suivant les recommandations Unity
+		const { contentType, contentEncoding } = getUnityWebGLHeaders(filename);
+
+		// Préparer les en-têtes de réponse
 		const headers = {
+			"Content-Type": contentType,
 			"Cache-Control": "public, max-age=3600",
 			"Access-Control-Allow-Origin": "*",
 			"Access-Control-Expose-Headers":
-				"Content-Length,Content-Type,Content-Range,Accept-Ranges",
+				"Content-Length,Content-Type,Content-Encoding",
 			"Content-Length": content.length.toString(),
 		};
 
-		// Pour les fichiers Unity WebGL, on utilise une approche simplifiée
-		if (fullBlobPath.endsWith(".gz")) {
-			// IMPORTANT: Pour les fichiers .gz, on laisse Unity gérer la décompression
-			// en ne spécifiant PAS Content-Encoding et en utilisant le type MIME brut
-			if (
-				fullBlobPath.includes(".framework.js.gz") ||
-				fullBlobPath.includes(".js.gz")
-			) {
-				headers["Content-Type"] = "application/javascript";
-			} else if (fullBlobPath.includes(".wasm.gz")) {
-				headers["Content-Type"] = "application/wasm";
-			} else if (fullBlobPath.includes(".data.gz")) {
-				headers["Content-Type"] = "application/octet-stream";
-			} else {
-				headers["Content-Type"] = "application/octet-stream";
-			}
-		} else if (fullBlobPath.endsWith(".js")) {
-			headers["Content-Type"] = "application/javascript";
-		} else if (fullBlobPath.endsWith(".wasm")) {
-			headers["Content-Type"] = "application/wasm";
-		} else {
-			headers["Content-Type"] = "application/octet-stream";
+		// IMPORTANT: Ajouter l'en-tête Content-Encoding pour les fichiers compressés
+		if (contentEncoding) {
+			headers["Content-Encoding"] = contentEncoding;
 		}
 
 		console.log(`[FETCH-BLOB] En-têtes de réponse:`, headers);
-		console.log(
-			`[FETCH-BLOB] Envoi du fichier au client, taille: ${content.length} octets`
-		);
+		console.log(`[FETCH-BLOB] Envoi du fichier au client`);
 
 		// Retourner les données avec les en-têtes appropriés
 		return new NextResponse(content, { headers });
@@ -131,4 +120,71 @@ async function streamToBuffer(readableStream) {
 		});
 		readableStream.on("error", reject);
 	});
+}
+
+// Configuration spécifique pour Unity WebGL
+function getUnityWebGLHeaders(filename) {
+	let contentType = "application/octet-stream";
+	let contentEncoding = null;
+
+	// Pour les fichiers compressés avec gzip
+	if (filename.endsWith(".gz")) {
+		contentEncoding = "gzip";
+
+		// Déterminer le type MIME en fonction du nom de base
+		const baseFilename = filename.slice(0, -3);
+
+		if (
+			baseFilename.endsWith(".framework.js") ||
+			baseFilename.endsWith(".js")
+		) {
+			contentType = "application/javascript";
+		} else if (baseFilename.endsWith(".wasm")) {
+			contentType = "application/wasm";
+		} else if (baseFilename.endsWith(".data")) {
+			contentType = "application/octet-stream";
+		}
+	}
+	// Pour les fichiers compressés avec brotli
+	else if (filename.endsWith(".br")) {
+		contentEncoding = "br";
+
+		// Déterminer le type MIME en fonction du nom de base
+		const baseFilename = filename.slice(0, -3);
+
+		if (
+			baseFilename.endsWith(".framework.js") ||
+			baseFilename.endsWith(".js")
+		) {
+			contentType = "application/javascript";
+		} else if (baseFilename.endsWith(".wasm")) {
+			contentType = "application/wasm";
+		} else if (baseFilename.endsWith(".data")) {
+			contentType = "application/octet-stream";
+		}
+	}
+	// Pour les fichiers non compressés
+	else {
+		if (filename.endsWith(".js")) {
+			contentType = "application/javascript";
+		} else if (filename.endsWith(".wasm")) {
+			contentType = "application/wasm";
+		} else if (filename.endsWith(".data")) {
+			contentType = "application/octet-stream";
+		} else if (filename.endsWith(".json")) {
+			contentType = "application/json";
+		} else if (filename.endsWith(".html")) {
+			contentType = "text/html";
+		} else if (filename.endsWith(".css")) {
+			contentType = "text/css";
+		}
+	}
+
+	console.log(
+		`[FETCH-BLOB] Type de contenu détecté pour ${filename}: ${contentType}${
+			contentEncoding ? ", encodage: " + contentEncoding : ""
+		}`
+	);
+
+	return { contentType, contentEncoding };
 }
