@@ -20,6 +20,9 @@ export default function CourseDetail({ params }) {
 	const router = useRouter();
 	const { containerName, isLoading: containerLoading } = useAzureContainer();
 	const [courseId, setCourseId] = useState(params?.courseId || null);
+	const [organizationId, setOrganizationId] = useState(
+		params?.organizationId || null
+	); // Ajout de cet état
 	const [course, setCourse] = useState(null);
 	const [userProgress, setUserProgress] = useState(null);
 	const [isLoading, setIsLoading] = useState(true);
@@ -50,6 +53,10 @@ export default function CourseDetail({ params }) {
 	useEffect(() => {
 		if (params?.courseId) {
 			setCourseId(params.courseId);
+		}
+
+		if (params?.organizationId) {
+			setOrganizationId(params.organizationId);
 		}
 	}, [params]);
 
@@ -83,9 +90,10 @@ export default function CourseDetail({ params }) {
 	const fetchCourseDetails = async () => {
 		setIsLoading(true);
 		try {
-			console.log(
-				`Chargement des détails du cours ${courseId} pour le container ${containerName}`
-			);
+			// URL différente pour les cours d'organisation
+			const apiUrl = organizationId
+				? `${WISETRAINER_CONFIG.API_ROUTES.ORGANIZATION_COURSE_DETAILS}/${organizationId}/${courseId}`
+				: `${WISETRAINER_CONFIG.API_ROUTES.COURSE_DETAILS}/${courseId}`;
 
 			// Charger les détails du cours depuis le fichier de configuration
 			let courseConfig;
@@ -234,27 +242,88 @@ export default function CourseDetail({ params }) {
 				}
 			);
 
-			// Si les fichiers n'existent pas, essayer de les importer d'abord
+			// Si les fichiers n'existent pas, essayer de les copier d'abord
 			if (!checkResponse.data.exists) {
 				console.log(
-					"Fichiers de formation non trouvés, tentative d'importation"
+					"Fichiers de formation non trouvés, tentative de copie des fichiers"
 				);
+				
+				// Utiliser la nouvelle API pour copier les fichiers depuis le container source approprié
+				try {
+					console.log(`Copie des fichiers de formation pour le cours ${courseId}`);
+					
+					// Appeler la nouvelle API pour copier les fichiers
+					const copyResponse = await axios.post(
+						WISETRAINER_CONFIG.API_ROUTES.COPY_TRAINING_FILES,
+						{
+							userId: containerName,
+							courseId: courseId,
+							organizationId: organizationId,
+						}
+					);
+					
+					if (copyResponse.data.success) {
+						console.log("Copie des fichiers réussie:", copyResponse.data);
+					} else {
+						console.warn("Copie partielle des fichiers:", copyResponse.data);
+					}
+				} catch (copyError) {
+					console.error("Erreur lors de la copie des fichiers:", copyError);
+					
+					// En cas d'échec, essayer l'ancienne méthode d'importation comme fallback
+					console.log("Tentative d'utilisation de l'ancienne méthode d'importation...");
+					
+					// Si nous n'avons pas encore d'informations sur le cours, les récupérer
+					let sourceContainer = WISETRAINER_CONFIG.CONTAINER_NAMES.SOURCE; // Valeur par défaut
+					
+					if (organizationId) {
+						try {
+							console.log(`Formation d'organisation détectée, ID: ${organizationId}, récupération du container...`);
+							// Récupérer les informations de l'organisation directement
+							const orgResponse = await axios.get(`/api/organization/${organizationId}`);
+							if (orgResponse.data && orgResponse.data.organization && orgResponse.data.organization.azureContainer) {
+								sourceContainer = orgResponse.data.organization.azureContainer;
+								console.log(`Container de l'organisation trouvé: ${sourceContainer}`);
+							} else {
+								console.warn("Container de l'organisation non trouvé, utilisation du container par défaut");
+							}
+						} catch (orgError) {
+							console.error("Erreur lors de la récupération du container de l'organisation:", orgError);
+						}
+					}
+					
+					console.log(`Importation depuis le conteneur source: ${sourceContainer}`);
+					
+					// Importer depuis le container source
+					await axios.post(
+						`${WISETRAINER_CONFIG.API_ROUTES.IMPORT_BUILD}/${containerName}/${courseId}`,
+						{
+							sourceContainer: sourceContainer
+						}
+					);
+				}
 
-				// Importer depuis le container source
-				await axios.post(
-					`${WISETRAINER_CONFIG.API_ROUTES.IMPORT_BUILD}/${containerName}/${courseId}`
-				);
-
-				console.log("Importation terminée");
+				console.log("Opération de copie/importation terminée");
 			}
 
-			// Initialiser la progression à 0%
+			// Déterminer la source correcte en fonction des paramètres
+			const sourceType = organizationId ? "organization" : "wisetwin";
+			const sourceOrganizationId = organizationId || null;
+
+			console.log("Source pour initialisation:", {
+				sourceType,
+				sourceOrganizationId,
+				courseId,
+			});
+
+			// Initialiser la progression à 0% avec les bonnes informations de source
 			const response = await axios.post(
-				WISETRAINER_CONFIG.API_ROUTES.UPDATE_PROGRESS,
+				WISETRAINER_CONFIG.API_ROUTES.INITIALIZE_PROGRESS,
 				{
 					userId: containerName,
-					trainingId: courseId,
-					progress: 0, // Commencer à 0%
+					courseId: courseId,
+					sourceType: sourceType,
+					sourceOrganizationId: sourceOrganizationId,
 				}
 			);
 
@@ -297,7 +366,7 @@ export default function CourseDetail({ params }) {
 	// const handleScenarioComplete = async (results) => {
 	// 	try {
 	// 		if (!currentScenario) return;
-
+	//
 	// 		// Gérer les différents formats de résultats possibles
 	// 		let score;
 	// 		if (Array.isArray(results)) {
@@ -362,20 +431,30 @@ export default function CourseDetail({ params }) {
 					score >= 70
 				);
 
-				// Déterminer quelle touche simuler en fonction du numéro de module
+				// Déterminer quelle touche simuler
+				let keyToSimulate;
 
-				// Trouver l'index du module complété (on commence à 0, donc module 1 = index 0)
-				const moduleIndex = course.modules.findIndex(
-					(module) => module.id === currentScenario.id
-				);
-
-				// Touche à simuler = numéro de module (index + 1)
-				const keyToSimulate =
-					moduleIndex >= 0 ? String(moduleIndex + 1) : "1";
-
-				console.log(
-					`Module index: ${moduleIndex}, simulant l'appui sur la touche '${keyToSimulate}'`
-				);
+				// Vérifier si le scénario actuel est "general-safety-rules" et si le score est insuffisant
+				if (
+					currentScenario.id === "general-safety-rules" &&
+					score < 70
+				) {
+					// Pour ce module spécifique, si l'utilisateur se trompe, on simule la touche 4
+					keyToSimulate = "4";
+					console.log(
+						`Module ${currentScenario.id} échoué, simulation de la touche '4'`
+					);
+				} else {
+					// Pour les autres modules, conserver la logique existante
+					const moduleIndex = course.modules.findIndex(
+						(module) => module.id === currentScenario.id
+					);
+					keyToSimulate =
+						moduleIndex >= 0 ? String(moduleIndex + 1) : "1";
+					console.log(
+						`Module index: ${moduleIndex}, simulation de la touche '${keyToSimulate}'`
+					);
+				}
 
 				// Simuler un événement clavier
 				console.log(
@@ -403,7 +482,6 @@ export default function CourseDetail({ params }) {
 				});
 
 				// 3. Dispatcher les événements sur l'élément Unity ou sur le document
-				// Option 1: Dispatcher sur l'élément Unity (si possible d'obtenir l'élément)
 				const unityCanvas = document.querySelector("canvas");
 				if (unityCanvas) {
 					unityCanvas.dispatchEvent(keydownEvent);
@@ -411,9 +489,7 @@ export default function CourseDetail({ params }) {
 					setTimeout(() => {
 						unityCanvas.dispatchEvent(keyupEvent);
 					}, 100);
-				}
-				// Option 2: Dispatcher sur le document (fallback)
-				else {
+				} else {
 					document.dispatchEvent(keydownEvent);
 					setTimeout(() => {
 						document.dispatchEvent(keyupEvent);
@@ -421,9 +497,17 @@ export default function CourseDetail({ params }) {
 				}
 			}
 
-			// Mettre à jour la progression en base de données
+			const sourceType = organizationId ? "organization" : "wisetwin";
+			const sourceOrganizationId = organizationId || null;
+
+			console.log("Mise à jour de la progression avec source:", {
+				sourceType,
+				sourceOrganizationId,
+				courseId,
+			});
+
+			// [Le reste de votre code pour mettre à jour la progression reste inchangé]
 			try {
-				// Appeler l'API pour mettre à jour la progression
 				const response = await axios.post(
 					WISETRAINER_CONFIG.API_ROUTES.UPDATE_PROGRESS,
 					{
@@ -436,13 +520,13 @@ export default function CourseDetail({ params }) {
 						),
 						completedModule: currentScenario.id,
 						moduleScore: score,
+						sourceType, // Ajouter ces informations
+						sourceOrganizationId, // pour la source
 					}
 				);
 
 				if (response.data.success) {
-					// Rafraîchir les données du cours
 					await fetchCourseDetails();
-
 					toast({
 						title: "Module terminé",
 						description: `Vous avez complété ce module avec un score de ${score}%`,

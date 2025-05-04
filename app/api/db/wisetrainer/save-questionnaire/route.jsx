@@ -8,8 +8,14 @@ const prisma = new PrismaClient();
 
 export async function POST(request) {
 	try {
-		const { userId, questionnaireId, responses, trainingId } =
-			await request.json();
+		const {
+			userId,
+			questionnaireId,
+			responses,
+			trainingId,
+			sourceType = "wisetwin",
+			sourceOrganizationId = null,
+		} = await request.json();
 
 		if (!userId || !questionnaireId || !responses || !trainingId) {
 			return NextResponse.json(
@@ -19,6 +25,12 @@ export async function POST(request) {
 				{ status: 400 }
 			);
 		}
+
+		console.log("Sauvegarde des réponses avec source:", {
+			trainingId,
+			sourceType,
+			sourceOrganizationId,
+		});
 
 		// Utiliser directement le trainingId fourni pour charger la configuration du cours
 		const configPath = path.join(
@@ -59,7 +71,6 @@ export async function POST(request) {
 			},
 		});
 
-		// Si l'utilisateur n'existe pas, retourner une erreur
 		if (!user) {
 			return NextResponse.json(
 				{
@@ -67,6 +78,33 @@ export async function POST(request) {
 				},
 				{ status: 404 }
 			);
+		}
+
+		// Vérifier si le cours existe en DB avec la source spécifiée
+		let courseDb = await prisma.course.findFirst({
+			where: {
+				courseId: trainingId,
+				sourceType: sourceType,
+				sourceOrganizationId: sourceOrganizationId,
+			},
+		});
+
+		// Si le cours n'existe pas en DB, le créer
+		if (!courseDb) {
+			courseDb = await prisma.course.create({
+				data: {
+					courseId: trainingId,
+					name: courseConfig.name,
+					description: courseConfig.description,
+					imageUrl:
+						courseConfig.imageUrl || "/images/png/placeholder.png",
+					category: courseConfig.category || "Formation",
+					difficulty: courseConfig.difficulty || "Intermédiaire",
+					duration: courseConfig.duration || "30 min",
+					sourceType: sourceType,
+					sourceOrganizationId: sourceOrganizationId,
+				},
+			});
 		}
 
 		// Vérifier les réponses et calculer le score
@@ -115,29 +153,6 @@ export async function POST(request) {
 				evaluatedResponses.length) *
 				100
 		);
-
-		// Vérifier si le cours existe en DB
-		let courseDb = await prisma.course.findUnique({
-			where: {
-				courseId: trainingId,
-			},
-		});
-
-		// Si le cours n'existe pas en DB, le créer
-		if (!courseDb) {
-			courseDb = await prisma.course.create({
-				data: {
-					courseId: trainingId,
-					name: courseConfig.name,
-					description: courseConfig.description,
-					imageUrl:
-						courseConfig.imageUrl || "/images/png/placeholder.png",
-					category: courseConfig.category || "Formation",
-					difficulty: courseConfig.difficulty || "Intermédiaire",
-					duration: courseConfig.duration || "30 min",
-				},
-			});
-		}
 
 		// Vérifier si le module existe en DB
 		let moduleEntity = await prisma.module.findFirst({

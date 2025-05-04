@@ -17,50 +17,14 @@ export function useAzureContainer() {
 			}
 
 			try {
-				// Générer un nom de container basé sur l'ID Auth0
-				const authId = user.sub.split("|")[1];
-				const generatedContainerName = `user-${authId}`;
-
-				// Vérifier si le container existe déjà
-				const checkResponse = await axios.get(
-					`/api/azure/check-container-exists?container=${generatedContainerName}`
-				);
-
-				if (checkResponse.data.exists) {
-					// Le container existe déjà, on l'utilise
-					setContainerName(generatedContainerName);
-				} else {
-					// Le container n'existe pas, on le crée
-					const createResponse = await axios.post(
-						`/api/azure/create-container`,
-						{
-							containerName: generatedContainerName,
-						}
-					);
-
-					if (createResponse.data.success) {
-						setContainerName(generatedContainerName);
-					} else {
-						throw new Error(
-							"Échec de la création du container: " +
-								createResponse.data.error
-						);
-					}
-				}
-
 				// Initialiser l'utilisateur dans la base de données
-				if (user) {
-					try {
-						await axios.post("/api/auth/initialize-user", {
-							containerName: generatedContainerName,
-						});
-					} catch (initError) {
-						console.error(
-							"Erreur d'initialisation de l'utilisateur:",
-							initError
-						);
-						// Ne pas bloquer si cela échoue
-					}
+				// Cette API va gérer la création du container si nécessaire
+				const initResponse = await axios.post("/api/auth/initialize-user", {});
+				
+				if (initResponse.data.success && initResponse.data.user.azureContainer) {
+					setContainerName(initResponse.data.user.azureContainer);
+				} else {
+					throw new Error("Échec de l'initialisation de l'utilisateur");
 				}
 
 				setIsLoading(false);

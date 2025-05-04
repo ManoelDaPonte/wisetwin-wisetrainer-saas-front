@@ -8,8 +8,21 @@ const prisma = new PrismaClient();
 
 export async function POST(request) {
 	try {
-		const { userId, trainingId, progress, completedModule, moduleScore } =
-			await request.json();
+		const {
+			userId,
+			trainingId,
+			progress,
+			completedModule,
+			moduleScore,
+			sourceType = "wisetwin",
+			sourceOrganizationId = null,
+		} = await request.json();
+
+		console.log("Mise à jour de la progression avec source:", {
+			trainingId,
+			sourceType,
+			sourceOrganizationId,
+		});
 
 		// Fonction pour charger un fichier de configuration de cours
 		const loadCourseConfig = (courseId) => {
@@ -59,9 +72,11 @@ export async function POST(request) {
 		}
 
 		// Vérifier si le cours existe
-		let course = await prisma.course.findUnique({
+		let course = await prisma.course.findFirst({
 			where: {
 				courseId: trainingId,
+				sourceType: sourceType,
+				sourceOrganizationId: sourceOrganizationId,
 			},
 		});
 
@@ -72,14 +87,22 @@ export async function POST(request) {
 				course = await prisma.course.create({
 					data: {
 						courseId: trainingId,
-						name: courseConfig.name,
-						description: courseConfig.description,
-						imageUrl:
-							courseConfig.imageUrl ||
-							"/images/png/placeholder.png",
-						category: courseConfig.category || "Formation",
-						difficulty: courseConfig.difficulty || "Intermédiaire",
-						duration: courseConfig.duration || "30 min",
+						name: courseData ? courseData.name : trainingId,
+						description: courseData
+							? courseData.description
+							: `Formation ${trainingId}`,
+						imageUrl: courseData
+							? courseData.imageUrl
+							: "/images/png/placeholder.png",
+						category: courseData
+							? courseData.category
+							: "Formation",
+						difficulty: courseData
+							? courseData.difficulty
+							: "Intermédiaire",
+						duration: courseData ? courseData.duration : "30 min",
+						sourceType: sourceType,
+						sourceOrganizationId: sourceOrganizationId,
 					},
 				});
 			} else {
@@ -87,12 +110,22 @@ export async function POST(request) {
 				course = await prisma.course.create({
 					data: {
 						courseId: trainingId,
-						name: trainingId,
-						description: `Formation ${trainingId}`,
-						imageUrl: "/images/png/placeholder.png",
-						category: "Formation",
-						difficulty: "Intermédiaire",
-						duration: "30 min",
+						name: courseData ? courseData.name : trainingId,
+						description: courseData
+							? courseData.description
+							: `Formation ${trainingId}`,
+						imageUrl: courseData
+							? courseData.imageUrl
+							: "/images/png/placeholder.png",
+						category: courseData
+							? courseData.category
+							: "Formation",
+						difficulty: courseData
+							? courseData.difficulty
+							: "Intermédiaire",
+						duration: courseData ? courseData.duration : "30 min",
+						sourceType: sourceType,
+						sourceOrganizationId: sourceOrganizationId,
 					},
 				});
 			}

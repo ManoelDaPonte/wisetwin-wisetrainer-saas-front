@@ -1,6 +1,7 @@
 //app/api/organization/[organizationId]/tags/training-associations/route.jsx
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
+import { BlobServiceClient } from "@azure/storage-blob";
 import { auth0 } from "@/lib/auth0";
 
 const prisma = new PrismaClient();
@@ -49,6 +50,26 @@ export async function GET(request, { params }) {
 			);
 		}
 
+		// Récupérer les formations actives pour l'organisation
+		const organization = await prisma.organization.findUnique({
+			where: {
+				id: organizationId,
+			},
+		});
+
+		// Récupérer les IDs des formations actives de l'organisation
+		const organizationTrainings = await prisma.organizationTraining.findMany({
+			where: {
+				organizationId: organizationId,
+				isActive: true,
+			},
+			select: {
+				courseId: true
+			},
+		});
+		
+		const activeTrainingIds = organizationTrainings.map(training => training.courseId);
+		
 		// Récupérer toutes les associations tag-formation pour cette organisation
 		const associations = await prisma.tagTraining.findMany({
 			where: {
@@ -62,8 +83,43 @@ export async function GET(request, { params }) {
 			},
 		});
 
+		// Identifier les associations obsolètes (formations qui n'existent plus)
+		const validAssociations = [];
+		const obsoleteAssociationIds = [];
+		
+		associations.forEach(assoc => {
+			// Vérifier si la formation associée existe encore dans l'organisation
+			if (activeTrainingIds.includes(assoc.courseId)) {
+				validAssociations.push(assoc);
+			} else {
+				obsoleteAssociationIds.push(assoc.id);
+			}
+		});
+		
+		// Nettoyer automatiquement les associations obsolètes si l'utilisateur est admin ou owner
+		let cleanupPerformed = false;
+		if (obsoleteAssociationIds.length > 0 && 
+			(membership.role === "ADMIN" || membership.role === "OWNER")) {
+			try {
+				// Supprimer toutes les associations obsolètes en une seule opération
+				await prisma.tagTraining.deleteMany({
+					where: {
+						id: {
+							in: obsoleteAssociationIds
+						}
+					}
+				});
+				
+				console.log(`Nettoyage automatique: ${obsoleteAssociationIds.length} associations obsolètes supprimées`);
+				cleanupPerformed = true;
+			} catch (error) {
+				console.error("Erreur lors du nettoyage automatique des associations:", error);
+				// Continuer malgré l'erreur
+			}
+		}
+
 		// Transformer les données pour les renvoyer (simplifiées)
-		const formattedAssociations = associations.map((assoc) => ({
+		const formattedAssociations = validAssociations.map((assoc) => ({
 			id: assoc.id,
 			tagId: assoc.tagId,
 			courseId: assoc.courseId,
@@ -71,11 +127,13 @@ export async function GET(request, { params }) {
 			courseName:
 				assoc.course?.name ||
 				assoc.course?.courseId ||
-				"Formation inconnue",
+				"Formation inconnue"
 		}));
 
 		return NextResponse.json({
 			associations: formattedAssociations,
+			cleanupPerformed,
+			cleanupCount: obsoleteAssociationIds.length
 		});
 	} catch (error) {
 		console.error(

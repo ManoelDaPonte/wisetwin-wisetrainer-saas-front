@@ -30,13 +30,15 @@ model User {
 // Modèle de cours de formation
 model Course {
     id                   String                 @id @default(uuid())
-    courseId             String                 @unique // Identifiant externe (ex: "wisetrainer-template")
+    courseId             String // Identifiant externe (ex: "wisetrainer-template")
     name                 String // Nom du cours
     description          String // Description du cours
     imageUrl             String? // URL de l'image du cours
     category             String // Catégorie (ex: "Sécurité")
     difficulty           String // Niveau de difficulté (ex: "Intermédiaire")
     duration             String // Durée estimée (ex: "30 min")
+    sourceType           String? // "organization" ou "wisetwin"
+    sourceOrganizationId String? // ID de l'organisation source si applicable
     createdAt            DateTime               @default(now())
     updatedAt            DateTime               @updatedAt
     modules              Module[] // Modules du cours
@@ -44,6 +46,28 @@ model Course {
     userSessions         UserSession[] // Sessions des utilisateurs liées à ce cours
     OrganizationTraining OrganizationTraining[]
     TagTraining          TagTraining[]
+
+    // Contrainte pour garantir l'unicité d'un cours par combinaison courseId/source
+    @@unique([courseId, sourceType, sourceOrganizationId])
+}
+
+// Modèle de progression d'un utilisateur dans un cours (mise à jour)
+model UserCourse {
+    id           String       @id @default(uuid())
+    userId       String // Référence à l'utilisateur
+    user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+    courseId     String // Référence au cours
+    course       Course       @relation(fields: [courseId], references: [id], onDelete: Cascade)
+    progress     Int          @default(0) // Pourcentage de progression globale
+    lastAccessed DateTime     @default(now()) // Dernière fois que l'utilisateur a accédé au cours
+    startedAt    DateTime     @default(now()) // Date de début du cours
+    completedAt  DateTime? // Date de fin du cours (null si non terminé)
+    createdAt    DateTime     @default(now())
+    updatedAt    DateTime     @updatedAt
+    userModules  UserModule[] // Progression dans les modules
+
+    // Un utilisateur ne peut être inscrit qu'une fois à un cours précis
+    @@unique([userId, courseId])
 }
 
 // Modèle de module (partie d'un cours)
@@ -107,24 +131,6 @@ model Option {
     updatedAt  DateTime @updatedAt
 
     @@unique([questionId, optionId])
-}
-
-// Modèle de progression d'un utilisateur dans un cours
-model UserCourse {
-    id           String       @id @default(uuid())
-    userId       String // Référence à l'utilisateur
-    user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-    courseId     String // Référence au cours
-    course       Course       @relation(fields: [courseId], references: [id], onDelete: Cascade)
-    progress     Int          @default(0) // Pourcentage de progression globale
-    lastAccessed DateTime     @default(now()) // Dernière fois que l'utilisateur a accédé au cours
-    startedAt    DateTime     @default(now()) // Date de début du cours
-    completedAt  DateTime? // Date de fin du cours (null si non terminé)
-    createdAt    DateTime     @default(now())
-    updatedAt    DateTime     @updatedAt
-    userModules  UserModule[] // Progression dans les modules
-
-    @@unique([userId, courseId]) // Un utilisateur ne peut être inscrit qu'une fois à un cours
 }
 
 // Modèle de progression d'un utilisateur dans un module

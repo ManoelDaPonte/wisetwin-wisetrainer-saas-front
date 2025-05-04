@@ -1,4 +1,4 @@
-// components/wisetrainer/courses/PersonalCoursesTab.jsx
+//components/wisetrainer/courses/PersonalCoursesTab.jsx
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import CourseCard from "@/components/wisetrainer/courses/CourseCard";
@@ -60,7 +60,7 @@ const PersonalCoursesTab = ({
 						</h3>
 
 						{inProgressCourses.length === 0 ? (
-							<Card className=" border-gray-200 dark:border-gray-700">
+							<Card className="border-gray-200 dark:border-gray-700">
 								<CardContent className="flex flex-col items-center justify-center py-10 text-center">
 									<div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-full mb-4">
 										<BookOpen className="h-8 w-8 text-wisetwin-blue dark:text-wisetwin-blue-light" />
@@ -93,7 +93,16 @@ const PersonalCoursesTab = ({
 									(course) =>
 										course && (
 											<CourseCard
-												key={course.id}
+												key={
+													course.compositeId ||
+													`${course.id}_${
+														course.source?.type
+													}_${
+														course.source
+															?.organizationId ||
+														"wisetwin"
+													}`
+												}
 												course={course}
 												onSelect={onCourseSelect}
 												onUnenroll={onUnenroll}
@@ -137,7 +146,16 @@ const PersonalCoursesTab = ({
 										(course) =>
 											course && (
 												<CourseCard
-													key={course.id}
+													key={
+														course.compositeId ||
+														`${course.id}_${
+															course.source?.type
+														}_${
+															course.source
+																?.organizationId ||
+															"wisetwin"
+														}`
+													}
 													course={course}
 													onSelect={onCourseSelect}
 													onUnenroll={onUnenroll}

@@ -25,6 +25,7 @@ export default function CatalogOrganizationTab({
 	isImporting,
 	containerVariants,
 	itemVariants,
+	isUserEnrolled, // Accepter la fonction de vérification
 }) {
 	// Organisation sélectionnée
 	const selectedOrganization = organizations.find(
@@ -137,24 +138,36 @@ export default function CatalogOrganizationTab({
 					>
 						{trainings.map((course) => (
 							<CatalogCourseCard
-								key={course.id}
+								key={
+									course.compositeId ||
+									`${course.id}_${selectedOrganizationId}`
+								}
 								course={{
 									...course,
-									// Ajouter le nom de l'organisation comme source
+									// S'assurer que les informations d'organisation sont correctement définies
 									source: {
 										type: "organization",
+										organizationId: selectedOrganizationId,
 										name: selectedOrganization
 											? selectedOrganization.name
 											: "Organisation",
+										containerName:
+											selectedOrganization?.azureContainer ||
+											null,
 									},
 								}}
 								onEnroll={onEnroll}
 								onToggleInfo={onToggleInfo}
 								flippedCardId={flippedCardId}
 								isImporting={isImporting === course.id}
-								isEnrolled={personalCourses.some(
-									(c) => c.id === course.id
-								)}
+								isEnrolled={
+									isUserEnrolled
+										? isUserEnrolled(
+												course,
+												personalCourses
+										  )
+										: false
+								}
 								itemVariants={itemVariants}
 							/>
 						))}

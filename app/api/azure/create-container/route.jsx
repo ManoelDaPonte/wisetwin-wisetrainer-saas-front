@@ -22,11 +22,7 @@ export async function POST(request) {
 			blobServiceClient.getContainerClient(containerName);
 
 		// Créer le container s'il n'existe pas
-		const createContainerResponse = await containerClient.createIfNotExists(
-			{
-				access: "blob", // Accès en lecture publique pour les blobs
-			}
-		);
+		const createContainerResponse = await containerClient.createIfNotExists();
 
 		return NextResponse.json({
 			success: true,

@@ -68,9 +68,11 @@ export async function GET(request, { params }) {
 		}
 
 		// Si aucun fichier JSON trouvé, essayer la base de données
-		const course = await prisma.course.findUnique({
+		const course = await prisma.course.findFirst({
 			where: {
 				courseId: courseId,
+				sourceType: "wisetwin", // Par défaut, nous cherchons les formations WiseTwin
+				sourceOrganizationId: null,
 			},
 			include: {
 				modules: true,
