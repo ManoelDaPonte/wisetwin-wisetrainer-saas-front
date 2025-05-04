@@ -386,6 +386,11 @@ export default function WiseTrainerCourses() {
 								);
 								return {
 									...training,
+									// Préserver le nom de la formation
+									name: training.name || training.id
+										.split("-")
+										.map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+										.join(" "),
 									compositeId: `${training.id}__organization__${selectedOrgId}`,
 									source: {
 										type: "organization",

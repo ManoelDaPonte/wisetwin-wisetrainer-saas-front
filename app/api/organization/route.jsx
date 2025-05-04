@@ -85,6 +85,7 @@ export async function GET(request) {
 					description: membership.organization.description,
 					logoUrl: membership.organization.logoUrl,
 					createdAt: membership.organization.createdAt,
+					azureContainer: membership.organization.azureContainer,
 					userRole: membership.role,
 					joinedAt: membership.joinedAt,
 					membersCount,
