@@ -215,8 +215,8 @@ export default function WiseTrainerCourses() {
 		if (!courseToUnenroll) return;
 
 		try {
-			// Modifier l'appel API pour utiliser le format d'URL avec les paramètres
-			const response = await axios.delete(
+			// 1. Appel API pour supprimer l'inscription de la base de données
+			const dbResponse = await axios.delete(
 				`${
 					WISETRAINER_CONFIG.API_ROUTES.UNENROLL_COURSE
 				}/${containerName}/${courseToUnenroll.id}?sourceType=${
@@ -226,7 +226,14 @@ export default function WiseTrainerCourses() {
 				}`
 			);
 
-			if (response.data.success) {
+			// 2. Appel API pour supprimer les fichiers dans Azure
+			const azureResponse = await axios.delete(
+				`${WISETRAINER_CONFIG.API_ROUTES.UNENROLL_AZURE}/${containerName}/${courseToUnenroll.id}`
+			);
+
+			console.log("Réponse suppression Azure:", azureResponse.data);
+
+			if (dbResponse.data.success) {
 				// Rafraîchir la liste des formations personnelles
 				await refreshPersonalCourses();
 
@@ -237,7 +244,7 @@ export default function WiseTrainerCourses() {
 				});
 			} else {
 				throw new Error(
-					response.data.error || "Échec de la suppression"
+					dbResponse.data.error || "Échec de la suppression"
 				);
 			}
 		} catch (error) {
@@ -386,6 +393,11 @@ export default function WiseTrainerCourses() {
 								);
 								return {
 									...training,
+									// Préserver le nom de la formation
+									name: training.name || training.id
+										.split("-")
+										.map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+										.join(" "),
 									compositeId: `${training.id}__organization__${selectedOrgId}`,
 									source: {
 										type: "organization",

@@ -18,12 +18,8 @@ async function createAzureContainer(containerName) {
 		const containerClient =
 			blobServiceClient.getContainerClient(containerName);
 
-		// Créer le container s'il n'existe pas
-		const createContainerResponse = await containerClient.createIfNotExists(
-			{
-				access: "blob", // Accès en lecture publique pour les blobs
-			}
-		);
+		// Créer le container s'il n'existe pas (sans spécifier l'accès pour le rendre privé)
+		const createContainerResponse = await containerClient.createIfNotExists();
 
 		return {
 			success: true,
@@ -89,6 +85,7 @@ export async function GET(request) {
 					description: membership.organization.description,
 					logoUrl: membership.organization.logoUrl,
 					createdAt: membership.organization.createdAt,
+					azureContainer: membership.organization.azureContainer,
 					userRole: membership.role,
 					joinedAt: membership.joinedAt,
 					membersCount,
@@ -159,7 +156,7 @@ export async function POST(request) {
 
 		// Ajouter un suffixe unique pour éviter les conflits
 		const uniqueSuffix = Math.random().toString(36).substring(2, 8);
-		const containerName = `${normalizedName}-${uniqueSuffix}`;
+		const containerName = `org-${normalizedName}-${uniqueSuffix}`;
 		// Créer le container Azure
 		const containerResult = await createAzureContainer(containerName);
 

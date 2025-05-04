@@ -29,14 +29,10 @@ async function createUserContainer(userName, email) {
 			process.env.AZURE_STORAGE_CONNECTION_STRING
 		);
 
-		// Création du container
+		// Création du container (sans spécifier l'accès pour le rendre privé)
 		const containerClient =
 			blobServiceClient.getContainerClient(containerName);
-		const createContainerResponse = await containerClient.createIfNotExists(
-			{
-				access: "blob", // Accès en lecture publique pour les blobs
-			}
-		);
+		const createContainerResponse = await containerClient.createIfNotExists();
 
 		return {
 			success: true,
@@ -62,7 +58,8 @@ export async function POST(request) {
 		}
 
 		// Le containerName n'est plus requis dans la requête car nous allons le créer
-		const { containerName: requestContainerName } = await request.json();
+		// Récupérer le body de la requête mais containerName n'est plus nécessaire
+		await request.json().catch(() => ({}));
 
 		// Récupérer ou créer l'utilisateur
 		let user = await prisma.user.findUnique({
@@ -72,7 +69,7 @@ export async function POST(request) {
 		});
 
 		// Créer un container basé sur le nom d'utilisateur si nécessaire
-		let containerName = requestContainerName;
+		let containerName = null;
 		if (!user || !user.azureContainer) {
 			// Créer un nouveau container basé sur le nom d'utilisateur
 			const containerResult = await createUserContainer(

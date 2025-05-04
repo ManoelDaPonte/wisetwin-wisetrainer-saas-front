@@ -97,6 +97,8 @@ export function useCurrentTraining() {
 							...training,
 							compositeId, // ID composite pour identifier de manière unique
 							imageUrl,
+							// Préserver le nom formaté ou utiliser celui des détails du cours
+							name: courseDetails?.name || training.name || formatCourseName(training.id),
 							modules:
 								mergedModules.length > 0
 									? mergedModules
@@ -137,6 +139,8 @@ export function useCurrentTraining() {
 						return {
 							...training,
 							compositeId,
+							// Utiliser formatCourseName pour s'assurer que le nom est correctement formaté
+							name: training.name || formatCourseName(training.id),
 							source,
 							trainingUrl:
 								source.type === "organization"

@@ -122,6 +122,11 @@ export function useTrainingOrganization(organizationId, containerName) {
 									...training,
 									organizationId, // Ajouter explicitement l'ID
 									containerName: response.data.containerName,
+									// S'assurer que le nom est correctement formaté
+									name: training.name || training.id
+										.split("-")
+										.map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+										.join(" "),
 									imageUrl:
 										training.imageUrl ||
 										WISETRAINER_CONFIG.DEFAULT_IMAGE,

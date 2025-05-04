@@ -60,6 +60,15 @@ export default function TagsTrainingAssociations({ organization }) {
 
 			console.log("Associations chargées:", associationsList);
 
+			// Notification si un nettoyage automatique a été effectué
+			if (associationsResponse.data.cleanupPerformed) {
+				toast({
+					title: "Nettoyage automatique",
+					description: `${associationsResponse.data.cleanupCount} associations obsolètes ont été supprimées automatiquement`,
+					variant: "info",
+				});
+			}
+
 			setTrainings(trainingsList);
 			setTags(tagsList);
 			setAssociations(associationsList);
