@@ -1,4 +1,4 @@
-//app/api/azure/fetch-blob-data/[containerName]/[...blobPath]/route.jsx
+// app/api/azure/fetch-blob-data/[containerName]/[...blobPath]/route.jsx
 import { NextResponse } from "next/server";
 import { BlobServiceClient } from "@azure/storage-blob";
 
@@ -24,7 +24,9 @@ export async function GET(request, { params }) {
 		}
 
 		// Log pour debug
-		console.log(`[FETCH-BLOB] Tentative d'accès au fichier: ${containerName}/${fullBlobPath}`);
+		console.log(
+			`[FETCH-BLOB] Tentative d'accès au fichier: ${containerName}/${fullBlobPath}`
+		);
 
 		// Connexion au service Azure Blob Storage
 		const blobServiceClient = BlobServiceClient.fromConnectionString(
@@ -41,37 +43,68 @@ export async function GET(request, { params }) {
 		// Vérifier si le blob existe
 		const exists = await blobClient.exists();
 		if (!exists) {
-			console.log(`[FETCH-BLOB] Le fichier n'existe pas: ${containerName}/${fullBlobPath}`);
+			console.log(
+				`[FETCH-BLOB] Le fichier n'existe pas: ${containerName}/${fullBlobPath}`
+			);
 			return NextResponse.json(
 				{ error: `Le fichier demandé n'existe pas: ${fullBlobPath}` },
 				{ status: 404 }
 			);
 		}
 
-		console.log(`[FETCH-BLOB] Le fichier existe: ${containerName}/${fullBlobPath}`);
-
-		// Récupérer les propriétés du blob
-		const properties = await blobClient.getProperties();
-		
-		// Extraire le nom du fichier
-		const filename = fullBlobPath.split('/').pop();
+		console.log(
+			`[FETCH-BLOB] Le fichier existe: ${containerName}/${fullBlobPath}`
+		);
 
 		// Télécharger le contenu du blob
 		const downloadResponse = await blobClient.download();
-		const content = await streamToBuffer(downloadResponse.readableStreamBody);
-		
-		console.log(`[FETCH-BLOB] Contenu téléchargé: ${content.length} octets`);
+		const content = await streamToBuffer(
+			downloadResponse.readableStreamBody
+		);
 
-		// SIMPLIFIÉ : Utiliser seulement les en-têtes essentiels qui fonctionnent avec debug-download
+		console.log(
+			`[FETCH-BLOB] Contenu téléchargé: ${content.length} octets`
+		);
+
+		// Configuration des en-têtes pour Unity WebGL
 		const headers = {
-			'Content-Disposition': `attachment; filename="${filename}"`,
-			'Content-Type': 'application/octet-stream',
-			'Content-Length': content.length.toString()
+			"Cache-Control": "public, max-age=3600",
+			"Access-Control-Allow-Origin": "*",
+			"Access-Control-Expose-Headers":
+				"Content-Length,Content-Type,Content-Range,Accept-Ranges",
+			"Content-Length": content.length.toString(),
 		};
 
-		console.log(`[FETCH-BLOB] Envoi du fichier au client`);
+		// Pour les fichiers Unity WebGL, on utilise une approche simplifiée
+		if (fullBlobPath.endsWith(".gz")) {
+			// IMPORTANT: Pour les fichiers .gz, on laisse Unity gérer la décompression
+			// en ne spécifiant PAS Content-Encoding et en utilisant le type MIME brut
+			if (
+				fullBlobPath.includes(".framework.js.gz") ||
+				fullBlobPath.includes(".js.gz")
+			) {
+				headers["Content-Type"] = "application/javascript";
+			} else if (fullBlobPath.includes(".wasm.gz")) {
+				headers["Content-Type"] = "application/wasm";
+			} else if (fullBlobPath.includes(".data.gz")) {
+				headers["Content-Type"] = "application/octet-stream";
+			} else {
+				headers["Content-Type"] = "application/octet-stream";
+			}
+		} else if (fullBlobPath.endsWith(".js")) {
+			headers["Content-Type"] = "application/javascript";
+		} else if (fullBlobPath.endsWith(".wasm")) {
+			headers["Content-Type"] = "application/wasm";
+		} else {
+			headers["Content-Type"] = "application/octet-stream";
+		}
 
-		// Retourner les données avec les en-têtes simplifiés
+		console.log(`[FETCH-BLOB] En-têtes de réponse:`, headers);
+		console.log(
+			`[FETCH-BLOB] Envoi du fichier au client, taille: ${content.length} octets`
+		);
+
+		// Retourner les données avec les en-têtes appropriés
 		return new NextResponse(content, { headers });
 	} catch (error) {
 		console.error(`[FETCH-BLOB] Erreur:`, error);
@@ -79,6 +112,7 @@ export async function GET(request, { params }) {
 			{
 				error: "Échec de la récupération du fichier",
 				details: error.message,
+				stack: error.stack,
 			},
 			{ status: 500 }
 		);
