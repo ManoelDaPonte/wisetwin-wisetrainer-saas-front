@@ -16,6 +16,7 @@ export default function CourseTrainingTab({
 	courseId,
 	containerName,
 	onQuestionnaireRequest,
+	onInformationRequest,
 }) {
 	const handleResetCamera = () => {
 		console.log("Tentative de réinitialisation de la caméra...");

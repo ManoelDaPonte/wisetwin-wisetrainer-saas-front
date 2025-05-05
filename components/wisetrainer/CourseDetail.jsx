@@ -12,9 +12,11 @@ import CourseDetailsTab from "@/components/wisetrainer/course/CourseDetailsTab";
 import CourseTrainingTab from "@/components/wisetrainer/course/CourseTrainingTab";
 import QuestionnaireModal from "@/components/wisetrainer/QuestionnaireModal";
 import InteractiveGuideModal from "@/components/wisetrainer/InteractiveGuideModal";
+import InformationModal from "@/components/wisetrainer/InformationModal";
 import { useUnityEvents } from "@/lib/hooks/useUnityEvents";
 import WISETRAINER_CONFIG from "@/lib/config/wisetrainer/wisetrainer";
 import { useToast } from "@/lib/hooks/useToast";
+import { useInformationModal } from "@/lib/hooks/useInformationModal";
 
 export default function CourseDetail({ params }) {
 	const router = useRouter();
@@ -32,6 +34,13 @@ export default function CourseDetail({ params }) {
 	const [activeTab, setActiveTab] = useState("details");
 	const [selectedModule, setSelectedModule] = useState(null);
 	const { toast } = useToast();
+	
+	// Nous n'avons plus besoin d'utiliser useInformationModal car useUnityEvents gère déjà cela
+	// Créons juste une fonction pour fermer la modale d'information
+	const closeInformation = () => {
+		setShowInformation(false);
+		setCurrentInformation(null);
+	};
 
 	const handleSwitchTab = (tabId) => {
 		setActiveTab(tabId);
@@ -41,12 +50,16 @@ export default function CourseDetail({ params }) {
 	const {
 		currentScenario,
 		currentGuide,
+		currentInformation,
 		showQuestionnaire,
 		showGuide,
+		showInformation,
 		setShowQuestionnaire,
 		setShowGuide,
+		setShowInformation,
 		setCurrentScenario,
 		setCurrentGuide,
+		setCurrentInformation,
 	} = useUnityEvents(courseId);
 
 	// Extraire courseId des paramètres
@@ -632,10 +645,12 @@ export default function CourseDetail({ params }) {
 				`${WISETRAINER_CONFIG.API_ROUTES.FETCH_SCENARIO}/${moduleId}`
 			);
 
-			// Vérifier si c'est un guide ou un questionnaire standard
+			// Vérifier le type de module
 			if (response.data.type === "guide") {
 				setCurrentGuide(response.data);
 				setShowGuide(true);
+			} else if (response.data.type === "information") {
+				requestInformation(moduleId);
 			} else {
 				setCurrentScenario(response.data);
 				setShowQuestionnaire(true);
@@ -658,6 +673,8 @@ export default function CourseDetail({ params }) {
 			return false;
 		}
 	};
+	
+	// Fonction pour gérer la fermeture de la modale d'information est maintenant gérée par le hook useInformationModal
 
 	// Gérer les cas de chargement et d'erreur
 	if (
@@ -766,6 +783,19 @@ export default function CourseDetail({ params }) {
 					onComplete={handleGuideComplete}
 					onClose={() => setShowGuide(false)}
 					onStartTutorial={handleStartTutorial} // Passer la fonction au lieu de la référence
+				/>
+			)}
+
+			{/* Modal d'information */}
+			{showInformation && currentInformation && (
+				<InformationModal
+					isOpen={showInformation}
+					onClose={closeInformation}
+					title={currentInformation.title}
+					description={currentInformation.description}
+					imageUrl={currentInformation.modalData?.imageUrl}
+					keyToPress={currentInformation.modalData?.keyToPress || "1"}
+					unityRef={unityBuildRef}
 				/>
 			)}
 		</div>
