@@ -14,11 +14,11 @@
       {
         "id": "dialysate-set-installation",
         "order": 1,
-        "title": "Installation du set de dialysat",
-        "description": "Comment installer correctement le set de dialysat dans le système Nextkidney",
+        "title": "Dialysate Set Installation",
+        "description": "Installation du set de dialysat",
         "type": "information",
         "modalData": {
-          "imageUrl": "/images/wisetrainer/nextkidney.jpg",
+          "imageUrl": "/images/wisetrainer/nextkidney_lv1.png",
           "keyToPress": "1",
           "animationToPlay": "dialysate-set-installation-animation"
         }
@@ -26,11 +26,11 @@
       {
         "id": "dialysate-cartridge-insertion",
         "order": 2,
-        "title": "Insertion de la cartouche de dialysat",
-        "description": "Comment insérer correctement la cartouche de dialysat dans le système Nextkidney",
+        "title": "Weighing Bag Installation",
+        "description": "Installation du bag de pesée",
         "type": "information",
         "modalData": {
-          "imageUrl": "/images/wisetrainer/nextkidney.jpg",
+          "imageUrl": "/images/wisetrainer/nextkidney_lv2.png",
           "keyToPress": "2",
           "animationToPlay": "dialysate-cartridge-insertion-animation"
         }
