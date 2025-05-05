@@ -63,6 +63,31 @@ export async function GET(request, { params }) {
 			});
 		}
 
+		// Vérifier si c'est un module de type information
+		if (foundModule.type === "information") {
+			// Pour un module d'information, retourner les données directement
+			return NextResponse.json({
+				id: foundModule.id,
+				title: foundModule.title,
+				description: foundModule.description,
+				type: "information",
+				modalData: {
+					imageUrl: foundModule.modalData?.imageUrl || null,
+					keyToPress: foundModule.modalData?.keyToPress || null,
+					animationToPlay: foundModule.modalData?.animationToPlay || null
+				},
+				courseId: courseId, // Inclure l'ID du cours pour référence
+			});
+		}
+
+		// Vérifier que le module a une propriété questions avant d'y accéder
+		if (!foundModule.questions) {
+			return NextResponse.json(
+				{ error: `Le module ${scenarioId} n'a pas de questions définies` },
+				{ status: 400 }
+			);
+		}
+
 		// Pour un questionnaire standard, formatter les données
 		const formattedQuestions = foundModule.questions.map((q) => ({
 			id: q.id,

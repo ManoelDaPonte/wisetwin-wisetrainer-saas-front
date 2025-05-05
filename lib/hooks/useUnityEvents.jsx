@@ -5,8 +5,10 @@ import WISETRAINER_CONFIG from "@/lib/config/wisetrainer/wisetrainer";
 export function useUnityEvents(courseId = null) {
 	const [currentScenario, setCurrentScenario] = useState(null);
 	const [currentGuide, setCurrentGuide] = useState(null);
+	const [currentInformation, setCurrentInformation] = useState(null);
 	const [showQuestionnaire, setShowQuestionnaire] = useState(false);
 	const [showGuide, setShowGuide] = useState(false);
+	const [showInformation, setShowInformation] = useState(false);
 	const [objectMapping, setObjectMapping] = useState({});
 
 	// Log explicite pour le courseId reçu
@@ -160,10 +162,13 @@ export function useUnityEvents(courseId = null) {
 								response.data.title
 							);
 
-							// Vérifier si c'est un guide ou un questionnaire standard
+							// Vérifier le type de module
 							if (response.data.type === "guide") {
 								setCurrentGuide(response.data);
 								setShowGuide(true);
+							} else if (response.data.type === "information") {
+								setCurrentInformation(response.data);
+								setShowInformation(true);
 							} else {
 								setCurrentScenario(response.data);
 								setShowQuestionnaire(true);
@@ -201,10 +206,13 @@ export function useUnityEvents(courseId = null) {
 					response.data.title
 				);
 
-				// Vérifier si c'est un guide ou un questionnaire standard
+				// Vérifier le type de module
 				if (response.data.type === "guide") {
 					setCurrentGuide(response.data);
 					setShowGuide(true);
+				} else if (response.data.type === "information") {
+					setCurrentInformation(response.data);
+					setShowInformation(true);
 				} else {
 					setCurrentScenario(response.data);
 					setShowQuestionnaire(true);
@@ -302,11 +310,15 @@ export function useUnityEvents(courseId = null) {
 	return {
 		currentScenario,
 		currentGuide,
+		currentInformation,
 		showQuestionnaire,
 		showGuide,
+		showInformation,
 		setShowQuestionnaire,
 		setShowGuide,
+		setShowInformation,
 		setCurrentScenario,
 		setCurrentGuide,
+		setCurrentInformation,
 	};
 }
