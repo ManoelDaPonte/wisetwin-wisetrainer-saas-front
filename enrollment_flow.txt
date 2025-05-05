@@ -1,0 +1,92 @@
+# Flux d'Inscription et d'Utilisation des Cours WiseTrainer
+
+Ce document explique le flux complet des fonctions utilisées depuis le moment où l'utilisateur s'inscrit à un cours ("enroll course") jusqu'à l'utilisation des ressources dans le composant UnityBuild.
+
+## 1. Interface Utilisateur - Déclenchement de l'Inscription
+
+### CatalogCourseCard.jsx
+- Affiche les cartes de cours dans le catalogue
+- Contient le bouton "Commencer" qui déclenche le processus d'inscription
+- Le clic sur ce bouton appelle la fonction `onStartCourse` qui est passée en prop
+
+### CatalogCoursesTab.jsx
+- Affiche la liste des cours disponibles dans le catalogue
+- Gère l'affichage des cartes de cours et leur état (disponible, inscrit, etc.)
+
+### WiseTrainerCourses.jsx
+- Composant principal de gestion des cours
+- La fonction `handleStartCourse()` est au cœur du processus d'inscription:
+  * Vérifie si le cours nécessite un questionnaire
+  * Déclenche l'affichage du questionnaire si nécessaire
+  * Lance les appels API pour l'inscription
+  * Gère les transitions entre les états (chargement, succès, erreur)
+
+## 2. API d'Inscription et Préparation des Données
+
+### /api/db/wisetrainer/enroll-course/route.jsx
+- Endpoint API qui gère l'inscription au cours
+- Crée des entrées dans la base de données pour établir la relation utilisateur-cours
+- Initialise les données de progression de l'utilisateur pour le cours
+
+### /api/azure/check-container-exists/route.jsx
+- Vérifie si le conteneur Azure de l'utilisateur existe déjà
+- Retourne un statut pour indiquer l'existence du conteneur
+
+### /api/azure/create-container/route.jsx
+- Crée un nouveau conteneur Azure pour l'utilisateur si nécessaire
+- Configure les permissions et les paramètres du conteneur
+
+### /api/azure/wisetrainer/copy-training-files/route.jsx
+- Copie les fichiers du build depuis le conteneur source vers le conteneur de l'utilisateur
+- Gère la structure des dossiers et les permissions d'accès
+- S'assure que tous les fichiers nécessaires sont disponibles pour l'utilisateur
+
+## 3. Hooks et Services de Gestion
+
+### useAzureContainer.jsx
+- Hook qui gère la création et l'accès au conteneur Azure de l'utilisateur
+- Fournit des méthodes pour vérifier l'existence, créer, et accéder au conteneur
+- Gère les URLs SAS pour l'accès sécurisé
+
+### useCurrentTraining.jsx
+- Gère l'état des cours auxquels l'utilisateur est inscrit
+- Fournit des fonctions pour récupérer les détails du cours actuel
+- Permet de suivre la progression dans le cours
+
+### useTrainingWiseTwin.jsx
+- Récupère les cours WiseTwin disponibles pour l'inscription
+- Gère les métadonnées des cours et leur disponibilité
+
+## 4. Chargement et Utilisation du Build Unity
+
+### UnityBuild.jsx
+- Composant central qui charge et affiche le build Unity WebGL après l'inscription
+- Fonctions principales:
+  * `getUnityConfig()`: Configure les URLs pour les fichiers du build (loader, data, framework, WebAssembly)
+  * `handleUnityReady()`: Gère l'initialisation une fois que Unity est chargé
+  * `handleQuestionnaireComplete()`: Traite la complétion du questionnaire
+  * `onScenarioSelected()`: Gère la sélection d'un scénario dans le cours
+  * `useUnityContext()`: Initialise le contexte Unity avec les bonnes URL de ressources
+
+- Utilise les URL du conteneur de l'utilisateur pour charger:
+  * Le fichier loader (.js)
+  * Le fichier data (.unityweb)
+  * Le fichier framework (.js.unityweb)
+  * Le fichier WebAssembly (.wasm.unityweb)
+
+- Communique avec Unity via des événements:
+  * Envoie des données au build Unity (progression, configuration)
+  * Reçoit des événements depuis Unity (complétion de scénarios, résultats)
+
+## Flux Complet
+
+1. L'utilisateur clique sur "Commencer" pour un cours dans le catalogue
+2. La fonction `handleStartCourse()` dans WiseTrainerCourses.jsx est déclenchée
+3. Appel API à `/api/db/wisetrainer/enroll-course` pour créer l'entrée en base de données
+4. Si nécessaire, le conteneur de l'utilisateur est créé via `/api/azure/create-container`
+5. Les fichiers du cours sont copiés depuis le conteneur source vers le conteneur de l'utilisateur via `/api/azure/wisetrainer/copy-training-files`
+6. L'utilisateur est redirigé vers la page du cours où le composant UnityBuild charge le build WebGL
+7. Le build Unity charge les fichiers depuis le conteneur de l'utilisateur via les endpoints API et les accès blob
+8. Le composant UnityBuild gère les interactions avec le build Unity et les mises à jour de progression
+
+Cette architecture garantit que lorsqu'un utilisateur s'inscrit à un cours, les fichiers nécessaires sont copiés dans son conteneur personnel, et il peut immédiatement accéder au contenu de formation en toute sécurité.

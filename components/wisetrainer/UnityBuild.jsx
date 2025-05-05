@@ -23,71 +23,37 @@ const UnityBuild = forwardRef(
 		// Préfixe des blobs
 		const blobPrefix = WISETRAINER_CONFIG.BLOB_PREFIXES.WISETRAINER;
 
-		// ⚠️ IMPORTANT: Pour Unity WebGL, NE PAS utiliser l'extension .gz dans les URLs
-		// même si les fichiers sont stockés avec .gz dans Azure
-		// Unity s'attend à recevoir les URLs sans .gz mais avec Content-Encoding: gzip
-		// Ajouter un timestamp pour éviter les problèmes de cache
-		const timestamp = Date.now();
-		const loaderUrl = `/api/azure/fetch-blob-data/${containerName}/${blobPrefix}${courseId}.loader.js`;
-		const dataUrl = `/api/azure/fetch-blob-data/${containerName}/${blobPrefix}${courseId}.data.gz`;
-		const frameworkUrl = `/api/azure/fetch-blob-data/${containerName}/${blobPrefix}${courseId}.framework.js.gz`;
-		const codeUrl = `/api/azure/fetch-blob-data/${containerName}/${blobPrefix}${courseId}.wasm.gz`;
+		// Construire les URLs pour Unity
+		const baseUrl = `/api/blob/${containerName}`;
+		const loaderUrl = `${baseUrl}/${blobPrefix}/${courseId}.loader.js`;
+		const dataUrl = `${baseUrl}/${blobPrefix}/${courseId}.data`;
+		const frameworkUrl = `${baseUrl}/${blobPrefix}/${courseId}.framework.js`;
+		const wasmUrl = `${baseUrl}/${blobPrefix}/${courseId}.wasm`;
 
-		// Log des URLs pour debug
-		useEffect(() => {
-			if (!containerName || !courseId) return;
-
-			console.log(
-				"URLs de chargement configurées (API fetch-blob-data):",
-				{
-					loaderUrl,
-					dataUrl,
-					frameworkUrl,
-					codeUrl,
-					containerName,
-					blobPrefix,
-				}
-			);
-
-			// Définir l'état ready directement
-			setBuildStatus("ready");
-			setManualLoadingProgress(50);
-		}, [
-			containerName,
-			courseId,
-			loaderUrl,
-			dataUrl,
-			frameworkUrl,
-			codeUrl,
-			blobPrefix,
-		]);
-
-		// Initialiser le contexte Unity avec les nouvelles URLs
+		// Initialiser le contexte Unity
 		const {
 			unityProvider,
 			loadingProgression,
 			isLoaded,
-			requestFullscreen,
-			takeScreenshot,
+			error: unityError,
 			addEventListener,
 			removeEventListener,
 			sendMessage,
-			error: unityError,
 		} = useUnityContext({
 			loaderUrl: loaderUrl,
 			dataUrl: dataUrl,
 			frameworkUrl: frameworkUrl,
-			codeUrl: codeUrl,
+			codeUrl: wasmUrl,
 			webGLContextAttributes: {
 				preserveDrawingBuffer: true,
 				powerPreference: "high-performance",
 				failIfMajorPerformanceCaveat: false,
 			},
-			// Options avancées pour améliorer la compatibilité
-			fetchTimeout: 300000, // 5 minutes de timeout
-			disableWebAssemblyStreaming: true, // Désactiver le streaming pour contourner les problèmes liés à gzip
+			// Options avancées
+			fetchTimeout: 60000, // 1 minute timeout
+			disableWebAssemblyStreaming: true, // Important pour les fichiers compressés
 			cacheControl: false, // Désactiver le cache
-			maxRetries: 5, // Réessayer jusqu'à 5 fois en cas d'échec
+			maxRetries: 3, // Réessayer 3 fois max
 		});
 
 		// Mettre à jour la progression du chargement
