@@ -1,5 +1,5 @@
 //components/guide/CurrentTrainingsPanel.jsx
-import React from "react";
+import React, { memo } from "react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import {
@@ -14,7 +14,16 @@ import { Button } from "@/components/ui/button";
 import { Clock, ArrowRight, BookOpen, GraduationCap } from "lucide-react";
 import TrainingCard from "./TrainingCard";
 
-export default function CurrentTrainingsPanel({
+/**
+ * Displays the user's current training sessions
+ * Memoized to prevent unnecessary re-renders when other parts of the guide change
+ * 
+ * @param {Object} props - Component props
+ * @param {Array} props.trainings - List of current trainings to display
+ * @param {boolean} props.isLoading - Whether the trainings are still loading
+ * @returns {JSX.Element} The current trainings panel
+ */
+function CurrentTrainingsPanel({
 	trainings = [],
 	isLoading = false,
 }) {
@@ -139,3 +148,6 @@ export default function CurrentTrainingsPanel({
 		</motion.div>
 	);
 }
+
+// Export a memoized version to prevent unnecessary re-renders
+export default memo(CurrentTrainingsPanel);
