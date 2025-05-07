@@ -1,9 +1,10 @@
+//app/(app)/wisetrainer/page.jsx
 "use client";
 import React from "react";
 import { motion } from "framer-motion";
 import WiseTrainerCourses from "@/components/wisetrainer/WiseTrainerCourses";
 import { useAzureContainer } from "@/lib/hooks/useAzureContainer";
-import { GraduationCap, BookOpen } from "lucide-react";
+import { GraduationCap } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function WiseTrainerPage() {

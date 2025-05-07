@@ -8,7 +8,6 @@ import { useGuide } from "@/lib/contexts/GuideContext";
 // Composants
 import CurrentTrainingsPanel from "./CurrentTrainingsPanel";
 import OrganizationsSection from "./OrganizationsSection";
-import WiseTwinRecommendations from "./WiseTwinRecommendations";
 import NoOrganizationGuide from "./NoOrganizationGuide";
 import NoTrainingsMessage from "./NoTrainingsMessage";
 import LoadingState from "./LoadingState";
@@ -48,7 +47,6 @@ export default function Guide() {
   const {
     organizationsData,
     hasOrganizations,
-    wiseTwinTrainings,
     currentTrainings,
     isLoading,
     error,
@@ -77,7 +75,6 @@ export default function Guide() {
     organizationsData.some(
       (org) => org.taggedTrainings.length > 0 || org.orgTrainings.length > 0
     ) ||
-    wiseTwinTrainings.length > 0 ||
     currentTrainings.length > 0;
 
   return (
@@ -134,11 +131,6 @@ export default function Guide() {
 
         {/* 2. Organisations avec leurs formations */}
         <OrganizationsSection organizationsData={organizationsData} />
-
-        {/* 3. Formations recommandées par WiseTwin */}
-        {wiseTwinTrainings.length > 0 && (
-          <WiseTwinRecommendations trainings={wiseTwinTrainings} />
-        )}
 
         {/* Si pas d'organisation, afficher un guide spécifique */}
         {!hasOrganizations && <NoOrganizationGuide />}

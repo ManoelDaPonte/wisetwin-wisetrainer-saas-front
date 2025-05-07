@@ -4,7 +4,6 @@ import axios from "axios";
 import { useUser } from "@auth0/nextjs-auth0";
 import { useToast } from "@/lib/hooks/useToast";
 import { useAzureContainer } from "@/lib/hooks/useAzureContainer";
-import { useTrainingWiseTwin } from "@/lib/hooks/useTrainingWiseTwin";
 import { useCurrentTraining } from "@/lib/hooks/useCurrentTraining";
 
 /**
@@ -17,7 +16,6 @@ const GuideContext = createContext({
   hasOrganizations: false,
   
   // Formations
-  wiseTwinTrainings: [],
   currentTrainings: [],
   
   // États
@@ -39,7 +37,6 @@ export function GuideProvider({ children }) {
   const { user, isLoading: userLoading } = useUser();
   const { containerName, isLoading: containerLoading } = useAzureContainer();
   const { currentTrainings, isLoading: currentTrainingsLoading, refreshTrainings: refreshCurrentTrainings } = useCurrentTraining();
-  const { trainings: wiseTwinTrainings, isLoading: wiseTwinLoading, refreshTrainings: refreshWiseTwinTrainings } = useTrainingWiseTwin(containerName);
 
   // État local
   const [organizationsData, setOrganizationsData] = useState([]);
@@ -234,8 +231,7 @@ export function GuideProvider({ children }) {
       // Exécuter les rafraîchissements en parallèle
       await Promise.all([
         loadOrganizationsData(),
-        refreshCurrentTrainings && refreshCurrentTrainings(),
-        refreshWiseTwinTrainings && refreshWiseTwinTrainings()
+        refreshCurrentTrainings && refreshCurrentTrainings()
       ]);
       setLastRefresh(new Date());
     } catch (error) {
@@ -249,7 +245,7 @@ export function GuideProvider({ children }) {
     } finally {
       setIsLoading(false);
     }
-  }, [loadOrganizationsData, refreshCurrentTrainings, refreshWiseTwinTrainings, toast]);
+  }, [loadOrganizationsData, refreshCurrentTrainings, toast]);
 
   // Charger les données au montage du composant
   useEffect(() => {
@@ -259,14 +255,13 @@ export function GuideProvider({ children }) {
   }, [user, containerName, containerLoading, userLoading, loadOrganizationsData]);
 
   // État de chargement global
-  const globalLoading = userLoading || containerLoading || isLoading || wiseTwinLoading || currentTrainingsLoading;
+  const globalLoading = userLoading || containerLoading || isLoading || currentTrainingsLoading;
 
   // Valeur du contexte
   const value = {
     // Données
     organizationsData,
     hasOrganizations,
-    wiseTwinTrainings,
     currentTrainings,
     
     // États

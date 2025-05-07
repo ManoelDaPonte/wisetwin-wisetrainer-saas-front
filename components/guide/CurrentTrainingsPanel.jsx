@@ -91,11 +91,21 @@ function CurrentTrainingsPanel({
 								<TrainingCard
 									key={training.id}
 									training={training}
-									onClick={() =>
-										router.push(
-											`/wisetrainer/${training.id}`
-										)
-									}
+									onClick={() => {
+										// Si la formation appartient à une organisation, rediriger vers la page organisation
+										if (
+											training.source &&
+											training.source.type === "organization" &&
+											training.source.organizationId
+										) {
+											router.push(
+												`/wisetrainer/organization/${training.source.organizationId}/${training.id}`
+											);
+										} else {
+											// Rediriger vers la liste des formations
+											router.push("/wisetrainer");
+										}
+									}}
 								/>
 							))}
 						</div>

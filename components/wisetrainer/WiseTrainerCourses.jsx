@@ -7,13 +7,11 @@ import { useAzureContainer } from "@/lib/hooks/useAzureContainer";
 import { useToast } from "@/lib/hooks/useToast";
 
 // Import des hooks personnalisés
-import { useTrainingWiseTwin } from "@/lib/hooks/useTrainingWiseTwin";
 import { useTrainingOrganization } from "@/lib/hooks/useTrainingOrganization";
 import { useCurrentTraining } from "@/lib/hooks/useCurrentTraining";
 
 // Import des composants d'onglets
 import PersonalCoursesTab from "@/components/wisetrainer/courses/PersonalCoursesTab";
-import CatalogCoursesTab from "@/components/wisetrainer/courses/CatalogCoursesTab";
 import CatalogOrganizationTab from "@/components/wisetrainer/courses/CatalogOrganizationTab";
 import WISETRAINER_CONFIG from "@/lib/config/wisetrainer/wisetrainer";
 
@@ -30,8 +28,6 @@ export default function WiseTrainerCourses() {
 	const { toast } = useToast();
 
 	// Utiliser les hooks personnalisés pour récupérer les données
-	const { trainings: wiseTwinTrainings, isLoading: isLoadingWiseTwin } =
-		useTrainingWiseTwin(containerName);
 	const {
 		currentTrainings: personalCourses,
 		isLoading: isLoadingPersonal,
@@ -119,9 +115,9 @@ export default function WiseTrainerCourses() {
 			// Log pour déboguer les informations de source
 			console.log("INFO INSCRIPTION - Démarrage de la formation:", {
 				courseId: course.id,
-				sourceType: course.source?.type || "wisetwin",
+				sourceType: course.source?.type || "organization",
 				sourceOrganizationId: course.source?.organizationId || null,
-				sourceName: course.source?.name || "WiseTwin",
+				sourceName: course.source?.name || "Organisation",
 				compositeId: course.compositeId || `${course.id}__unknown`,
 			});
 
@@ -131,7 +127,7 @@ export default function WiseTrainerCourses() {
 				{
 					userId: containerName,
 					courseId: course.id,
-					sourceType: course.source?.type || "wisetwin",
+					sourceType: course.source?.type || "organization",
 					sourceOrganizationId: course.source?.organizationId || null,
 					sourceContainerName: course.source?.containerName || null,
 				}
@@ -156,11 +152,6 @@ export default function WiseTrainerCourses() {
 					router.push(
 						`/wisetrainer/organization/${course.source.organizationId}/${course.id}`
 					);
-				} else {
-					console.log("Redirection vers cours standard:", {
-						courseId: course.id,
-					});
-					router.push(`/wisetrainer/${course.id}`);
 				}
 
 				// Rafraîchir la liste des formations personnelles
@@ -204,9 +195,6 @@ export default function WiseTrainerCourses() {
 			router.push(
 				`/wisetrainer/organization/${course.source.organizationId}/${course.id}`
 			);
-		} else {
-			// Rediriger vers la version standard du cours
-			router.push(`/wisetrainer/${course.id}`);
 		}
 	};
 
@@ -220,7 +208,7 @@ export default function WiseTrainerCourses() {
 				`${
 					WISETRAINER_CONFIG.API_ROUTES.UNENROLL_COURSE
 				}/${containerName}/${courseToUnenroll.id}?sourceType=${
-					courseToUnenroll.source?.type || "wisetwin"
+					courseToUnenroll.source?.type || "organization"
 				}&sourceOrganizationId=${
 					courseToUnenroll.source?.organizationId || ""
 				}`
@@ -281,7 +269,7 @@ export default function WiseTrainerCourses() {
 			// Ajoutez l'ID qui pose problème ici
 			console.log("INFO VÉRIFICATION - Détails du cours à vérifier:", {
 				id: course.id,
-				sourceType: course.source?.type || "wisetwin",
+				sourceType: course.source?.type || "organization",
 				sourceOrgId: course.source?.organizationId || null,
 				compositeId: course.compositeId || `${course.id}__unknown`,
 			});
@@ -290,7 +278,7 @@ export default function WiseTrainerCourses() {
 			personalCourses.forEach((pc) => {
 				console.log("INFO VÉRIFICATION - Formation personnelle:", {
 					id: pc.id,
-					sourceType: pc.source?.type || "wisetwin",
+					sourceType: pc.source?.type || "organization",
 					sourceOrgId: pc.source?.organizationId || null,
 					compositeId: pc.compositeId || `${pc.id}__unknown`,
 				});
@@ -298,13 +286,13 @@ export default function WiseTrainerCourses() {
 		}
 
 		// Récupérer les informations de source du cours
-		const sourceType = course.source?.type || "wisetwin";
+		const sourceType = course.source?.type || "organization";
 		const orgId = course.source?.organizationId || null;
 
 		// Vérifier si le cours existe déjà dans les formations personnelles
 		return personalCourses.some((personalCourse) => {
 			const personalSourceType =
-				personalCourse.source?.type || "wisetwin";
+				personalCourse.source?.type || "organization";
 			const personalOrgId = personalCourse.source?.organizationId || null;
 
 			// Vérifier l'ID du cours ET sa source
@@ -320,8 +308,8 @@ export default function WiseTrainerCourses() {
 
 	// Fonction pour générer un ID composite pour un cours
 	const generateCompositeId = (course) => {
-		const sourceType = course.source?.type || "wisetwin";
-		const orgId = course.source?.organizationId || "wisetwin";
+		const sourceType = course.source?.type || "organization";
+		const orgId = course.source?.organizationId || "organization";
 		return `${course.id}__${sourceType}__${orgId}`;
 	};
 
@@ -337,9 +325,6 @@ export default function WiseTrainerCourses() {
 					<TabsTrigger value="personal" className="px-6">
 						Mes Formations
 					</TabsTrigger>
-					<TabsTrigger value="catalog" className="px-6">
-						Catalogue
-					</TabsTrigger>
 					<TabsTrigger value="organization" className="px-6">
 						Organisation
 					</TabsTrigger>
@@ -351,32 +336,9 @@ export default function WiseTrainerCourses() {
 						courses={personalCourses}
 						onCourseSelect={handleCourseSelect}
 						onUnenroll={handleUnenroll}
-						onBrowseCatalog={() => setActiveTab("catalog")}
+						onBrowseCatalog={() => setActiveTab("organization")}
 						containerVariants={containerVariants}
 						itemVariants={itemVariants}
-					/>
-				</TabsContent>
-
-				<TabsContent value="catalog">
-					<CatalogCoursesTab
-						isLoading={isLoadingWiseTwin}
-						courses={wiseTwinTrainings.map((course) => ({
-							...course,
-							compositeId: generateCompositeId(course),
-							source: {
-								type: "wisetwin",
-								name: "WiseTwin",
-								containerName:
-									WISETRAINER_CONFIG.CONTAINER_NAMES.SOURCE,
-							},
-						}))}
-						personalCourses={personalCourses}
-						onEnroll={handleStartCourse}
-						onToggleInfo={toggleCardFlip}
-						flippedCardId={flippedCardId}
-						containerVariants={containerVariants}
-						itemVariants={itemVariants}
-						isUserEnrolled={isUserEnrolled} // Passer la fonction de vérification
 					/>
 				</TabsContent>
 
