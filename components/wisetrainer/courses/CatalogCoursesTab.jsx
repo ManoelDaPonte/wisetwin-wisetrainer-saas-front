@@ -1,8 +1,10 @@
 //components/wisetrainer/courses/CatalogCoursesTab.jsx
 import React from "react";
 import { motion } from "framer-motion";
+import { Search } from "lucide-react";
 import CatalogCourseCard from "@/components/wisetrainer/courses/CatalogCourseCard";
 import CoursesLoading from "@/components/wisetrainer/courses/CoursesLoading";
+import EmptyStateCard from "@/components/wisetrainer/courses/EmptyStateCard";
 
 const CatalogCoursesTab = ({
 	isLoading,
@@ -36,16 +38,11 @@ const CatalogCoursesTab = ({
 			{isLoading ? (
 				<CoursesLoading />
 			) : validCourses.length === 0 ? (
-				<div className="text-center py-16">
-					<div className="text-4xl mb-4">🔍</div>
-					<h3 className="text-lg font-medium mb-2">
-						Aucune formation disponible
-					</h3>
-					<p className="text-gray-500 dark:text-gray-400 mb-6">
-						Nous n'avons pas trouvé de formations disponibles dans
-						le catalogue pour le moment.
-					</p>
-				</div>
+				<EmptyStateCard
+					icon={<Search className="w-10 h-10 text-gray-400 dark:text-gray-500" />}
+					title="Aucune formation disponible"
+					description="Nous n'avons pas trouvé de formations disponibles dans le catalogue pour le moment."
+				/>
 			) : (
 				<motion.div
 					variants={containerVariants}

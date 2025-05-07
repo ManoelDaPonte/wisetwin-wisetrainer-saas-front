@@ -10,6 +10,8 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import CatalogCourseCard from "@/components/wisetrainer/courses/CatalogCourseCard";
+import EmptyStateCard from "@/components/wisetrainer/courses/EmptyStateCard";
+import CoursesLoading from "@/components/wisetrainer/courses/CoursesLoading";
 
 export default function CatalogOrganizationTab({
 	organizations = [],
@@ -36,57 +38,86 @@ export default function CatalogOrganizationTab({
 	const isEmptyCatalog = trainings.length === 0;
 	const showNoOrganizations = organizations.length === 0;
 
-	// Partie du rendu pour les états vides
-	const renderEmptyState = () => {
+	// Sélection d'organisation
+	const handleOrganizationChange = (orgId) => {
+		// Changer l'organisation
+		onSelectOrganization(orgId);
+	};
+
+	// Rendu pour les différents états vides
+	const renderContent = () => {
 		if (isLoading) {
-			return (
-				<div className="flex flex-col items-center justify-center py-12">
-					<div className="w-16 h-16 border-4 border-wisetwin-blue border-t-transparent rounded-full animate-spin mb-4"></div>
-					<p className="text-gray-500 dark:text-gray-400 text-center">
-						Chargement des formations...
-					</p>
-				</div>
-			);
+			return <CoursesLoading count={4} />;
 		}
 
 		if (showNoOrganizations) {
 			return (
-				<div className="flex flex-col items-center justify-center py-12 bg-gray-50 dark:bg-gray-800 rounded-lg">
-					<Building className="w-16 h-16 text-gray-300 dark:text-gray-600 mb-4" />
-					<h3 className="text-lg font-medium mb-2">
-						Aucune organisation
-					</h3>
-					<p className="text-gray-500 dark:text-gray-400 text-center mb-4 max-w-md">
-						Vous n'êtes membre d'aucune organisation. Rejoignez une
-						organisation pour accéder aux formations spécifiques.
-					</p>
-				</div>
+				<EmptyStateCard
+					icon={<Building className="w-10 h-10 text-gray-400 dark:text-gray-500" />}
+					title="Aucune organisation"
+					description="Vous n'êtes membre d'aucune organisation. Rejoignez une organisation pour accéder aux formations spécifiques."
+				/>
 			);
 		}
 
 		if (isEmptyCatalog) {
 			return (
-				<div className="flex flex-col items-center justify-center py-12 bg-gray-50 dark:bg-gray-800 rounded-lg">
-					<Building className="w-16 h-16 text-gray-300 dark:text-gray-600 mb-4" />
-					<h3 className="text-lg font-medium mb-2">
-						Aucune formation disponible
-					</h3>
-					<p className="text-gray-500 dark:text-gray-400 text-center mb-4">
-						{selectedOrganization
+				<EmptyStateCard
+					icon={<Building className="w-10 h-10 text-gray-400 dark:text-gray-500" />}
+					title="Aucune formation disponible"
+					description={
+						selectedOrganization
 							? `L'organisation "${selectedOrganization.name}" n'a pas encore de formations disponibles.`
-							: "Cette organisation n'a pas encore de formations disponibles."}
-					</p>
-				</div>
+							: "Cette organisation n'a pas encore de formations disponibles."
+					}
+				/>
 			);
 		}
 
-		return null;
-	};
-
-	// Sélection d'organisation
-	const handleOrganizationChange = (orgId) => {
-		// Changer l'organisation
-		onSelectOrganization(orgId);
+		return (
+			<motion.div
+				variants={containerVariants}
+				initial="hidden"
+				animate="visible"
+				className="grid grid-cols-1 md:grid-cols-2 gap-8"
+			>
+				{trainings.map((course) => (
+					<CatalogCourseCard
+						key={
+							course.compositeId ||
+							`${course.id}_${selectedOrganizationId}`
+						}
+						course={{
+							...course,
+							// S'assurer que les informations d'organisation sont correctement définies
+							source: {
+								type: "organization",
+								organizationId: selectedOrganizationId,
+								name: selectedOrganization
+									? selectedOrganization.name
+									: "Organisation",
+								containerName:
+									selectedOrganization?.azureContainer ||
+									null,
+							},
+						}}
+						onEnroll={onEnroll}
+						onToggleInfo={onToggleInfo}
+						flippedCardId={flippedCardId}
+						isImporting={isImporting === course.id}
+						isEnrolled={
+							isUserEnrolled
+								? isUserEnrolled(
+										course,
+										personalCourses
+								  )
+								: false
+						}
+						itemVariants={itemVariants}
+					/>
+				))}
+			</motion.div>
+		);
 	};
 
 	return (
@@ -122,55 +153,7 @@ export default function CatalogOrganizationTab({
 				</div>
 			)}
 
-			{showNoOrganizations || isEmptyCatalog || isLoading ? (
-				renderEmptyState()
-			) : (
-				<>
-					{/* Liste des formations */}
-					<motion.div
-						variants={containerVariants}
-						initial="hidden"
-						animate="visible"
-						className="grid grid-cols-1 md:grid-cols-2 gap-8"
-					>
-						{trainings.map((course) => (
-							<CatalogCourseCard
-								key={
-									course.compositeId ||
-									`${course.id}_${selectedOrganizationId}`
-								}
-								course={{
-									...course,
-									// S'assurer que les informations d'organisation sont correctement définies
-									source: {
-										type: "organization",
-										organizationId: selectedOrganizationId,
-										name: selectedOrganization
-											? selectedOrganization.name
-											: "Organisation",
-										containerName:
-											selectedOrganization?.azureContainer ||
-											null,
-									},
-								}}
-								onEnroll={onEnroll}
-								onToggleInfo={onToggleInfo}
-								flippedCardId={flippedCardId}
-								isImporting={isImporting === course.id}
-								isEnrolled={
-									isUserEnrolled
-										? isUserEnrolled(
-												course,
-												personalCourses
-										  )
-										: false
-								}
-								itemVariants={itemVariants}
-							/>
-						))}
-					</motion.div>
-				</>
-			)}
+			{renderContent()}
 		</div>
 	);
 }
