@@ -99,7 +99,7 @@ function CurrentTrainingsPanel({
 											training.source.organizationId
 										) {
 											router.push(
-												`/wisetrainer/organization/${training.source.organizationId}/${training.id}`
+												`/wisetrainer/${training.source.organizationId}/${training.id}`
 											);
 										} else {
 											// Rediriger vers la liste des formations

@@ -150,7 +150,7 @@ export default function WiseTrainerCourses() {
 						orgId: course.source.organizationId,
 					});
 					router.push(
-						`/wisetrainer/organization/${course.source.organizationId}/${course.id}`
+						`/wisetrainer/${course.source.organizationId}/${course.id}`
 					);
 				}
 
@@ -193,7 +193,7 @@ export default function WiseTrainerCourses() {
 		) {
 			// Rediriger vers la version organisation du cours
 			router.push(
-				`/wisetrainer/organization/${course.source.organizationId}/${course.id}`
+				`/wisetrainer/${course.source.organizationId}/${course.id}`
 			);
 		}
 	};

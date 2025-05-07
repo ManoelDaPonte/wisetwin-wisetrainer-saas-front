@@ -96,9 +96,6 @@ export default function CatalogOrganizationTab({
 				<h2 className="text-xl font-semibold text-wisetwin-darkblue dark:text-white">
 					Formations de vos organisations
 				</h2>
-				<p className="text-gray-600 dark:text-gray-300">
-					Accédez aux formations proposées par vos organisations
-				</p>
 			</div>
 
 			{/* Sélection d'organisation si plusieurs sont disponibles */}

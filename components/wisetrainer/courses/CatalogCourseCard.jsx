@@ -267,19 +267,6 @@ const CatalogCourseCard = ({
 									<Clock className="h-4 w-4 mr-1" />
 									<span>{course.duration}</span>
 								</div>
-
-								{/* Afficher le container source */}
-								<div className="flex items-center text-xs text-gray-500 mt-1">
-									<Database className="h-3 w-3 mr-1" />
-									<span>
-										{isOrganizationCourse
-											? `Container: ${
-													source.containerName ||
-													"Non disponible"
-											  }`
-											: `Container: ${WISETRAINER_CONFIG.CONTAINER_NAMES.SOURCE}`}
-									</span>
-								</div>
 							</CardDescription>
 						</CardHeader>
 

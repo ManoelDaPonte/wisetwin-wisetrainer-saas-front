@@ -131,27 +131,10 @@ const CourseCard = ({ course, onSelect, onUnenroll, itemVariants }) => {
 								Dernier accès: {formatDate(course.lastAccessed)}
 							</span>
 						</div>
-
-						{/* Afficher le container source */}
-						<div className="flex items-center text-xs text-gray-500 mt-1">
-							<Database className="h-3 w-3 mr-1" />
-							<span>
-								{isOrganizationCourse
-									? `Container organisation: ${
-											source.containerName ||
-											"Non disponible"
-									  }`
-									: `Container WiseTwin: ${WISETRAINER_CONFIG.CONTAINER_NAMES.SOURCE}`}
-							</span>
-						</div>
 					</CardDescription>
 				</CardHeader>
 
 				<CardContent className="flex-grow">
-					<p className="text-sm text-gray-600 dark:text-gray-300 mb-4 line-clamp-2">
-						{course.description}
-					</p>
-
 					<div className="space-y-4">
 						<div>
 							<div className="flex justify-between mb-1">

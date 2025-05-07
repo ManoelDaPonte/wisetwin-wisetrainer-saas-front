@@ -14,7 +14,7 @@ import WISETRAINER_CONFIG from "@/lib/config/wisetrainer/wisetrainer";
 import axios from "axios";
 
 const UnityBuild = forwardRef(
-	({ courseId, containerName, onQuestionnaireRequest }, ref) => {
+	({ courseId, containerName, onQuestionnaireRequest, onLoadingProgress }, ref) => {
 		const [loadingTimeout, setLoadingTimeout] = useState(false);
 		const [buildError, setBuildError] = useState(null);
 		const [buildStatus, setBuildStatus] = useState("checking");
@@ -56,10 +56,28 @@ const UnityBuild = forwardRef(
 			maxRetries: 3, // Réessayer 3 fois max
 		});
 
-		// Mettre à jour la progression du chargement
+		// Simuler une progression initiale avant le chargement réel
+		useEffect(() => {
+			let interval;
+			if (buildStatus === "checking") {
+				setManualLoadingProgress(10);
+				interval = setInterval(() => {
+					setManualLoadingProgress(prev => {
+						if (prev >= 40) {
+							clearInterval(interval);
+							return prev;
+						}
+						return prev + 1;
+					});
+				}, 100);
+			}
+			return () => clearInterval(interval);
+		}, [buildStatus]);
+
+		// Mettre à jour la progression du chargement réel
 		useEffect(() => {
 			if (buildStatus === "ready" && !isLoaded) {
-				setManualLoadingProgress(70 + loadingProgression * 30);
+				setManualLoadingProgress(40 + loadingProgression * 60);
 			}
 		}, [loadingProgression, buildStatus, isLoaded]);
 
