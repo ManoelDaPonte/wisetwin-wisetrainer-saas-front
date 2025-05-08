@@ -50,7 +50,9 @@ export default function CatalogOrganizationTab({
 		if (showNoOrganizations) {
 			return (
 				<EmptyStateCard
-					icon={<Building className="w-12 h-12 text-gray-300 dark:text-gray-600" />}
+					icon={
+						<Building className="w-12 h-12 text-gray-300 dark:text-gray-600" />
+					}
 					title="Aucune organisation"
 					description="Vous n'êtes membre d'aucune organisation. Rejoignez une organisation pour accéder aux environnements 3D spécifiques."
 				/>
@@ -60,14 +62,15 @@ export default function CatalogOrganizationTab({
 		if (isEmptyCatalog) {
 			return (
 				<EmptyStateCard
-					icon={<Building className="w-12 h-12 text-gray-300 dark:text-gray-600" />}
+					icon={
+						<Building className="w-12 h-12 text-gray-300 dark:text-gray-600" />
+					}
 					title="Aucun environnement 3D disponible"
 					description={
 						selectedOrganization
 							? `L'organisation "${selectedOrganization.name}" n'a pas encore d'environnements 3D disponibles.`
 							: "Cette organisation n'a pas encore d'environnements 3D disponibles."
 					}
-					infoText="Demandez à votre administrateur de commander un nouveau digital twin pour votre organisation."
 				/>
 			);
 		}

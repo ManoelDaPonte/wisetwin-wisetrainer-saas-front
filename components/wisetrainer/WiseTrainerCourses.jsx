@@ -326,7 +326,7 @@ export default function WiseTrainerCourses() {
 						Mes Formations
 					</TabsTrigger>
 					<TabsTrigger value="organization" className="px-6">
-						Organisation
+						Catalogue de formations
 					</TabsTrigger>
 				</TabsList>
 
@@ -356,10 +356,18 @@ export default function WiseTrainerCourses() {
 								return {
 									...training,
 									// Préserver le nom de la formation
-									name: training.name || training.id
-										.split("-")
-										.map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-										.join(" "),
+									name:
+										training.name ||
+										training.id
+											.split("-")
+											.map(
+												(word) =>
+													word
+														.charAt(0)
+														.toUpperCase() +
+													word.slice(1)
+											)
+											.join(" "),
 									compositeId: `${training.id}__organization__${selectedOrgId}`,
 									source: {
 										type: "organization",
