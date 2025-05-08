@@ -9,7 +9,6 @@ const SettingsContext = createContext(undefined);
 // Clés pour les préférences localStorage
 const STORAGE_KEYS = {
   LANGUAGE: "wisetwin_language",
-  SIDEBAR_COMPACT: "wisetwin_sidebar_compact",
   NOTIFICATIONS: "wisetwin_notifications",
   EMAIL_ALERTS: "wisetwin_email_alerts"
 };
@@ -75,7 +74,6 @@ export const SettingsProvider = ({ children }) => {
   const [language, setLanguage] = useState("fr");
   const [notifications, setNotifications] = useState(true);
   const [emailAlerts, setEmailAlerts] = useState(true);
-  const [sidebarCompact, setSidebarCompact] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [lastRefresh, setLastRefresh] = useState(new Date());
 
@@ -83,7 +81,6 @@ export const SettingsProvider = ({ children }) => {
   useEffect(() => {
     // Préférences UI depuis localStorage
     setLanguage(getStorageValue(STORAGE_KEYS.LANGUAGE, "fr"));
-    setSidebarCompact(getStorageValue(STORAGE_KEYS.SIDEBAR_COMPACT, false));
     setNotifications(getStorageValue(STORAGE_KEYS.NOTIFICATIONS, true));
     setEmailAlerts(getStorageValue(STORAGE_KEYS.EMAIL_ALERTS, true));
   }, []);
@@ -94,11 +91,6 @@ export const SettingsProvider = ({ children }) => {
     setStorageValue(STORAGE_KEYS.LANGUAGE, value);
   }, []);
 
-  // Gérer les mises à jour du mode compact
-  const handleSetSidebarCompact = useCallback((value) => {
-    setSidebarCompact(value);
-    setStorageValue(STORAGE_KEYS.SIDEBAR_COMPACT, value);
-  }, []);
 
   // Gérer les mises à jour des notifications
   const handleSetNotifications = useCallback((value) => {
@@ -137,7 +129,6 @@ export const SettingsProvider = ({ children }) => {
     language,
     notifications,
     emailAlerts,
-    sidebarCompact,
     isLoading,
     lastRefresh,
     
@@ -147,7 +138,6 @@ export const SettingsProvider = ({ children }) => {
     setLanguage: handleSetLanguage,
     setNotifications: handleSetNotifications,
     setEmailAlerts: handleSetEmailAlerts,
-    setSidebarCompact: handleSetSidebarCompact,
     
     // Actions
     refreshSettings,

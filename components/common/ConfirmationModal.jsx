@@ -11,6 +11,7 @@ import {
 	DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
 
 const ConfirmationModal = ({
 	title,
@@ -21,6 +22,7 @@ const ConfirmationModal = ({
 	confirmText = "Confirmer",
 	cancelText = "Annuler",
 	isDanger = false,
+	isProcessing = false,
 }) => {
 	return (
 		<Dialog open={isVisible} onOpenChange={onCancel}>
@@ -30,7 +32,11 @@ const ConfirmationModal = ({
 					<DialogDescription>{message}</DialogDescription>
 				</DialogHeader>
 				<DialogFooter className="flex flex-row justify-end gap-2 mt-4">
-					<Button variant="outline" onClick={onCancel}>
+					<Button
+						variant="outline"
+						onClick={onCancel}
+						disabled={isProcessing}
+					>
 						{cancelText}
 					</Button>
 					<Button
@@ -41,8 +47,16 @@ const ConfirmationModal = ({
 								: "bg-wisetwin-darkblue hover:bg-wisetwin-darkblue-light"
 						}
 						onClick={onConfirm}
+						disabled={isProcessing}
 					>
-						{confirmText}
+						{isProcessing ? (
+							<span className="flex items-center">
+								<Loader2 className="w-4 h-4 mr-2 animate-spin" />
+								Traitement...
+							</span>
+						) : (
+							confirmText
+						)}
 					</Button>
 				</DialogFooter>
 			</DialogContent>

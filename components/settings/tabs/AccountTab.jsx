@@ -4,12 +4,13 @@ import { useUser } from "@/lib/hooks/useUser"; // Notre hook personnalisé
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { AlertTriangle, User, Edit, Save, CheckCircle } from "lucide-react";
+import { AlertTriangle, User, Edit, Save, CheckCircle, Loader2 } from "lucide-react";
 import Image from "next/image";
 import ConfirmationModal from "@/components/common/ConfirmationModal";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useSettings } from "@/lib/contexts/SettingsContext";
 import { useRouter } from "next/navigation";
+import { accountService } from "@/lib/services/accountService";
 
 export default function AccountTab() {
 	const { user, error: userError, updateUser, refreshUser } = useUser();
@@ -21,6 +22,7 @@ export default function AccountTab() {
 		name: "",
 	});
 	const [isLoading, setIsLoading] = useState(false);
+	const [isDeletingAccount, setIsDeletingAccount] = useState(false);
 	const [saveStatus, setSaveStatus] = useState({
 		type: "", // "success" ou "error"
 		message: "",
@@ -96,6 +98,32 @@ export default function AccountTab() {
 			});
 		} finally {
 			setIsLoading(false);
+		}
+	};
+
+	/**
+	 * Gère la suppression du compte utilisateur
+	 */
+	const handleDeleteAccount = async () => {
+		try {
+			setIsDeletingAccount(true);
+			
+			// Appeler le service de suppression de compte
+			const result = await accountService.deleteAccount();
+			
+			if (!result.success) {
+				throw new Error(result.error || "Une erreur est survenue lors de la suppression du compte");
+			}
+			
+			// La redirection est gérée par le service accountService
+		} catch (error) {
+			console.error("Erreur lors de la suppression du compte:", error);
+			setSaveStatus({
+				type: "error",
+				message: error.message || "Une erreur est survenue lors de la suppression du compte."
+			});
+			setIsConfirmationModalOpen(false);
+			setIsDeletingAccount(false);
 		}
 	};
 
@@ -252,17 +280,14 @@ export default function AccountTab() {
 			{/* Modal de confirmation pour la suppression du compte */}
 			<ConfirmationModal
 				title="Confirmer la suppression"
-				message="Êtes-vous sûr de vouloir supprimer votre compte ? Cette action est irréversible et toutes vos données seront perdues."
+				message="Êtes-vous sûr de vouloir supprimer votre compte ? Cette action est irréversible et toutes vos données seront perdues. Vous serez déconnecté immédiatement après la suppression."
 				isVisible={isConfirmationModalOpen}
-				onConfirm={() => {
-					// Action de suppression du compte ici
-					console.log("Account deletion confirmed");
-					setIsConfirmationModalOpen(false);
-				}}
+				onConfirm={handleDeleteAccount}
 				onCancel={() => setIsConfirmationModalOpen(false)}
 				confirmText="Supprimer définitivement"
 				cancelText="Annuler"
 				isDanger={true}
+				isProcessing={isDeletingAccount}
 			/>
 		</div>
 	);

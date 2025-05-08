@@ -1,6 +1,6 @@
 // components/settings/tabs/GeneralTab.jsx
 import React from "react";
-import { Moon, Sun, Globe, Mail, PanelLeft, Monitor, Tags } from "lucide-react";
+import { Moon, Sun, Globe, Mail, Monitor, Tags } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -18,9 +18,7 @@ const GeneralTab = () => {
 		notifications: trainingAlerts,
 		setNotifications: setTrainingAlerts,
 		emailAlerts: commercialOffers,
-		setEmailAlerts: setCommercialOffers,
-		sidebarCompact,
-		setSidebarCompact
+		setEmailAlerts: setCommercialOffers
 	} = useSettings();
 
 	// Animation pour la sélection du thème
@@ -99,35 +97,6 @@ const GeneralTab = () => {
 						<span className="font-medium">Système</span>
 						{theme === "system" && <Badge className="bg-wisetwin-darkblue">Actif</Badge>}
 					</motion.div>
-				</div>
-			</div>
-
-			{/* Paramètres d'interface */}
-			<div>
-				<div className="flex items-center gap-3 mb-4">
-					<div className="p-2 bg-wisetwin-blue/10 dark:bg-wisetwin-blue/20 rounded-full">
-						<PanelLeft className="h-5 w-5 text-wisetwin-blue dark:text-wisetwin-light" />
-					</div>
-					<h3 className="text-lg font-medium">Interface</h3>
-				</div>
-
-				<div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-lg space-y-4">
-					<div className="flex items-center justify-between">
-						<div className="flex items-center gap-2">
-							<Label htmlFor="sidebar-compact" className="cursor-pointer font-medium">
-								Mode compact pour la barre latérale
-							</Label>
-						</div>
-						<Switch
-							id="sidebar-compact"
-							checked={sidebarCompact}
-							onCheckedChange={setSidebarCompact}
-						/>
-					</div>
-					<p className="text-sm text-muted-foreground">
-						Lorsque le mode compact est activé, la barre latérale
-						n'affichera que les icônes des menus.
-					</p>
 				</div>
 			</div>
 
