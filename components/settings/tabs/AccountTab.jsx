@@ -1,6 +1,6 @@
 // components/settings/tabs/AccountTab.jsx
 import React, { useState, useEffect } from "react";
-import { useUser } from "@auth0/nextjs-auth0";
+import { useUser } from "@/lib/hooks/useUser"; // Notre hook personnalisé
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,7 +12,7 @@ import { useSettings } from "@/lib/contexts/SettingsContext";
 import { useRouter } from "next/navigation";
 
 export default function AccountTab() {
-	const { user, error: userError } = useUser();
+	const { user, error: userError, updateUser, refreshUser } = useUser();
 	const router = useRouter();
 	const { refreshSettings } = useSettings();
 	const [isConfirmationModalOpen, setIsConfirmationModalOpen] = useState(false);
@@ -59,17 +59,13 @@ export default function AccountTab() {
 		setSaveStatus({ type: "", message: "" });
 
 		try {
-			// Appel à l'API pour mettre à jour le nom d'utilisateur
-			const response = await fetch("/api/user/update-name", {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ name: formData.name.trim() }),
+			// Utiliser notre hook updateUser pour mettre à jour le profil
+			const result = await updateUser({ 
+				name: formData.name.trim() 
 			});
 
-			const data = await response.json();
-
-			if (!response.ok) {
-				throw new Error(data.error || "Une erreur est survenue");
+			if (!result.success) {
+				throw new Error(result.error || "Une erreur est survenue");
 			}
 
 			// Mise à jour réussie
@@ -78,18 +74,12 @@ export default function AccountTab() {
 				message: "Nom mis à jour avec succès",
 			});
 			
-			// Mettre à jour les données du formulaire avec la valeur mise à jour
-			setFormData(prev => ({
-				...prev,
-				name: data.user.name
-			}));
-
 			setIsEditing(false);
 			
 			// Rafraîchir les informations du contexte
 			refreshSettings();
 			
-			// Force refresh pour mettre à jour les informations utilisateur d'Auth0
+			// Force refresh pour mettre à jour les informations utilisateur
 			router.refresh();
 
 			// Attendre 3 secondes avant de faire disparaître le message de succès
@@ -109,7 +99,7 @@ export default function AccountTab() {
 		}
 	};
 
-	// Utiliser le nom local, pas celui d'Auth0 (qui peut être obsolète)
+	// Utiliser le nom de la base de données Prisma via notre hook useUser
 	const displayName = formData.name || user?.name || "";
 
 	return (

@@ -1,20 +1,27 @@
 // components/settings/tabs/GeneralTab.jsx
-import React, { useState } from "react";
+import React from "react";
 import { Moon, Sun, Globe, Mail, PanelLeft, Monitor, Tags } from "lucide-react";
-import { useTheme } from "@/lib/hooks/useTheme";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { motion } from "framer-motion";
+import { useSettings } from "@/lib/contexts/SettingsContext";
 
 const GeneralTab = () => {
-	const { theme, setTheme } = useTheme();
-	const [language, setLanguage] = useState("fr");
-	const [commercialOffers, setCommercialOffers] = useState(false);
-	const [trainingAlerts, setTrainingAlerts] = useState(true);
-	const [sidebarCompact, setSidebarCompact] = useState(false);
+	const { 
+		theme, 
+		setTheme,
+		language,
+		setLanguage,
+		notifications: trainingAlerts,
+		setNotifications: setTrainingAlerts,
+		emailAlerts: commercialOffers,
+		setEmailAlerts: setCommercialOffers,
+		sidebarCompact,
+		setSidebarCompact
+	} = useSettings();
 
 	// Animation pour la sélection du thème
 	const themeVariants = {

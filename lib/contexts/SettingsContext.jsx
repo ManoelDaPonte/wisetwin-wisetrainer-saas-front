@@ -1,9 +1,18 @@
 "use client";
-import React, { createContext, useContext, useState, useCallback } from "react";
+import React, { createContext, useContext, useState, useCallback, useEffect } from "react";
 import { useTheme } from "@/lib/hooks/useTheme";
+import { useUser } from "@/lib/hooks/useUser";
 
 // Création du contexte
 const SettingsContext = createContext(undefined);
+
+// Clés pour les préférences localStorage
+const STORAGE_KEYS = {
+  LANGUAGE: "wisetwin_language",
+  SIDEBAR_COMPACT: "wisetwin_sidebar_compact",
+  NOTIFICATIONS: "wisetwin_notifications",
+  EMAIL_ALERTS: "wisetwin_email_alerts"
+};
 
 /**
  * Hook personnalisé pour utiliser le contexte des paramètres
@@ -20,6 +29,36 @@ export const useSettings = () => {
 };
 
 /**
+ * Fonction pour lire une valeur de localStorage avec valeur par défaut
+ */
+const getStorageValue = (key, defaultValue) => {
+  if (typeof window === "undefined") return defaultValue;
+  
+  try {
+    const storedValue = localStorage.getItem(key);
+    return storedValue !== null
+      ? JSON.parse(storedValue)
+      : defaultValue;
+  } catch (error) {
+    console.error(`Erreur lors de la lecture de ${key} depuis localStorage:`, error);
+    return defaultValue;
+  }
+};
+
+/**
+ * Fonction pour sauvegarder une valeur dans localStorage
+ */
+const setStorageValue = (key, value) => {
+  if (typeof window === "undefined") return;
+  
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch (error) {
+    console.error(`Erreur lors de l'écriture de ${key} dans localStorage:`, error);
+  }
+};
+
+/**
  * Fournisseur de contexte pour les paramètres
  * Centralise la gestion de l'état des paramètres de l'application
  * 
@@ -30,6 +69,8 @@ export const useSettings = () => {
 export const SettingsProvider = ({ children }) => {
   // État du contexte
   const { theme, setTheme } = useTheme();
+  const { user, updateUser, refreshUser } = useUser();
+  
   const [activeTab, setActiveTab] = useState("preferences");
   const [language, setLanguage] = useState("fr");
   const [notifications, setNotifications] = useState(true);
@@ -38,16 +79,46 @@ export const SettingsProvider = ({ children }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [lastRefresh, setLastRefresh] = useState(new Date());
 
-  // Fonction pour rafraîchir les données des paramètres si nécessaire
+  // Initialiser les préférences depuis localStorage
+  useEffect(() => {
+    // Préférences UI depuis localStorage
+    setLanguage(getStorageValue(STORAGE_KEYS.LANGUAGE, "fr"));
+    setSidebarCompact(getStorageValue(STORAGE_KEYS.SIDEBAR_COMPACT, false));
+    setNotifications(getStorageValue(STORAGE_KEYS.NOTIFICATIONS, true));
+    setEmailAlerts(getStorageValue(STORAGE_KEYS.EMAIL_ALERTS, true));
+  }, []);
+
+  // Gérer les mises à jour du langage
+  const handleSetLanguage = useCallback((value) => {
+    setLanguage(value);
+    setStorageValue(STORAGE_KEYS.LANGUAGE, value);
+  }, []);
+
+  // Gérer les mises à jour du mode compact
+  const handleSetSidebarCompact = useCallback((value) => {
+    setSidebarCompact(value);
+    setStorageValue(STORAGE_KEYS.SIDEBAR_COMPACT, value);
+  }, []);
+
+  // Gérer les mises à jour des notifications
+  const handleSetNotifications = useCallback((value) => {
+    setNotifications(value);
+    setStorageValue(STORAGE_KEYS.NOTIFICATIONS, value);
+  }, []);
+
+  // Gérer les mises à jour des alertes email
+  const handleSetEmailAlerts = useCallback((value) => {
+    setEmailAlerts(value);
+    setStorageValue(STORAGE_KEYS.EMAIL_ALERTS, value);
+  }, []);
+
+  // Fonction pour rafraîchir les données des paramètres
   const refreshSettings = useCallback(async () => {
     setIsLoading(true);
     
     try {
-      // Ici, on pourrait ajouter un appel API pour récupérer les paramètres de l'utilisateur
-      // Exemple : const response = await fetch('/api/user/settings');
-      
-      // Simulons un délai pour l'exemple
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Rafraîchir les données utilisateur
+      await refreshUser();
       
       // Mise à jour des données
       setLastRefresh(new Date());
@@ -56,7 +127,7 @@ export const SettingsProvider = ({ children }) => {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [refreshUser]);
 
   // Valeur du contexte à exposer
   const value = {
@@ -73,10 +144,10 @@ export const SettingsProvider = ({ children }) => {
     // Setters
     setActiveTab,
     setTheme,
-    setLanguage,
-    setNotifications,
-    setEmailAlerts,
-    setSidebarCompact,
+    setLanguage: handleSetLanguage,
+    setNotifications: handleSetNotifications,
+    setEmailAlerts: handleSetEmailAlerts,
+    setSidebarCompact: handleSetSidebarCompact,
     
     // Actions
     refreshSettings,
