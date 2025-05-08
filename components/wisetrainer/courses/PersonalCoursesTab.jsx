@@ -4,10 +4,9 @@ import { motion } from "framer-motion";
 import CourseCard from "@/components/wisetrainer/courses/CourseCard";
 import EmptyCoursesState from "@/components/wisetrainer/courses/EmptyCoursesState";
 import CoursesLoading from "@/components/wisetrainer/courses/CoursesLoading";
+import EmptyStateCard from "@/components/wisetrainer/courses/EmptyStateCard";
 import { Building, BookOpen, ArrowRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 
 const PersonalCoursesTab = ({
 	isLoading,
@@ -60,28 +59,14 @@ const PersonalCoursesTab = ({
 						</h3>
 
 						{inProgressCourses.length === 0 ? (
-							<Card className="border-gray-200 dark:border-gray-700">
-								<CardContent className="flex flex-col items-center justify-center py-10 text-center">
-									<div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-full mb-4">
-										<BookOpen className="h-8 w-8 text-wisetwin-blue dark:text-wisetwin-blue-light" />
-									</div>
-									<h4 className="text-lg font-medium mb-2">
-										Aucune formation en cours
-									</h4>
-									<p className="text-gray-500 dark:text-gray-400 mb-6 max-w-md">
-										Parcourez notre catalogue et commencez
-										une nouvelle formation pour développer
-										vos compétences.
-									</p>
-									<Button
-										className="bg-wisetwin-blue hover:bg-wisetwin-blue-light text-white flex items-center gap-2"
-										onClick={onBrowseCatalog}
-									>
-										Découvrir les formations
-										<ArrowRight className="h-4 w-4" />
-									</Button>
-								</CardContent>
-							</Card>
+							<EmptyStateCard
+								icon={<BookOpen className="h-8 w-8 text-wisetwin-blue dark:text-wisetwin-blue-light" />}
+								title="Aucune formation en cours"
+								description="Parcourez notre catalogue et commencez une nouvelle formation pour développer vos compétences."
+								actionFn={onBrowseCatalog}
+								actionText="Découvrir les formations"
+								className="border-gray-200 dark:border-gray-700"
+							/>
 						) : (
 							<motion.div
 								variants={containerVariants}

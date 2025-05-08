@@ -114,7 +114,7 @@ export function useCurrentTraining() {
 							// URL pour accéder à la formation (basée sur la source)
 							trainingUrl:
 								source.type === "organization"
-									? `/wisetrainer/organization/${source.organizationId}/${training.id}`
+									? `/wisetrainer/${source.organizationId}/${training.id}`
 									: `/wisetrainer/${training.id}`,
 						};
 					} catch (error) {
@@ -144,7 +144,7 @@ export function useCurrentTraining() {
 							source,
 							trainingUrl:
 								source.type === "organization"
-									? `/wisetrainer/organization/${source.organizationId}/${training.id}`
+									? `/wisetrainer/${source.organizationId}/${training.id}`
 									: `/wisetrainer/${training.id}`,
 						};
 					}

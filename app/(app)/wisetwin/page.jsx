@@ -4,8 +4,9 @@ import React from "react";
 import { motion } from "framer-motion";
 import WiseTwinViewer from "@/components/wisetwin/WiseTwinViewer";
 import { useAzureContainer } from "@/lib/hooks/useAzureContainer";
-import { Box, Building3D } from "lucide-react";
+import { Box, AlertTriangle } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export default function WiseTwinPage() {
 	const { isLoading } = useAzureContainer();
@@ -37,6 +38,13 @@ export default function WiseTwinPage() {
 			animate="visible"
 			variants={containerVariants}
 		>
+			<Alert className="mb-6 border-orange-400 bg-orange-100 dark:bg-orange-800/20 text-orange-800 dark:text-orange-300">
+				<AlertTriangle className="h-4 w-4 mr-2" />
+				<AlertDescription>
+					Fonctionnalité en cours de développement - Certaines options peuvent être limitées
+				</AlertDescription>
+			</Alert>
+			
 			<motion.div variants={itemVariants} className="mb-8">
 				<div className="flex items-center gap-3 mb-3">
 					<div className="bg-wisetwin-blue/10 dark:bg-wisetwin-blue/20 p-2 rounded-lg">

@@ -6,6 +6,7 @@ import LeftNavBar from "@/components/layout/LeftNavBar";
 import TermsAcceptanceModal from "@/components/cookies/TermsAcceptanceModal";
 import { DashboardProvider } from "@/lib/contexts/DashboardContext";
 import { ThemeProvider } from "@/lib/contexts/ThemeContext";
+import { SettingsProvider } from "@/lib/contexts/SettingsContext";
 import { Toaster } from "@/components/ui/toaster";
 import "@/app/globals.css";
 
@@ -23,7 +24,8 @@ export default function RootLayout({ children, pathname }) {
 			<body className={inter.className}>
 				{/* Fournisseurs de contexte */}
 				<ThemeProvider>
-					<DashboardProvider>
+					<SettingsProvider>
+						<DashboardProvider>
 						<div className="flex h-screen w-screen overflow-hidden">
 							{/* Barre de navigation latérale */}
 							<LeftNavBar />
@@ -62,7 +64,8 @@ export default function RootLayout({ children, pathname }) {
 						</div>
 						<Toaster />
 					</DashboardProvider>
-				</ThemeProvider>
+						</SettingsProvider>
+					</ThemeProvider>
 
 				{/* Modal d'acceptation des termes */}
 				<TermsAcceptanceModal />

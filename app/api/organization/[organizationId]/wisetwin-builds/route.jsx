@@ -8,7 +8,8 @@ const prisma = new PrismaClient();
 
 export async function GET(request, { params }) {
 	try {
-		const { organizationId } = params;
+		const resolvedParams = await params;
+		const { organizationId } = resolvedParams;
 
 		// Vérifier si l'organisation existe
 		const organization = await prisma.organization.findUnique({

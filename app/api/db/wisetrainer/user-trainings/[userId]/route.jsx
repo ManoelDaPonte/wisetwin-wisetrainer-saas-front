@@ -146,7 +146,7 @@ export async function GET(request, { params }) {
 					// URL pour accéder à la formation (basée sur la source)
 					trainingUrl:
 						source.type === "organization"
-							? `/wisetrainer/organization/${source.organizationId}/${userCourse.course.courseId}`
+							? `/wisetrainer/${source.organizationId}/${userCourse.course.courseId}`
 							: `/wisetrainer/${userCourse.course.courseId}`,
 				};
 			})

@@ -8,6 +8,7 @@ import {
 	Users,
 	Compass,
 	Settings,
+	User,
 } from "lucide-react";
 
 export const STATS_CONFIG = {
@@ -60,7 +61,7 @@ export const HomePageCards = [
 		description:
 			"Visualisez vos statistiques et suivez votre progression sur l'ensemble des modules de formation. Consultez vos résultats récents, télécharger vos diplômes et reprenez facilement vos sessions de formation là où vous les avez laissées.",
 		icon: ChartNoAxesCombined,
-		route: "/overview",
+		route: "/mon-profil",
 		primaryAction: "Voir mes statistiques",
 		secondaryInfo: "Suivi personnalisé en temps réel",
 	},
@@ -79,9 +80,9 @@ export const navigationItems = {
 	topItems: [
 		{ id: "guide", label: "Guide", icon: Compass },
 		{
-			id: "overview",
-			label: "Statistiques",
-			icon: ChartNoAxesCombined,
+			id: "mon-profil",
+			label: "Mon profil",
+			icon: User,
 		},
 	],
 	coreItems: [

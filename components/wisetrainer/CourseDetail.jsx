@@ -17,6 +17,7 @@ import { useUnityEvents } from "@/lib/hooks/useUnityEvents";
 import WISETRAINER_CONFIG from "@/lib/config/wisetrainer/wisetrainer";
 import { useToast } from "@/lib/hooks/useToast";
 import { useInformationModal } from "@/lib/hooks/useInformationModal";
+import Spinner from "@/components/common/Spinner";
 
 export default function CourseDetail({ params }) {
 	const router = useRouter();
@@ -73,6 +74,10 @@ export default function CourseDetail({ params }) {
 		}
 	}, [params]);
 
+	// État pour suivre si les fichiers ont été téléchargés
+	const [filesDownloaded, setFilesDownloaded] = useState(false);
+	const [isDownloading, setIsDownloading] = useState(false);
+
 	// Charger les détails du cours quand courseId et containerName sont disponibles
 	useEffect(() => {
 		if (courseId && containerName && !containerLoading) {
@@ -107,7 +112,7 @@ export default function CourseDetail({ params }) {
 			const apiUrl = organizationId
 				? `${WISETRAINER_CONFIG.API_ROUTES.ORGANIZATION_COURSE_DETAILS}/${organizationId}/${courseId}`
 				: `${WISETRAINER_CONFIG.API_ROUTES.COURSE_DETAILS}/${courseId}`;
-
+				
 			// Charger les détails du cours depuis le fichier de configuration
 			let courseConfig;
 			try {
@@ -135,7 +140,7 @@ export default function CourseDetail({ params }) {
 					modules: [],
 				};
 			}
-
+				
 			// Récupérer la progression de l'utilisateur depuis l'API
 			try {
 				console.log(
@@ -148,7 +153,7 @@ export default function CourseDetail({ params }) {
 					"Réponse de l'API de progression:",
 					progressResponse.data
 				);
-
+					
 				const courseProgress = progressResponse.data.trainings?.find(
 					(t) => t.id === courseId
 				);
@@ -219,7 +224,7 @@ export default function CourseDetail({ params }) {
 
 				setCourse(courseConfig);
 			}
-
+				
 			console.log("Course state après chargement:", course);
 			console.log("UserProgress state après chargement:", userProgress);
 		} catch (error) {
@@ -227,6 +232,11 @@ export default function CourseDetail({ params }) {
 				"Erreur détaillée lors du chargement du cours:",
 				error
 			);
+			toast({
+				title: "Erreur",
+				description: "Erreur lors du chargement du cours. Veuillez réessayer.",
+				variant: "destructive",
+			});
 		} finally {
 			setIsLoading(false);
 		}
@@ -238,6 +248,7 @@ export default function CourseDetail({ params }) {
 
 		try {
 			setIsInitializingProgress(true);
+			setIsDownloading(true);
 
 			console.log(
 				"Initialisation de la progression pour le cours",
@@ -277,8 +288,11 @@ export default function CourseDetail({ params }) {
 					
 					if (copyResponse.data.success) {
 						console.log("Copie des fichiers réussie:", copyResponse.data);
+						setFilesDownloaded(true);
 					} else {
 						console.warn("Copie partielle des fichiers:", copyResponse.data);
+						// Même avec une copie partielle, on considère que c'est téléchargé
+						setFilesDownloaded(true);
 					}
 				} catch (copyError) {
 					console.error("Erreur lors de la copie des fichiers:", copyError);
@@ -308,15 +322,30 @@ export default function CourseDetail({ params }) {
 					console.log(`Importation depuis le conteneur source: ${sourceContainer}`);
 					
 					// Importer depuis le container source
-					await axios.post(
-						`${WISETRAINER_CONFIG.API_ROUTES.IMPORT_BUILD}/${containerName}/${courseId}`,
-						{
-							sourceContainer: sourceContainer
-						}
-					);
+					try {
+						await axios.post(
+							`${WISETRAINER_CONFIG.API_ROUTES.IMPORT_BUILD}/${containerName}/${courseId}`,
+							{
+								sourceContainer: sourceContainer
+							}
+						);
+						setFilesDownloaded(true);
+					} catch (importError) {
+						console.error("Erreur lors de l'importation des fichiers:", importError);
+						setFilesDownloaded(false);
+						toast({
+							title: "Erreur de téléchargement",
+							description: "Impossible de télécharger les fichiers de formation. Veuillez réessayer.",
+							variant: "destructive",
+						});
+					}
 				}
 
 				console.log("Opération de copie/importation terminée");
+			} else {
+				// Les fichiers existent déjà
+				console.log("Fichiers de formation trouvés dans le container");
+				setFilesDownloaded(true);
 			}
 
 			// Déterminer la source correcte en fonction des paramètres
@@ -358,9 +387,14 @@ export default function CourseDetail({ params }) {
 				"Erreur lors de l'initialisation de la progression:",
 				error
 			);
-			// Ne pas afficher de toast d'erreur pour éviter de perturber l'utilisateur
+			toast({
+				title: "Erreur d'initialisation",
+				description: "Erreur lors de l'initialisation. Les données par défaut seront utilisées.",
+				variant: "destructive",
+			});
 		} finally {
 			setIsInitializingProgress(false);
+			setIsDownloading(false);
 		}
 	};
 
@@ -677,12 +711,7 @@ export default function CourseDetail({ params }) {
 	// Fonction pour gérer la fermeture de la modale d'information est maintenant gérée par le hook useInformationModal
 
 	// Gérer les cas de chargement et d'erreur
-	if (
-		containerLoading ||
-		(isLoading && !course) ||
-		!courseId ||
-		!containerName
-	) {
+	if (containerLoading || (isLoading && !course) || !courseId || !containerName || isDownloading) {
 		return (
 			<div className="container mx-auto py-8">
 				<div className="flex flex-col items-center justify-center h-64">
@@ -701,11 +730,12 @@ export default function CourseDetail({ params }) {
 							</Button>
 						</div>
 					) : (
-						// Chargement en cours
-						<div className="text-center">
-							<div className="animate-spin h-10 w-10 border-4 border-wisetwin-blue border-t-transparent rounded-full mb-4 mx-auto"></div>
-							<p>Chargement du cours...</p>
-						</div>
+						// Chargement en cours avec indication du téléchargement si applicable
+						<Spinner 
+							text={isDownloading ? "Téléchargement des fichiers de formation..." : "Chargement du cours..."}
+							size="lg" 
+							centered={true}
+						/>
 					)}
 				</div>
 			</div>
@@ -762,6 +792,8 @@ export default function CourseDetail({ params }) {
 						showGuide={showGuide}
 						setShowGuide={setShowGuide}
 						onGuideComplete={handleGuideComplete}
+						filesDownloaded={filesDownloaded}
+						isDownloading={isDownloading}
 					/>
 				</TabsContent>
 			</Tabs>

@@ -10,6 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Info, RotateCcw } from "lucide-react";
 import UnityBuild from "@/components/wisetrainer/UnityBuild";
+import Spinner from "@/components/common/Spinner";
 
 export default function CourseTrainingTab({
 	unityBuildRef,
@@ -17,6 +18,9 @@ export default function CourseTrainingTab({
 	containerName,
 	onQuestionnaireRequest,
 	onInformationRequest,
+	filesDownloaded,
+	isDownloading,
+	onUnityProgress
 }) {
 	const handleResetCamera = () => {
 		console.log("Tentative de réinitialisation de la caméra...");
@@ -37,17 +41,44 @@ export default function CourseTrainingTab({
 							variant="outline"
 							className="flex items-center gap-2"
 							onClick={handleResetCamera}
+							disabled={!filesDownloaded}
 						>
 							<RotateCcw className="w-4 h-4" />
 							Réinitialiser la caméra
 						</Button>
 					</div>
-					<UnityBuild
-						ref={unityBuildRef}
-						courseId={courseId}
-						containerName={containerName}
-						onQuestionnaireRequest={onQuestionnaireRequest}
-					/>
+					{isDownloading ? (
+						<div className="aspect-video w-full relative bg-gray-100 dark:bg-gray-800 rounded-lg flex flex-col items-center justify-center p-6">
+							<Spinner 
+								text="Téléchargement des fichiers de formation..." 
+								size="lg" 
+								centered={true}
+							/>
+							<p className="text-sm text-gray-500 mt-8">Veuillez patienter. Cette opération peut prendre quelques minutes.</p>
+						</div>
+					) : !filesDownloaded ? (
+						<div className="aspect-video w-full relative bg-gray-100 dark:bg-gray-800 rounded-lg flex flex-col items-center justify-center p-6">
+							<div className="text-center">
+								<div className="text-red-500 text-xl mb-4">
+									Téléchargement requis
+								</div>
+								<p className="text-gray-600 dark:text-gray-300 mb-4">
+									Les fichiers de formation doivent être téléchargés avant de pouvoir accéder à l'environnement 3D.
+								</p>
+								<p className="text-sm text-gray-500">
+									Veuillez réessayer ou contacter l'assistance si le problème persiste.
+								</p>
+							</div>
+						</div>
+					) : (
+						<UnityBuild
+							ref={unityBuildRef}
+							courseId={courseId}
+							containerName={containerName}
+							onQuestionnaireRequest={onQuestionnaireRequest}
+							onLoadingProgress={onUnityProgress}
+						/>
+					)}
 				</CardContent>
 			</Card>
 

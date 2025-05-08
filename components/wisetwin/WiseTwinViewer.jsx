@@ -130,10 +130,10 @@ export default function WiseTwinViewer() {
 			>
 				<TabsList className="mb-8">
 					<TabsTrigger value="catalog" className="px-6">
-						Catalogue WiseTwin
+						Mes Environnements
 					</TabsTrigger>
 					<TabsTrigger value="organization" className="px-6">
-						Environnements d'Organisation
+						Catalogue d'environnements
 					</TabsTrigger>
 				</TabsList>
 
@@ -155,7 +155,33 @@ export default function WiseTwinViewer() {
 						organizations={userOrganizations}
 						selectedOrganizationId={selectedOrgId}
 						onSelectOrganization={handleSelectOrganization}
-						builds={organizationBuilds || []}
+						builds={(organizationBuilds || []).map((build) => {
+							// S'assurer que chaque build a les informations de source complètes
+							const selectedOrg = userOrganizations.find(
+								(org) => org.id === selectedOrgId
+							);
+							return {
+								...build,
+								// Préserver le nom du build
+								name:
+									build.name ||
+									build.id
+										.split("-")
+										.map(
+											(word) =>
+												word.charAt(0).toUpperCase() +
+												word.slice(1)
+										)
+										.join(" "),
+								source: {
+									type: "organization",
+									name: selectedOrg?.name || "Organisation",
+									organizationId: selectedOrgId,
+									containerName:
+										selectedOrg?.azureContainer || null,
+								},
+							};
+						})}
 						isLoading={isLoadingOrgs || isLoadingOrg}
 						onViewBuild={handleViewBuild}
 						onToggleInfo={toggleCardFlip}

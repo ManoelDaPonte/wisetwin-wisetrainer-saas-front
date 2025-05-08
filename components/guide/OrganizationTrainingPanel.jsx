@@ -92,7 +92,7 @@ export default function OrganizationTrainingPanel({
 								key={`tag-${training.id}-${index}`}
 								training={training}
 								onClick={() =>
-									router.push(`/wisetrainer/organization/${organization.id}/${training.id}`)
+									router.push(`/wisetrainer/${organization.id}/${training.id}`)
 								}
 								isTagged
 							/>
