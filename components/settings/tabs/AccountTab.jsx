@@ -1,23 +1,39 @@
 // components/settings/tabs/AccountTab.jsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useUser } from "@auth0/nextjs-auth0";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { AlertTriangle, User, Mail, Edit, Save } from "lucide-react";
+import { AlertTriangle, User, Edit, Save, CheckCircle } from "lucide-react";
 import Image from "next/image";
 import ConfirmationModal from "@/components/common/ConfirmationModal";
-import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useSettings } from "@/lib/contexts/SettingsContext";
+import { useRouter } from "next/navigation";
 
 export default function AccountTab() {
-	const { user } = useUser();
-	const [isConfirmationModalOpen, setIsConfirmationModalOpen] =
-		useState(false);
+	const { user, error: userError } = useUser();
+	const router = useRouter();
+	const { refreshSettings } = useSettings();
+	const [isConfirmationModalOpen, setIsConfirmationModalOpen] = useState(false);
 	const [isEditing, setIsEditing] = useState(false);
 	const [formData, setFormData] = useState({
-		name: user?.name || "",
-		email: user?.email || "",
+		name: "",
 	});
+	const [isLoading, setIsLoading] = useState(false);
+	const [saveStatus, setSaveStatus] = useState({
+		type: "", // "success" ou "error"
+		message: "",
+	});
+
+	// Mise à jour du state formData quand l'utilisateur est chargé
+	useEffect(() => {
+		if (user) {
+			setFormData({
+				name: user.name || "",
+			});
+		}
+	}, [user]);
 
 	const handleChange = (e) => {
 		const { name, value } = e.target;
@@ -25,14 +41,76 @@ export default function AccountTab() {
 			...prev,
 			[name]: value,
 		}));
+		// Réinitialiser le statut quand l'utilisateur modifie le champ
+		setSaveStatus({ type: "", message: "" });
 	};
 
 	const handleSaveProfile = async () => {
-		// Ici, on simulerait l'enregistrement des données du profil
-		console.log("Saving profile data:", formData);
-		setIsEditing(false);
-		// Afficher une notification de succès
+		// Validation
+		if (!formData.name.trim()) {
+			setSaveStatus({
+				type: "error",
+				message: "Le nom ne peut pas être vide",
+			});
+			return;
+		}
+
+		setIsLoading(true);
+		setSaveStatus({ type: "", message: "" });
+
+		try {
+			// Appel à l'API pour mettre à jour le nom d'utilisateur
+			const response = await fetch("/api/user/update-name", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ name: formData.name.trim() }),
+			});
+
+			const data = await response.json();
+
+			if (!response.ok) {
+				throw new Error(data.error || "Une erreur est survenue");
+			}
+
+			// Mise à jour réussie
+			setSaveStatus({
+				type: "success",
+				message: "Nom mis à jour avec succès",
+			});
+			
+			// Mettre à jour les données du formulaire avec la valeur mise à jour
+			setFormData(prev => ({
+				...prev,
+				name: data.user.name
+			}));
+
+			setIsEditing(false);
+			
+			// Rafraîchir les informations du contexte
+			refreshSettings();
+			
+			// Force refresh pour mettre à jour les informations utilisateur d'Auth0
+			router.refresh();
+
+			// Attendre 3 secondes avant de faire disparaître le message de succès
+			setTimeout(() => {
+				setSaveStatus({ type: "", message: "" });
+			}, 3000);
+		} catch (error) {
+			console.error("Erreur lors de la mise à jour du nom:", error);
+			setSaveStatus({
+				type: "error",
+				message:
+					error.message ||
+					"Une erreur est survenue lors de la mise à jour de votre nom",
+			});
+		} finally {
+			setIsLoading(false);
+		}
 	};
+
+	// Utiliser le nom local, pas celui d'Auth0 (qui peut être obsolète)
+	const displayName = formData.name || user?.name || "";
 
 	return (
 		<div className="space-y-8">
@@ -58,9 +136,6 @@ export default function AccountTab() {
 								</div>
 							)}
 						</div>
-						<Button variant="outline" size="sm">
-							Changer la photo
-						</Button>
 					</div>
 
 					{/* Formulaire d'informations */}
@@ -90,14 +165,38 @@ export default function AccountTab() {
 						</div>
 
 						<div className="space-y-4">
+							{/* Message de statut */}
+							{saveStatus.type === "success" && (
+								<Alert className="bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800">
+									<CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+									<AlertDescription className="text-green-700 dark:text-green-300">
+										{saveStatus.message}
+									</AlertDescription>
+								</Alert>
+							)}
+
+							{saveStatus.type === "error" && (
+								<Alert className="bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800">
+									<AlertTriangle className="h-4 w-4 text-red-600 dark:text-red-400" />
+									<AlertDescription className="text-red-700 dark:text-red-300">
+										{saveStatus.message}
+									</AlertDescription>
+								</Alert>
+							)}
+
 							<div className="space-y-2">
 								<Label htmlFor="name">Nom complet</Label>
 								<Input
 									id="name"
 									name="name"
-									value={formData.name}
+									value={isEditing ? formData.name : displayName}
 									onChange={handleChange}
 									disabled={!isEditing}
+									className={
+										isEditing
+											? ""
+											: "bg-gray-50 dark:bg-gray-800/50"
+									}
 								/>
 							</div>
 
@@ -107,14 +206,10 @@ export default function AccountTab() {
 									id="email"
 									name="email"
 									type="email"
-									value={formData.email}
-									onChange={handleChange}
-									disabled={!isEditing}
+									value={user?.email || ""}
+									disabled={true}
+									className="bg-gray-50 dark:bg-gray-800/50"
 								/>
-								<p className="text-xs text-muted-foreground">
-									Cette adresse est utilisée pour vous
-									connecter et recevoir des notifications.
-								</p>
 							</div>
 
 							{isEditing && (
@@ -122,8 +217,11 @@ export default function AccountTab() {
 									<Button
 										onClick={handleSaveProfile}
 										className="bg-wisetwin-blue hover:bg-wisetwin-blue-light text-white"
+										disabled={isLoading}
 									>
-										Enregistrer les modifications
+										{isLoading
+											? "Enregistrement..."
+											: "Enregistrer les modifications"}
 									</Button>
 								</div>
 							)}
