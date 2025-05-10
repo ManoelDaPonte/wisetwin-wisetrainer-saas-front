@@ -71,23 +71,16 @@ export async function GET(request, { params }) {
 
     console.log(`[DEBUG] Contenu téléchargé: ${content.length} octets`);
 
-    // Configurer les en-têtes HTTP avec des réponses CORS plus permissives
+    // Configurer les en-têtes HTTP
     const headers = {
-      // Désactiver complètement le cache pour résoudre les problèmes de chargement
-      "Cache-Control": "no-cache, no-store, must-revalidate",
+      "Cache-Control": "no-cache",
       "Pragma": "no-cache",
       "Expires": "0",
-
-      // En-têtes CORS améliorés
       "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "GET, HEAD, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type, Accept, Range",
-      "Access-Control-Expose-Headers": "Content-Length, Content-Type, Content-Encoding, Accept-Ranges, ETag",
-
-      // En-têtes de contenu
+      "Access-Control-Allow-Methods": "GET",
+      "Access-Control-Expose-Headers": "Content-Length, Content-Type, Content-Encoding",
       "Content-Length": content.length.toString(),
       "Accept-Ranges": "bytes",
-      "Vary": "Accept-Encoding",
     };
 
     // Déterminer le type MIME
@@ -104,29 +97,9 @@ export async function GET(request, { params }) {
     headers["Content-Type"] = contentType;
 
     // Si le fichier est compressé, ajouter l'en-tête Content-Encoding
-    // Mais uniquement si ce n'est pas un fichier Unity WebGL avec .gz
     if (isCompressed || actualBlobPath.endsWith(".gz")) {
-      // Pour les fichiers Unity WebGL, ne pas ajouter Content-Encoding pour éviter les problèmes de décompression
-      // En effet, Unity gère lui-même la décompression des fichiers .gz
-      if (actualBlobPath.endsWith(".framework.js.gz") ||
-          actualBlobPath.endsWith(".data.gz") ||
-          actualBlobPath.endsWith(".wasm.gz")) {
-        // Supprimer l'extension .gz du Content-Type pour les fichiers Unity
-        if (headers["Content-Type"] === "application/octet-stream" && actualBlobPath.endsWith(".data.gz")) {
-          headers["Content-Type"] = "application/octet-stream";
-        } else if (headers["Content-Type"] === "application/octet-stream" && actualBlobPath.endsWith(".framework.js.gz")) {
-          headers["Content-Type"] = "application/javascript";
-        } else if (headers["Content-Type"] === "application/octet-stream" && actualBlobPath.endsWith(".wasm.gz")) {
-          headers["Content-Type"] = "application/wasm";
-        }
-
-        // Ne pas ajouter de Content-Encoding pour laisser le navigateur traiter directement les données
-        console.log(`[DEBUG] Fichier Unity WebGL, pas d'en-tête Content-Encoding pour: ${actualBlobPath}`);
-      } else {
-        // Pour les autres fichiers .gz, ajouter normalement Content-Encoding
-        headers["Content-Encoding"] = "gzip";
-        console.log(`[DEBUG] Ajout en-tête: Content-Encoding: gzip`);
-      }
+      headers["Content-Encoding"] = "gzip";
+      console.log(`[DEBUG] Ajout en-tête: Content-Encoding: gzip`);
     }
 
     console.log(`[DEBUG] En-têtes: ${JSON.stringify(headers)}`);
