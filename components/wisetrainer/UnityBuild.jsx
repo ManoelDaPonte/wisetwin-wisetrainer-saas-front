@@ -14,23 +14,27 @@ import WISETRAINER_CONFIG from "@/lib/config/wisetrainer/wisetrainer";
 import axios from "axios";
 
 const UnityBuild = forwardRef(
-	({ courseId, containerName, onQuestionnaireRequest, onLoadingProgress }, ref) => {
+	(
+		{ courseId, containerName, onQuestionnaireRequest, onLoadingProgress },
+		ref
+	) => {
 		const [loadingTimeout, setLoadingTimeout] = useState(false);
 		const [buildError, setBuildError] = useState(null);
 		const [buildStatus, setBuildStatus] = useState("checking");
 		const [manualLoadingProgress, setManualLoadingProgress] = useState(10);
+		const [filesChecked, setFilesChecked] = useState(false);
 
 		// Préfixe des blobs
 		const blobPrefix = WISETRAINER_CONFIG.BLOB_PREFIXES.WISETRAINER;
 
 		// Construire les URLs pour Unity
 		const baseUrl = `/api/blob/${containerName}`;
-		const loaderUrl = `${baseUrl}/${blobPrefix}/${courseId}.loader.js`;
-		const dataUrl = `${baseUrl}/${blobPrefix}/${courseId}.data`;
-		const frameworkUrl = `${baseUrl}/${blobPrefix}/${courseId}.framework.js`;
-		const wasmUrl = `${baseUrl}/${blobPrefix}/${courseId}.wasm`;
+		const loaderUrl = `${baseUrl}/${blobPrefix}${courseId}.loader.js`;
+		const dataUrl = `${baseUrl}/${blobPrefix}${courseId}.data.gz`;
+		const frameworkUrl = `${baseUrl}/${blobPrefix}${courseId}.framework.js.gz`;
+		const wasmUrl = `${baseUrl}/${blobPrefix}${courseId}.wasm.gz`;
 
-		// Initialiser le contexte Unity
+		// Toujours initialiser le contexte Unity mais uniquement l'utiliser quand on est prêt
 		const {
 			unityProvider,
 			loadingProgression,
@@ -39,6 +43,7 @@ const UnityBuild = forwardRef(
 			addEventListener,
 			removeEventListener,
 			sendMessage,
+			requestFullscreen,
 		} = useUnityContext({
 			loaderUrl: loaderUrl,
 			dataUrl: dataUrl,
@@ -49,12 +54,67 @@ const UnityBuild = forwardRef(
 				powerPreference: "high-performance",
 				failIfMajorPerformanceCaveat: false,
 			},
-			// Options avancées
-			fetchTimeout: 60000, // 1 minute timeout
-			disableWebAssemblyStreaming: true, // Important pour les fichiers compressés
-			cacheControl: false, // Désactiver le cache
-			maxRetries: 3, // Réessayer 3 fois max
+			// Options avancées pour Unity WebGL
+			fetchTimeout: 180000, // 3 minutes timeout
+			disableWebAssemblyStreaming: true,
+			cacheControl: false,
+			maxRetries: 10, // Augmenter les tentatives
+			companyName: "WiseTwin",
+			productName: "WiseTrainer",
+			productVersion: "1.0",
+			
+			// Fonction custom pour gérer les requêtes fetch faites par Unity
+			onUnityFetch: async (url, options) => {
+				console.log(`[DEBUG] Requête Unity vers: ${url}`);
+				// Ne pas modifier l'en-tête 'Content-Encoding' pour les fichiers gzippés
+				// Unity va gérer lui-même la décompression
+				try {
+					// Essayer de récupérer sans timeout spécifique
+					const response = await fetch(url, {
+						...options,
+						credentials: 'same-origin',
+						mode: 'cors'
+					});
+					return response;
+				} catch (error) {
+					console.error(`[ERROR] Échec fetch Unity pour ${url}:`, error);
+					throw error;
+				}
+			},
 		});
+
+		// Vérifier que les fichiers sont disponibles avant de charger Unity
+		useEffect(() => {
+			const checkFiles = async () => {
+				try {
+					setBuildStatus("checking");
+					
+					// Vérifier que les fichiers sont disponibles avec GET request
+					const checkLoader = fetch(loaderUrl);
+					const checkFramework = fetch(frameworkUrl);
+					const checkData = fetch(dataUrl);
+					
+					const responses = await Promise.all([checkLoader, checkFramework, checkData]);
+					
+					// Vérifier si tous les fichiers sont accessibles
+					if (responses.some(response => !response.ok)) {
+						console.error("Certains fichiers sont inaccessibles", responses);
+						setBuildError("Certains fichiers nécessaires sont inaccessibles");
+						setBuildStatus("error");
+					} else {
+						console.log("Tous les fichiers sont disponibles, initialisation Unity");
+						setBuildStatus("ready");
+						setFilesChecked(true);
+					}
+				} catch (error) {
+					console.error("Erreur lors de la vérification des fichiers", error);
+					setBuildError("Erreur lors de la vérification des fichiers");
+					setBuildStatus("error");
+				}
+			};
+			
+			checkFiles();
+		}, [loaderUrl, frameworkUrl, dataUrl]);
 
 		// Simuler une progression initiale avant le chargement réel
 		useEffect(() => {
@@ -62,7 +122,7 @@ const UnityBuild = forwardRef(
 			if (buildStatus === "checking") {
 				setManualLoadingProgress(10);
 				interval = setInterval(() => {
-					setManualLoadingProgress(prev => {
+					setManualLoadingProgress((prev) => {
 						if (prev >= 40) {
 							clearInterval(interval);
 							return prev;
@@ -78,6 +138,11 @@ const UnityBuild = forwardRef(
 		useEffect(() => {
 			if (buildStatus === "ready" && !isLoaded) {
 				setManualLoadingProgress(40 + loadingProgression * 60);
+				
+				// Débug des problèmes de chargement
+				if (loadingProgression > 0 && loadingProgression < 1) {
+					console.log(`Progression Unity: ${loadingProgression * 100}%`);
+				}
 			}
 		}, [loadingProgression, buildStatus, isLoaded]);
 
@@ -120,8 +185,6 @@ const UnityBuild = forwardRef(
 					);
 				}
 			},
-
-			// Ajoutez cette nouvelle méthode
 			sendMessage: (objectName, methodName, parameter) => {
 				if (isLoaded) {
 					console.log(
@@ -297,7 +360,7 @@ const UnityBuild = forwardRef(
 					"QuestionnaireRequest",
 					handleQuestionnaireRequest
 				);
-				addEventListener("ButtonClicked", handleUnityButtonClick); // Ajout d'un nouvel écouteur
+				addEventListener("ButtonClicked", handleUnityButtonClick);
 			}
 
 			return () => {
@@ -313,7 +376,7 @@ const UnityBuild = forwardRef(
 					removeEventListener(
 						"ButtonClicked",
 						handleUnityButtonClick
-					); // Nettoyage
+					);
 				}
 			};
 		}, [
@@ -330,7 +393,7 @@ const UnityBuild = forwardRef(
 			if (!isLoaded && !loadingTimeout && buildStatus === "ready") {
 				const timer = setTimeout(() => {
 					setLoadingTimeout(true);
-				}, 60000); // 60 secondes timeout
+				}, 180000); // 3 minutes timeout
 
 				return () => clearTimeout(timer);
 			}
@@ -406,12 +469,14 @@ const UnityBuild = forwardRef(
 						</div>
 					)}
 
-					{/* Conteneur Unity */}
-					<Unity
-						unityProvider={unityProvider}
-						style={{ width: "100%", height: "100%" }}
-						className={isLoaded ? "block" : "hidden"}
-					/>
+					{/* Le rendu du composant Unity est conditionné à la vérification des fichiers */}
+					{filesChecked ? (
+						<Unity
+							unityProvider={unityProvider}
+							style={{ width: "100%", height: "100%" }}
+							className={isLoaded ? "block" : "hidden"}
+						/>
+					) : null}
 				</div>
 			</div>
 		);
