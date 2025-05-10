@@ -78,12 +78,50 @@ export default function CourseDetail({ params }) {
 	const [filesDownloaded, setFilesDownloaded] = useState(false);
 	const [isDownloading, setIsDownloading] = useState(false);
 
+	// Fonction dédiée pour vérifier l'existence des fichiers
+	const checkFilesExistence = async () => {
+		try {
+			if (!courseId || !containerName || containerLoading) return false;
+
+			console.log("Vérification de l'existence des fichiers de formation");
+			const checkResponse = await axios.get(
+				`${WISETRAINER_CONFIG.API_ROUTES.CHECK_BLOB}`,
+				{
+					params: {
+						container: containerName,
+						blob: `${WISETRAINER_CONFIG.BLOB_PREFIXES.WISETRAINER}${courseId}.loader.js`,
+					},
+				}
+			);
+
+			const filesExist = checkResponse.data.exists;
+			console.log(`Fichiers ${filesExist ? "trouvés" : "non trouvés"} dans le container`);
+			setFilesDownloaded(filesExist);
+			return filesExist;
+		} catch (error) {
+			console.error("Erreur lors de la vérification des fichiers:", error);
+			setFilesDownloaded(false);
+			return false;
+		}
+	};
+
 	// Charger les détails du cours quand courseId et containerName sont disponibles
 	useEffect(() => {
 		if (courseId && containerName && !containerLoading) {
 			fetchCourseDetails();
+			// Vérifier l'existence des fichiers à chaque chargement
+			checkFilesExistence();
 		}
 	}, [courseId, containerName, containerLoading]);
+
+	// Vérifier à nouveau les fichiers après le chargement des détails du cours
+	useEffect(() => {
+		// Si nous avons les détails du cours et de la progression, vérifier les fichiers
+		if (course && userProgress && containerName && !containerLoading && !isLoading) {
+			console.log("Vérification de l'existence des fichiers après chargement des données du cours");
+			checkFilesExistence();
+		}
+	}, [course, userProgress, isLoading]);
 
 	// Initialiser automatiquement la progression lorsque l'utilisateur accède au cours
 	useEffect(() => {
@@ -255,27 +293,19 @@ export default function CourseDetail({ params }) {
 				courseId
 			);
 
-			// Vérifier d'abord si les fichiers de formation sont présents dans le container
-			const checkResponse = await axios.get(
-				`${WISETRAINER_CONFIG.API_ROUTES.CHECK_BLOB}`,
-				{
-					params: {
-						container: containerName,
-						blob: `${WISETRAINER_CONFIG.BLOB_PREFIXES.WISETRAINER}${courseId}.loader.js`,
-					},
-				}
-			);
+			// Utiliser notre fonction dédiée pour vérifier l'existence des fichiers
+			const filesExist = await checkFilesExistence();
 
 			// Si les fichiers n'existent pas, essayer de les copier d'abord
-			if (!checkResponse.data.exists) {
+			if (!filesExist) {
 				console.log(
 					"Fichiers de formation non trouvés, tentative de copie des fichiers"
 				);
-				
+
 				// Utiliser la nouvelle API pour copier les fichiers depuis le container source approprié
 				try {
 					console.log(`Copie des fichiers de formation pour le cours ${courseId}`);
-					
+
 					// Appeler la nouvelle API pour copier les fichiers
 					const copyResponse = await axios.post(
 						WISETRAINER_CONFIG.API_ROUTES.COPY_TRAINING_FILES,
@@ -285,7 +315,7 @@ export default function CourseDetail({ params }) {
 							organizationId: organizationId,
 						}
 					);
-					
+
 					if (copyResponse.data.success) {
 						console.log("Copie des fichiers réussie:", copyResponse.data);
 						setFilesDownloaded(true);
@@ -296,13 +326,13 @@ export default function CourseDetail({ params }) {
 					}
 				} catch (copyError) {
 					console.error("Erreur lors de la copie des fichiers:", copyError);
-					
+
 					// En cas d'échec, essayer l'ancienne méthode d'importation comme fallback
 					console.log("Tentative d'utilisation de l'ancienne méthode d'importation...");
-					
+
 					// Si nous n'avons pas encore d'informations sur le cours, les récupérer
 					let sourceContainer = WISETRAINER_CONFIG.CONTAINER_NAMES.SOURCE; // Valeur par défaut
-					
+
 					if (organizationId) {
 						try {
 							console.log(`Formation d'organisation détectée, ID: ${organizationId}, récupération du container...`);
@@ -318,9 +348,9 @@ export default function CourseDetail({ params }) {
 							console.error("Erreur lors de la récupération du container de l'organisation:", orgError);
 						}
 					}
-					
+
 					console.log(`Importation depuis le conteneur source: ${sourceContainer}`);
-					
+
 					// Importer depuis le container source
 					try {
 						await axios.post(
@@ -342,10 +372,9 @@ export default function CourseDetail({ params }) {
 				}
 
 				console.log("Opération de copie/importation terminée");
-			} else {
-				// Les fichiers existent déjà
-				console.log("Fichiers de formation trouvés dans le container");
-				setFilesDownloaded(true);
+
+				// Vérifier à nouveau l'existence des fichiers après tentative de copie
+				await checkFilesExistence();
 			}
 
 			// Déterminer la source correcte en fonction des paramètres
