@@ -14,27 +14,13 @@ import WISETRAINER_CONFIG from "@/lib/config/wisetrainer/wisetrainer";
 import axios from "axios";
 
 const UnityBuild = forwardRef(
-	(
-		{ courseId, containerName, onQuestionnaireRequest, onLoadingProgress },
-		ref
-	) => {
+	({ courseId, onQuestionnaireRequest, onLoadingProgress }, ref) => {
 		const [loadingTimeout, setLoadingTimeout] = useState(false);
 		const [buildError, setBuildError] = useState(null);
 		const [buildStatus, setBuildStatus] = useState("checking");
 		const [manualLoadingProgress, setManualLoadingProgress] = useState(10);
-		const [filesChecked, setFilesChecked] = useState(false);
 
-		// Préfixe des blobs
-		const blobPrefix = WISETRAINER_CONFIG.BLOB_PREFIXES.WISETRAINER;
-
-		// Construire les URLs pour Unity
-		const baseUrl = `/api/blob/${containerName}`;
-		const loaderUrl = `${baseUrl}/${blobPrefix}${courseId}.loader.js`;
-		const dataUrl = `${baseUrl}/${blobPrefix}${courseId}.data.gz`;
-		const frameworkUrl = `${baseUrl}/${blobPrefix}${courseId}.framework.js.gz`;
-		const wasmUrl = `${baseUrl}/${blobPrefix}${courseId}.wasm.gz`;
-
-		// Toujours initialiser le contexte Unity mais uniquement l'utiliser quand on est prêt
+		// Initialiser Unity directement avec les chemins des fichiers
 		const {
 			unityProvider,
 			loadingProgression,
@@ -45,10 +31,10 @@ const UnityBuild = forwardRef(
 			sendMessage,
 			requestFullscreen,
 		} = useUnityContext({
-			loaderUrl: loaderUrl,
-			dataUrl: dataUrl,
-			frameworkUrl: frameworkUrl,
-			codeUrl: wasmUrl,
+			loaderUrl: `/build/${courseId}.loader.js`,
+			dataUrl: `/build/${courseId}.data.gz`,
+			frameworkUrl: `/build/${courseId}.framework.js.gz`,
+			codeUrl: `/build/${courseId}.wasm.gz`,
 			webGLContextAttributes: {
 				preserveDrawingBuffer: true,
 				powerPreference: "high-performance",
@@ -62,59 +48,34 @@ const UnityBuild = forwardRef(
 			companyName: "WiseTwin",
 			productName: "WiseTrainer",
 			productVersion: "1.0",
-			
+
 			// Fonction custom pour gérer les requêtes fetch faites par Unity
 			onUnityFetch: async (url, options) => {
 				console.log(`[DEBUG] Requête Unity vers: ${url}`);
-				// Ne pas modifier l'en-tête 'Content-Encoding' pour les fichiers gzippés
-				// Unity va gérer lui-même la décompression
 				try {
-					// Essayer de récupérer sans timeout spécifique
 					const response = await fetch(url, {
 						...options,
-						credentials: 'same-origin',
-						mode: 'cors'
+						credentials: "same-origin",
+						mode: "cors",
 					});
 					return response;
 				} catch (error) {
-					console.error(`[ERROR] Échec fetch Unity pour ${url}:`, error);
+					console.error(
+						`[ERROR] Échec fetch Unity pour ${url}:`,
+						error
+					);
 					throw error;
 				}
 			},
 		});
 
-		// Vérifier que les fichiers sont disponibles avant de charger Unity
+		// Informer le composant parent que l'initialisation a commencé
 		useEffect(() => {
-			const checkFiles = async () => {
-				try {
-					setBuildStatus("checking");
-					
-					// Vérifier que les fichiers sont disponibles avec GET request
-					const checkLoader = fetch(loaderUrl);
-					const checkFramework = fetch(frameworkUrl);
-					const checkData = fetch(dataUrl);
-					
-					const responses = await Promise.all([checkLoader, checkFramework, checkData]);
-					
-					// Vérifier si tous les fichiers sont accessibles
-					if (responses.some(response => !response.ok)) {
-						console.error("Certains fichiers sont inaccessibles", responses);
-						setBuildError("Certains fichiers nécessaires sont inaccessibles");
-						setBuildStatus("error");
-					} else {
-						console.log("Tous les fichiers sont disponibles, initialisation Unity");
-						setBuildStatus("ready");
-						setFilesChecked(true);
-					}
-				} catch (error) {
-					console.error("Erreur lors de la vérification des fichiers", error);
-					setBuildError("Erreur lors de la vérification des fichiers");
-					setBuildStatus("error");
-				}
-			};
-			
-			checkFiles();
-		}, [loaderUrl, frameworkUrl, dataUrl]);
+			if (onLoadingProgress) {
+				onLoadingProgress(10);
+			}
+			setBuildStatus("ready");
+		}, [onLoadingProgress]);
 
 		// Simuler une progression initiale avant le chargement réel
 		useEffect(() => {
@@ -123,28 +84,40 @@ const UnityBuild = forwardRef(
 				setManualLoadingProgress(10);
 				interval = setInterval(() => {
 					setManualLoadingProgress((prev) => {
-						if (prev >= 40) {
+						const newValue = prev < 40 ? prev + 1 : prev;
+						if (newValue >= 40) {
 							clearInterval(interval);
-							return prev;
 						}
-						return prev + 1;
+						// Notifier le parent de la progression si la fonction est fournie
+						if (onLoadingProgress) {
+							onLoadingProgress(newValue);
+						}
+						return newValue;
 					});
 				}, 100);
 			}
 			return () => clearInterval(interval);
-		}, [buildStatus]);
+		}, [buildStatus, onLoadingProgress]);
 
 		// Mettre à jour la progression du chargement réel
 		useEffect(() => {
 			if (buildStatus === "ready" && !isLoaded) {
-				setManualLoadingProgress(40 + loadingProgression * 60);
-				
+				const newProgress = 40 + loadingProgression * 60;
+				setManualLoadingProgress(newProgress);
+
+				// Notifier le parent de la progression si la fonction est fournie
+				if (onLoadingProgress) {
+					onLoadingProgress(newProgress);
+				}
+
 				// Débug des problèmes de chargement
 				if (loadingProgression > 0 && loadingProgression < 1) {
-					console.log(`Progression Unity: ${loadingProgression * 100}%`);
+					console.log(
+						`Progression Unity: ${loadingProgression * 100}%`
+					);
 				}
 			}
-		}, [loadingProgression, buildStatus, isLoaded]);
+		}, [loadingProgression, buildStatus, isLoaded, onLoadingProgress]);
 
 		// Gérer les erreurs Unity
 		useEffect(() => {
@@ -233,6 +206,13 @@ const UnityBuild = forwardRef(
 				return false;
 			},
 			isReady: isLoaded,
+			requestFullscreen: () => {
+				if (isLoaded) {
+					requestFullscreen(true);
+					return true;
+				}
+				return false;
+			},
 		}));
 
 		// Gestionnaire pour les événements Unity
@@ -399,6 +379,13 @@ const UnityBuild = forwardRef(
 			}
 		}, [isLoaded, loadingTimeout, buildStatus]);
 
+		// Notifier le parent quand Unity est complètement chargé
+		useEffect(() => {
+			if (isLoaded && onLoadingProgress) {
+				onLoadingProgress(100);
+			}
+		}, [isLoaded, onLoadingProgress]);
+
 		// En cas d'erreur, afficher un message d'erreur
 		if (buildStatus === "error" || buildError) {
 			return (
@@ -448,7 +435,7 @@ const UnityBuild = forwardRef(
 								<>
 									<div className="mb-4">
 										{buildStatus === "checking"
-											? "Vérification des fichiers de formation..."
+											? "Préparation des fichiers de formation..."
 											: "Chargement de l'environnement de formation..."}
 									</div>
 									<div className="w-64 bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
@@ -469,14 +456,12 @@ const UnityBuild = forwardRef(
 						</div>
 					)}
 
-					{/* Le rendu du composant Unity est conditionné à la vérification des fichiers */}
-					{filesChecked ? (
-						<Unity
-							unityProvider={unityProvider}
-							style={{ width: "100%", height: "100%" }}
-							className={isLoaded ? "block" : "hidden"}
-						/>
-					) : null}
+					{/* Le rendu du composant Unity */}
+					<Unity
+						unityProvider={unityProvider}
+						style={{ width: "100%", height: "100%" }}
+						className={isLoaded ? "block" : "hidden"}
+					/>
 				</div>
 			</div>
 		);
