@@ -1,0 +1,22 @@
+{
+    "headers": [
+      {
+        "source": "/(.*)\\.gz",
+        "headers": [
+          {
+            "key": "Content-Encoding",
+            "value": "gzip"
+          }
+        ]
+      },
+      {
+        "source": "/(.*)\\.wasm\\.gz",
+        "headers": [
+          {
+            "key": "Content-Type",
+            "value": "application/wasm"
+          }
+        ]
+      }
+    ]
+  }

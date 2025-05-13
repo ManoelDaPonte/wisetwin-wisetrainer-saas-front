@@ -13,12 +13,100 @@ import { Button } from "@/components/ui/button";
 import WISETRAINER_CONFIG from "@/lib/config/wisetrainer/wisetrainer";
 import axios from "axios";
 
+// Fonction utilitaire pour détecter les extensions de fichiers disponibles
+const detectUnityBuildPaths = async (courseId) => {
+  const basePath = `/build/${courseId}`;
+  
+  // Extensions possibles pour chaque type de fichier
+  const possibleExtensions = {
+    loader: ['.loader.js'],
+    data: ['.data', '.data.gz', '.data.unityweb'],
+    framework: ['.framework.js', '.framework.js.gz', '.framework.js.unityweb'],
+    code: ['.wasm', '.wasm.gz', '.wasm.unityweb']
+  };
+  
+  // Vérifier l'existence des fichiers
+  const checkFileExists = async (path) => {
+    try {
+      const response = await fetch(path, { method: 'HEAD' });
+      return response.ok;
+    } catch (error) {
+      console.error(`Erreur lors de la vérification du fichier ${path}:`, error);
+      return false;
+    }
+  };
+
+  // Détecter les extensions pour chaque type de fichier
+  const detectedExtensions = {
+    loader: null,
+    data: null,
+    framework: null,
+    code: null
+  };
+  
+  // Vérifier les fichiers un par un
+  for (const [fileType, extensions] of Object.entries(possibleExtensions)) {
+    for (const ext of extensions) {
+      const path = `${basePath}${ext}`;
+      const exists = await checkFileExists(path);
+      if (exists) {
+        detectedExtensions[fileType] = ext;
+        break;
+      }
+    }
+  }
+  
+  // Vérifier si tous les fichiers ont été trouvés
+  const allFound = Object.values(detectedExtensions).every(ext => ext !== null);
+  
+  if (allFound) {
+    return {
+      loaderUrl: `${basePath}${detectedExtensions.loader}`,
+      dataUrl: `${basePath}${detectedExtensions.data}`,
+      frameworkUrl: `${basePath}${detectedExtensions.framework}`,
+      codeUrl: `${basePath}${detectedExtensions.code}`
+    };
+  }
+  
+  // Si tous les fichiers n'ont pas été trouvés, utiliser les extensions par défaut
+  console.warn(`Impossible de détecter tous les fichiers pour ${courseId}, utilisation des extensions par défaut`);
+  return {
+    loaderUrl: `${basePath}.loader.js`,
+    dataUrl: `${basePath}.data.gz`,
+    frameworkUrl: `${basePath}.framework.js.gz`,
+    codeUrl: `${basePath}.wasm.gz`
+  };
+};
+
 const UnityBuild = forwardRef(
 	({ courseId, onQuestionnaireRequest, onLoadingProgress }, ref) => {
 		const [loadingTimeout, setLoadingTimeout] = useState(false);
 		const [buildError, setBuildError] = useState(null);
 		const [buildStatus, setBuildStatus] = useState("checking");
 		const [manualLoadingProgress, setManualLoadingProgress] = useState(10);
+		// Définir les chemins par défaut
+			const [buildPaths, setBuildPaths] = useState({
+				loaderUrl: `/build/${courseId}.loader.js`,
+				dataUrl: `/build/${courseId}.data.gz`,
+				frameworkUrl: `/build/${courseId}.framework.js.gz`,
+				codeUrl: `/build/${courseId}.wasm.gz`,
+			});
+
+			// Détecter les extensions des fichiers au chargement
+			useEffect(() => {
+				const detectFiles = async () => {
+					try {
+						const paths = await detectUnityBuildPaths(courseId);
+						console.log('Chemins détectés pour Unity:', paths);
+						setBuildPaths(paths);
+					} catch (error) {
+						console.error('Erreur lors de la détection des fichiers:', error);
+						setBuildError(`Erreur lors de la détection des fichiers: ${error.message}`);
+					}
+				};
+				
+				detectFiles();
+			}, [courseId]);
 
 		// Initialiser Unity directement avec les chemins des fichiers
 		const {
@@ -31,10 +119,10 @@ const UnityBuild = forwardRef(
 			sendMessage,
 			requestFullscreen,
 		} = useUnityContext({
-			loaderUrl: `/build/${courseId}.loader.js`,
-			dataUrl: `/build/${courseId}.data.gz`,
-			frameworkUrl: `/build/${courseId}.framework.js.gz`,
-			codeUrl: `/build/${courseId}.wasm.gz`,
+			loaderUrl: buildPaths.loaderUrl,
+			dataUrl: buildPaths.dataUrl,
+			frameworkUrl: buildPaths.frameworkUrl,
+			codeUrl: buildPaths.codeUrl,
 			webGLContextAttributes: {
 				preserveDrawingBuffer: true,
 				powerPreference: "high-performance",
@@ -69,13 +157,41 @@ const UnityBuild = forwardRef(
 			},
 		});
 
-		// Informer le composant parent que l'initialisation a commencé
+		// Vérifier les extensions de fichiers disponibles
 		useEffect(() => {
+			const checkBuildFiles = async () => {
+				try {
+					// Tenter de détecter les fichiers de build disponibles
+					const detectedPaths = await getUnityBuildPaths(courseId);
+					console.log("Detected Unity build paths:", detectedPaths);
+					
+					// Mettre à jour les chemins si différents
+					if (
+						detectedPaths.dataUrl !== buildPaths.dataUrl ||
+						detectedPaths.frameworkUrl !== buildPaths.frameworkUrl ||
+						detectedPaths.codeUrl !== buildPaths.codeUrl
+					) {
+						console.log("Updating Unity build paths to match detected files");
+						setBuildPaths(detectedPaths);
+						// Note: this won't update the current useUnityContext instance
+						// but will help for future debugging
+					}
+					setBuildStatus("ready");
+				} catch (error) {
+					console.warn("Failed to detect Unity build files:", error.message);
+					// Continue with default paths
+					setBuildStatus("ready");
+				}
+			};
+			
+			// Informer le composant parent que l'initialisation a commencé
 			if (onLoadingProgress) {
 				onLoadingProgress(10);
 			}
-			setBuildStatus("ready");
-		}, [onLoadingProgress]);
+			
+			// Vérifier les fichiers de build
+			checkBuildFiles();
+		}, [courseId, onLoadingProgress, buildPaths]);
 
 		// Simuler une progression initiale avant le chargement réel
 		useEffect(() => {
@@ -123,6 +239,8 @@ const UnityBuild = forwardRef(
 		useEffect(() => {
 			if (unityError) {
 				console.error("Erreur Unity:", unityError);
+				// Inclure les chemins de fichiers tentés dans le message d'erreur pour débogage
+				console.error("Chemins de fichiers tentés:", buildPaths);
 				setBuildError(
 					`Erreur lors du chargement de l'environnement 3D: ${
 						unityError.message || "Erreur inconnue"
@@ -130,7 +248,7 @@ const UnityBuild = forwardRef(
 				);
 				setBuildStatus("error");
 			}
-		}, [unityError]);
+		}, [unityError, buildPaths]);
 
 		// Exposer des méthodes au composant parent via ref
 		useImperativeHandle(ref, () => ({
@@ -399,6 +517,16 @@ const UnityBuild = forwardRef(
 								{buildError ||
 									"Une erreur s'est produite lors du chargement de l'environnement 3D."}
 							</p>
+							{process.env.NODE_ENV === 'development' && (
+								<div className="text-xs text-gray-500 dark:text-gray-400 mb-4 max-w-md overflow-auto">
+									<details>
+										<summary>Détails techniques (dev)</summary>
+										<pre className="mt-2 text-left">
+											{JSON.stringify(buildPaths, null, 2)}
+										</pre>
+									</details>
+								</div>
+							)}
 							<Button onClick={() => window.location.reload()}>
 								Réessayer
 							</Button>
