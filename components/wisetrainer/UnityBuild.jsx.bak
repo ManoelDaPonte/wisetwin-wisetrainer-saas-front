@@ -71,17 +71,10 @@ const UnityBuild = forwardRef(
 				// Unity va gérer lui-même la décompression
 				try {
 					// Essayer de récupérer sans timeout spécifique
-					// Fix pour le problème 403 : utiliser omit pour credentials
 					const response = await fetch(url, {
 						...options,
-						credentials: 'omit', // Ne pas envoyer de cookies
-						mode: 'cors',
-						cache: 'no-store', // Ignorer le cache
-						headers: {
-							...options.headers,
-							'Pragma': 'no-cache',
-							'Cache-Control': 'no-cache'
-						}
+						credentials: 'same-origin',
+						mode: 'cors'
 					});
 					return response;
 				} catch (error) {
@@ -105,30 +98,19 @@ const UnityBuild = forwardRef(
 					const responses = await Promise.all([checkLoader, checkFramework, checkData]);
 					
 					// Vérifier si tous les fichiers sont accessibles (modifié pour régler le problème 403 avec framework.js)
-					// Journaliser les détails pour débogage
-					const responseDetails = responses.map((response, idx) => {
-						const url = idx === 0 ? loaderUrl : idx === 1 ? frameworkUrl : dataUrl;
-						return {
-							url,
-							ok: response.ok,
-							status: response.status,
-							statusText: response.statusText
-						};
-					});
-
-					console.log("Détails des réponses:", responseDetails);
-
-					// Forcer le chargement même si certains fichiers sont inaccessibles
-					// (Fix pour l'erreur 403 avec framework.js en Angleterre)
-					console.log("Forcer le chargement Unity même avec des erreurs potentielles");
-					setBuildStatus("ready");
-					setFilesChecked(true);
+					if (responses.some(response => !response.ok)) {
+						console.error("Certains fichiers sont inaccessibles", responses);
+						setBuildError("Certains fichiers nécessaires sont inaccessibles");
+						setBuildStatus("error");
+					} else {
+						console.log("Tous les fichiers sont disponibles, initialisation Unity");
+						setBuildStatus("ready");
+						setFilesChecked(true);
+					}
 				} catch (error) {
 					console.error("Erreur lors de la vérification des fichiers", error);
-					// Forcer le chargement même en cas d'erreur
-					console.log("Forcer le chargement Unity malgré l'erreur de vérification");
-					setBuildStatus("ready");
-					setFilesChecked(true);
+					setBuildError("Erreur lors de la vérification des fichiers");
+					setBuildStatus("error");
 				}
 			};
 			
@@ -169,10 +151,12 @@ const UnityBuild = forwardRef(
 		useEffect(() => {
 			if (unityError) {
 				console.error("Erreur Unity:", unityError);
-				// Ne pas bloquer le chargement, journaliser l'erreur et continuer
-				console.log("Erreur Unity détectée, mais on continue le chargement");
-				// Note: En Angleterre, nous avons remarqué que le chargement peut réussir
-				// malgré des erreurs initiales, donc on ne bloque pas
+				setBuildError(
+					`Erreur lors du chargement de l'environnement 3D: ${
+						unityError.message || "Erreur inconnue"
+					}`
+				);
+				setBuildStatus("error");
 			}
 		}, [unityError]);
 
