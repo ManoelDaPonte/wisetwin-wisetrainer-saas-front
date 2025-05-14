@@ -1,20 +1,36 @@
 {
     "headers": [
       {
-        "source": "/(.*)\\.gz",
+        "source": "/build/(.*)\\.gz",
         "headers": [
           {
-            "key": "Content-Encoding",
-            "value": "gzip"
+            "key": "Content-Type",
+            "value": "application/octet-stream"
+          },
+          {
+            "key": "X-Content-Type-Options",
+            "value": "nosniff"
+          },
+          {
+            "key": "Cache-Control",
+            "value": "public, max-age=31536000, immutable"
           }
         ]
       },
       {
-        "source": "/(.*)\\.wasm\\.gz",
+        "source": "/build/(.*)\\.wasm\\.gz",
         "headers": [
           {
             "key": "Content-Type",
-            "value": "application/wasm"
+            "value": "application/octet-stream"
+          },
+          {
+            "key": "X-Content-Type-Options",
+            "value": "nosniff"
+          },
+          {
+            "key": "Cache-Control",
+            "value": "public, max-age=31536000, immutable"
           }
         ]
       }
