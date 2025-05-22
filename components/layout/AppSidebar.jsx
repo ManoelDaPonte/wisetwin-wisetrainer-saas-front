@@ -2,28 +2,18 @@
 
 import * as React from "react";
 import { usePathname } from "next/navigation";
-import { useUser } from "@auth0/nextjs-auth0";
+import { useUser as useAuth0User } from "@auth0/nextjs-auth0";
 import Link from "next/link";
 import Image from "next/image";
 import { useTheme } from "@/lib/hooks/useTheme";
-import navigationItems from "@/lib/config/config";
+import { useUser } from "@/newlib/hooks/useUser";
+import { useOrganization } from "@/newlib/hooks/useOrganization";
+import CreateOrganizationModal from "@/components/organizations/CreateOrganizationModal";
 
 import {
-	AudioWaveform,
-	BookOpen,
-	Bot,
-	Command,
-	Frame,
-	GalleryVerticalEnd,
-	Map,
-	PieChart,
-	Settings2,
-	SquareTerminal,
-	ChevronRight,
 	ChevronsUpDown,
 	Plus,
 	Building2,
-	Crown,
 	CreditCard,
 	LogOut,
 	Settings,
@@ -31,6 +21,11 @@ import {
 	BadgeCheck,
 	Bell,
 	User,
+	Home,
+	Compass,
+	GraduationCap,
+	Box,
+	Users,
 } from "lucide-react";
 
 import {
@@ -38,19 +33,6 @@ import {
 	AvatarFallback,
 	AvatarImage,
 } from "@/components/ui/avatar";
-import {
-	Breadcrumb,
-	BreadcrumbItem,
-	BreadcrumbLink,
-	BreadcrumbList,
-	BreadcrumbPage,
-	BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
-import {
-	Collapsible,
-	CollapsibleContent,
-	CollapsibleTrigger,
-} from "@/components/ui/collapsible";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -61,7 +43,6 @@ import {
 	DropdownMenuShortcut,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Separator } from "@/components/ui/separator";
 import {
 	Sidebar,
 	SidebarContent,
@@ -69,87 +50,182 @@ import {
 	SidebarGroup,
 	SidebarGroupLabel,
 	SidebarHeader,
-	SidebarInset,
 	SidebarMenu,
-	SidebarMenuAction,
 	SidebarMenuButton,
 	SidebarMenuItem,
-	SidebarMenuSub,
-	SidebarMenuSubButton,
-	SidebarMenuSubItem,
-	SidebarProvider,
-	SidebarRail,
-	SidebarTrigger,
 } from "@/components/ui/sidebar";
-
-const { topItems, coreItems, otherItems } = navigationItems;
-
-// Organisation data
-const teams = [
-	{
-		name: "Espace Personnel",
-		logo: User,
-		plan: "Personnel",
-	},
-	{
-		name: "Mon Entreprise",
-		logo: Building2,
-		plan: "Pro",
-	},
-];
 
 export function AppSidebar({ ...props }) {
 	const pathname = usePathname();
-	const { user } = useUser();
+	const { user: auth0User } = useAuth0User();
 	const { theme } = useTheme();
-	const [activeTeam, setActiveTeam] = React.useState(teams[0]);
+	
+	// Hooks newlib
+	const { user, azureContainer } = useUser();
+	const { organizations, isLoading: orgsLoading, hasOrganizations, createOrganization } = useOrganization();
+	
+	// État pour l'organisation/mode actuel
+	const [activeContext, setActiveContext] = React.useState(null);
+	
+	// État pour la modale de création
+	const [isCreateModalOpen, setIsCreateModalOpen] = React.useState(false);
+	
+	// Fonction pour charger le contexte depuis localStorage
+	const loadContextFromStorage = React.useCallback(() => {
+		const lastSelection = localStorage.getItem('wisetwin-active-context');
+		if (lastSelection) {
+			try {
+				const parsed = JSON.parse(lastSelection);
+				setActiveContext(parsed);
+			} catch {
+				// Si erreur de parsing, utiliser le mode personnel par défaut
+				setActiveContext({
+					type: 'personal',
+					name: 'Mode Personnel',
+					azureContainer: azureContainer
+				});
+			}
+		} else {
+			// Mode personnel par défaut
+			setActiveContext({
+				type: 'personal',
+				name: 'Mode Personnel',
+				azureContainer: azureContainer
+			});
+		}
+	}, [azureContainer]);
+
+	// Initialiser le contexte au chargement
+	React.useEffect(() => {
+		if (!activeContext) {
+			loadContextFromStorage();
+		}
+	}, [activeContext, loadContextFromStorage]);
+
+	// Écouter les changements de contexte depuis d'autres pages
+	React.useEffect(() => {
+		const handleContextChange = () => {
+			loadContextFromStorage();
+		};
+
+		window.addEventListener('wisetwin-context-changed', handleContextChange);
+		
+		return () => {
+			window.removeEventListener('wisetwin-context-changed', handleContextChange);
+		};
+	}, [loadContextFromStorage]);
+	
+	// Sauvegarder la sélection dans localStorage et recharger la page
+	const updateActiveContext = (context) => {
+		setActiveContext(context);
+		localStorage.setItem('wisetwin-active-context', JSON.stringify(context));
+		
+		// Recharger la page pour vider tous les caches et états
+		window.location.reload();
+	};
+	
+	// Gérer la création d'organisation
+	const handleCreateOrganization = async (orgData) => {
+		try {
+			const newOrg = await createOrganization(orgData);
+			if (newOrg) {
+				// Mettre à jour le contexte actif vers la nouvelle organisation
+				updateActiveContext({
+					type: 'organization',
+					id: newOrg.id,
+					name: newOrg.name,
+					logoUrl: newOrg.logoUrl,
+					azureContainer: newOrg.azureContainer
+				});
+				setIsCreateModalOpen(false);
+			}
+		} catch (error) {
+			console.error('Erreur lors de la création de l\'organisation:', error);
+			throw error; // Relancer l'erreur pour que la modale puisse la gérer
+		}
+	};
 
 	// Fonction pour déterminer si un item est actif
 	const isItemActive = (itemId) => {
+		if (itemId === "/") {
+			return pathname === "/";
+		}
 		if (itemId === "guide") {
-			return pathname === "/guide" || pathname === "/" || pathname.startsWith("/guide");
+			return pathname === "/guide" || pathname.startsWith("/guide");
 		}
 		return pathname.startsWith(`/${itemId}`);
 	};
 
-	// Convertir les items de navigation en format attendu
+	// Navigation items définis directement dans le composant
 	const navMain = [
 		{
 			title: "Navigation principale",
-			items: topItems.map((item) => ({
-				id: item.id,
-				title: item.label,
-				url: `/${item.id}`,
-				icon: item.icon,
-				isActive: isItemActive(item.id),
-				disabled: item.disabled,
-			})),
+			items: [
+				{
+					id: "/",
+					title: "Accueil",
+					url: "/",
+					icon: Home,
+					isActive: isItemActive("/"),
+				},
+				{
+					id: "guide",
+					title: "Guide",
+					url: "/guide",
+					icon: Compass,
+					isActive: isItemActive("guide"),
+				},
+				{
+					id: "mon-profil",
+					title: "Mon profil",
+					url: "/mon-profil",
+					icon: User,
+					isActive: isItemActive("mon-profil"),
+				},
+			],
 		},
 		{
 			title: "Applications",
-			items: coreItems.map((item) => ({
-				id: item.id,
-				title: item.label,
-				url: `/${item.id}`,
-				icon: item.icon,
-				isActive: isItemActive(item.id),
-				disabled: item.disabled,
-			})),
+			items: [
+				{
+					id: "wisetwin",
+					title: "WiseTwin",
+					url: "/wisetwin",
+					icon: Box,
+					isActive: isItemActive("wisetwin"),
+				},
+				{
+					id: "wisetrainer",
+					title: "WiseTrainer",
+					url: "/wisetrainer",
+					icon: GraduationCap,
+					isActive: isItemActive("wisetrainer"),
+				},
+			],
 		},
 		{
 			title: "Paramètres",
-			items: otherItems.map((item) => ({
-				id: item.id,
-				title: item.label,
-				url: `/${item.id}`,
-				icon: item.icon,
-				isActive: isItemActive(item.id),
-				disabled: item.disabled,
-			})),
+			items: [
+				{
+					id: "organization",
+					title: "Gérer mon organisation",
+					url: "/organization",
+					icon: Users,
+					isActive: isItemActive("organization"),
+				},
+				{
+					id: "settings",
+					title: "Paramètres",
+					url: "/settings",
+					icon: Settings,
+					isActive: isItemActive("settings"),
+				},
+			],
 		},
 	];
 
 	return (
+		<>
 		<Sidebar collapsible="icon" className="bg-muted/50" {...props}>
 			<SidebarHeader>
 				<SidebarMenu>
@@ -159,17 +235,31 @@ export function AppSidebar({ ...props }) {
 								<SidebarMenuButton
 									size="lg"
 									className="data-[state=open]:bg-wisetwin-blue/10 data-[state=open]:text-wisetwin-darkblue hover:bg-wisetwin-blue/10 hover:text-wisetwin-darkblue dark:hover:bg-wisetwin-blue/20 dark:hover:text-wisetwin-blue transition-colors focus-visible:ring-0 focus-visible:ring-offset-0"
-									tooltip={`${activeTeam.name} - ${activeTeam.plan}`}
+									tooltip={activeContext ? `${activeContext.name}${activeContext.type === 'organization' ? ' - Organisation' : ' - Personnel'}` : 'Chargement...'}
 								>
-									<div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-wisetwin-darkblue text-white">
-										<activeTeam.logo className="size-4" />
+									<div className={`flex aspect-square size-8 items-center justify-center rounded-lg overflow-hidden ${
+										activeContext?.logoUrl ? 'bg-transparent' : 'bg-wisetwin-darkblue text-white'
+									}`}>
+										{activeContext?.logoUrl ? (
+											<Image
+												src={activeContext.logoUrl}
+												alt={activeContext.name || 'Logo'}
+												width={32}
+												height={32}
+												className="rounded-lg object-cover"
+											/>
+										) : activeContext?.type === 'organization' ? (
+											<Building2 className="size-4" />
+										) : (
+											<User className="size-4" />
+										)}
 									</div>
 									<div className="grid flex-1 text-left text-sm leading-tight">
 										<span className="truncate font-semibold text-foreground">
-											{activeTeam.name}
+											{activeContext?.name || 'Chargement...'}
 										</span>
 										<span className="truncate text-xs text-muted-foreground">
-											{activeTeam.plan}
+											{activeContext?.type === 'organization' ? 'Organisation' : 'Personnel'}
 										</span>
 									</div>
 									<ChevronsUpDown className="ml-auto text-muted-foreground" />
@@ -182,23 +272,75 @@ export function AppSidebar({ ...props }) {
 								sideOffset={4}
 							>
 								<DropdownMenuLabel className="text-xs text-muted-foreground">
-									Organisations
+									Contextes
 								</DropdownMenuLabel>
-								{teams.map((team, index) => (
-									<DropdownMenuItem
-										key={team.name}
-										onClick={() => setActiveTeam(team)}
-										className="gap-2 p-2 hover:bg-wisetwin-blue/10 hover:text-wisetwin-darkblue dark:hover:bg-wisetwin-blue/20 dark:hover:text-wisetwin-blue transition-colors focus:bg-wisetwin-blue/10 focus:text-wisetwin-darkblue"
-									>
-										<div className="flex size-6 items-center justify-center rounded-sm border">
-											<team.logo className="size-4 shrink-0" />
-										</div>
-										{team.name}
-										<DropdownMenuShortcut>⌘{index + 1}</DropdownMenuShortcut>
-									</DropdownMenuItem>
-								))}
+								
+								{/* Mode Personnel */}
+								<DropdownMenuItem
+									onClick={() => updateActiveContext({
+										type: 'personal',
+										name: 'Mode Personnel',
+										azureContainer: azureContainer
+									})}
+									className="gap-2 p-2 hover:bg-wisetwin-blue/10 hover:text-wisetwin-darkblue dark:hover:bg-wisetwin-blue/20 dark:hover:text-wisetwin-blue transition-colors focus:bg-wisetwin-blue/10 focus:text-wisetwin-darkblue"
+								>
+									<div className="flex size-6 items-center justify-center rounded-sm border bg-wisetwin-darkblue text-white">
+										<User className="size-4 shrink-0" />
+									</div>
+									Mode Personnel
+									{activeContext?.type === 'personal' && (
+										<DropdownMenuShortcut>✓</DropdownMenuShortcut>
+									)}
+								</DropdownMenuItem>
+								
+								{/* Organisations */}
+								{hasOrganizations && (
+									<>
+										<DropdownMenuSeparator />
+										<DropdownMenuLabel className="text-xs text-muted-foreground">
+											Organisations
+										</DropdownMenuLabel>
+										{organizations.map((org, index) => (
+											<DropdownMenuItem
+												key={org.id}
+												onClick={() => updateActiveContext({
+													type: 'organization',
+													id: org.id,
+													name: org.name,
+													logoUrl: org.logoUrl,
+													azureContainer: org.azureContainer
+												})}
+												className="gap-2 p-2 hover:bg-wisetwin-blue/10 hover:text-wisetwin-darkblue dark:hover:bg-wisetwin-blue/20 dark:hover:text-wisetwin-blue transition-colors focus:bg-wisetwin-blue/10 focus:text-wisetwin-darkblue"
+											>
+												<div className={`flex size-6 items-center justify-center rounded-sm border overflow-hidden ${
+													org.logoUrl ? 'bg-transparent' : 'bg-background'
+												}`}>
+													{org.logoUrl ? (
+														<Image
+															src={org.logoUrl}
+															alt={org.name}
+															width={24}
+															height={24}
+															className="rounded-sm object-cover"
+														/>
+													) : (
+														<Building2 className="size-4 shrink-0" />
+													)}
+												</div>
+												{org.name}
+												{activeContext?.type === 'organization' && activeContext?.id === org.id && (
+													<DropdownMenuShortcut>✓</DropdownMenuShortcut>
+												)}
+											</DropdownMenuItem>
+										))}
+									</>
+								)}
+								
 								<DropdownMenuSeparator />
-								<DropdownMenuItem className="gap-2 p-2 hover:bg-wisetwin-blue/10 hover:text-wisetwin-darkblue dark:hover:bg-wisetwin-blue/20 dark:hover:text-wisetwin-blue transition-colors focus:bg-wisetwin-blue/10 focus:text-wisetwin-darkblue">
+								<DropdownMenuItem 
+									onClick={() => setIsCreateModalOpen(true)}
+									className="gap-2 p-2 hover:bg-wisetwin-blue/10 hover:text-wisetwin-darkblue dark:hover:bg-wisetwin-blue/20 dark:hover:text-wisetwin-blue transition-colors focus:bg-wisetwin-blue/10 focus:text-wisetwin-darkblue cursor-pointer"
+								>
 									<div className="flex size-6 items-center justify-center rounded-md border bg-background">
 										<Plus className="size-4" />
 									</div>
@@ -251,33 +393,34 @@ export function AppSidebar({ ...props }) {
 					</SidebarGroup>
 				))}
 			</SidebarContent>
-			<SidebarFooter>
-				<SidebarMenu>
-					<SidebarMenuItem>
+			{auth0User && (
+				<SidebarFooter>
+					<SidebarMenu>
+						<SidebarMenuItem>
 						<DropdownMenu>
 							<DropdownMenuTrigger asChild>
 								<SidebarMenuButton
 									size="lg"
 									className="data-[state=open]:bg-wisetwin-blue/10 data-[state=open]:text-wisetwin-darkblue hover:bg-wisetwin-blue/10 hover:text-wisetwin-darkblue dark:hover:bg-wisetwin-blue/20 dark:hover:text-wisetwin-blue transition-colors focus-visible:ring-0 focus-visible:ring-offset-0"
-									tooltip={user?.name || user?.email || "Menu utilisateur"}
+									tooltip={auth0User?.name || auth0User?.email || "Menu utilisateur"}
 								>
 									<Avatar className="h-8 w-8 rounded-lg">
 										<AvatarImage
-											src={user?.picture}
-											alt={user?.name || "User"}
+											src={auth0User?.picture}
+											alt={auth0User?.name || "User"}
 										/>
 										<AvatarFallback className="rounded-lg bg-wisetwin-darkblue text-white">
-											{(user?.name || user?.email || "U")
+											{(auth0User?.name || auth0User?.email || "U")
 												.charAt(0)
 												.toUpperCase()}
 										</AvatarFallback>
 									</Avatar>
 									<div className="grid flex-1 text-left text-sm leading-tight">
 										<span className="truncate font-semibold text-foreground">
-											{user?.name || user?.email}
+											{auth0User?.name || auth0User?.email}
 										</span>
 										<span className="truncate text-xs text-muted-foreground">
-											{user?.email}
+											{auth0User?.email}
 										</span>
 									</div>
 									<ChevronsUpDown className="ml-auto size-4 text-muted-foreground" />
@@ -344,6 +487,15 @@ export function AppSidebar({ ...props }) {
 					</SidebarMenuItem>
 				</SidebarMenu>
 			</SidebarFooter>
+			)}
 		</Sidebar>
+		
+		{/* Modale de création d'organisation */}
+		<CreateOrganizationModal
+			isOpen={isCreateModalOpen}
+			onClose={() => setIsCreateModalOpen(false)}
+			onSubmit={handleCreateOrganization}
+		/>
+	</>
 	);
 }

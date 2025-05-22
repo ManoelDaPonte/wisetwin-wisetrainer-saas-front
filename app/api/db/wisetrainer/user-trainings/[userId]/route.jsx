@@ -112,6 +112,28 @@ export async function GET(request, { params }) {
 					order: userModule.module.order,
 				}));
 
+				// Calculer le score moyen basé sur les modules complétés
+				const completedModules = modules.filter(m => m.completed);
+				const averageScore = completedModules.length > 0 
+					? Math.round(completedModules.reduce((sum, m) => sum + m.score, 0) / completedModules.length)
+					: 0;
+
+				// Déterminer le statut de la formation selon la logique métier
+				let status = 'in_progress';
+				let statusLabel = 'En cours';
+				let canRestart = false;
+
+				if (userCourse.progress === 100) {
+					if (averageScore >= 80) {
+						status = 'completed';
+						statusLabel = 'Validée';
+					} else {
+						status = 'failed';
+						statusLabel = 'Échec';
+						canRestart = true; // Proposer de recommencer
+					}
+				}
+
 				// Générer l'ID composite pour distinguer les formations de même ID mais de sources différentes
 				const compositeId = `${userCourse.course.courseId}__${
 					source.type
@@ -127,11 +149,15 @@ export async function GET(request, { params }) {
 					difficulty: userCourse.course.difficulty,
 					duration: userCourse.course.duration,
 					progress: userCourse.progress,
+					score: averageScore,
+					status: status, // 'in_progress', 'completed', 'failed'
+					statusLabel: statusLabel,
+					canRestart: canRestart,
 					lastAccessed: userCourse.lastAccessed,
 					startedAt: userCourse.startedAt,
 					completedAt: userCourse.completedAt,
 					modules,
-					completedModules: modules.filter((m) => m.completed).length,
+					completedModules: completedModules.length,
 					totalModules: modules.length,
 					source,
 					// URL pour accéder à la formation (basée sur la source)
@@ -143,9 +169,32 @@ export async function GET(request, { params }) {
 			})
 		);
 
+		// Catégoriser les formations par statut pour faciliter l'utilisation côté client
+		const categorizedTrainings = {
+			inProgress: trainings.filter(t => t.status === 'in_progress'),
+			completed: trainings.filter(t => t.status === 'completed'),
+			failed: trainings.filter(t => t.status === 'failed'),
+			all: trainings
+		};
+
+		// Statistiques globales
+		const stats = {
+			total: trainings.length,
+			inProgress: categorizedTrainings.inProgress.length,
+			completed: categorizedTrainings.completed.length,
+			failed: categorizedTrainings.failed.length,
+			averageProgress: trainings.length > 0 
+				? Math.round(trainings.reduce((sum, t) => sum + t.progress, 0) / trainings.length)
+				: 0,
+			averageScore: trainings.filter(t => t.score > 0).length > 0
+				? Math.round(trainings.filter(t => t.score > 0).reduce((sum, t) => sum + t.score, 0) / trainings.filter(t => t.score > 0).length)
+				: 0
+		};
+
 		return NextResponse.json({
 			success: true,
-			trainings,
+			trainings: categorizedTrainings,
+			stats: stats
 		});
 	} catch (error) {
 		console.error(

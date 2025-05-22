@@ -8,7 +8,7 @@ import {
 	CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { UserPlus, RefreshCw } from "lucide-react";
+import { UserPlus, RefreshCw, LogOut } from "lucide-react";
 import MembersTable from "./MembersTable";
 import AddMemberModal from "./AddMemberModal";
 import axios from "axios";
@@ -19,6 +19,7 @@ export default function MembersTab({
 	onAddMember,
 	onChangeRole,
 	onRemoveMember,
+	onLeaveOrganization,
 }) {
 	const [showAddMemberModal, setShowAddMemberModal] = useState(false);
 	const [membersWithTags, setMembersWithTags] = useState(
@@ -81,8 +82,10 @@ export default function MembersTab({
 				<div>
 					<CardTitle>Membres de l'organisation</CardTitle>
 					<CardDescription>
-						Gérez les membres et leurs rôles au sein de votre
-						organisation
+						{organization.userRole === "MEMBER" 
+							? "Consultez la liste des membres de l'organisation"
+							: "Gérez les membres et leurs rôles au sein de votre organisation"
+						}
 					</CardDescription>
 				</div>
 				<div className="flex gap-2">
@@ -98,6 +101,8 @@ export default function MembersTab({
 						/>
 						Actualiser
 					</Button>
+					
+					{/* Bouton d'invitation pour admins et owners */}
 					{(organization.userRole === "OWNER" ||
 						organization.userRole === "ADMIN") && (
 						<Button
@@ -106,6 +111,17 @@ export default function MembersTab({
 						>
 							<UserPlus className="w-4 h-4 mr-2" />
 							Inviter un membre
+						</Button>
+					)}
+					
+					{/* Bouton de désinscription pour les membres */}
+					{organization.userRole === "MEMBER" && (
+						<Button
+							variant="destructive"
+							onClick={onLeaveOrganization}
+						>
+							<LogOut className="w-4 h-4 mr-2" />
+							Quitter l'organisation
 						</Button>
 					)}
 				</div>

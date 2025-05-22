@@ -1,152 +1,156 @@
-// app/(app)/organization/page.jsx
 "use client";
+
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import axios from "axios";
-import { Button } from "@/components/ui/button";
-import { Plus, Settings } from "lucide-react";
-import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardFooter,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui/card";
-import OrganizationsTable from "@/components/organizations/OrganizationsTable";
+import { Building2, Settings, Users, Tag, Mail } from "lucide-react";
+import { useOrganization } from "@/newlib/hooks/useOrganization";
+import CallToAction from "@/components/common/CallToAction";
 import CreateOrganizationModal from "@/components/organizations/CreateOrganizationModal";
-import { useToast } from "@/lib/hooks/useToast";
+import OrganizationTabs from "@/components/organizations/organization/OrganizationTabs";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function OrganizationPage() {
 	const router = useRouter();
-	const { toast } = useToast();
-	const [organizations, setOrganizations] = useState([]);
-	const [isLoading, setIsLoading] = useState(true);
-	const [showCreateModal, setShowCreateModal] = useState(false);
-
+	const { 
+		currentOrganization, 
+		currentOrganizationId,
+		organizations,
+		hasOrganizations,
+		isLoading,
+		createOrganization,
+		selectOrganization 
+	} = useOrganization();
+	
+	const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+	
+	// Récupérer l'organisation active depuis le localStorage
 	useEffect(() => {
-		fetchOrganizations();
-	}, []);
-
-	const fetchOrganizations = async () => {
-		try {
-			setIsLoading(true);
-			const response = await axios.get("/api/organization");
-
-			if (response.data.organizations) {
-				setOrganizations(response.data.organizations);
-			} else {
-				// Si aucune organisation n'est retournée, définir un tableau vide
-				setOrganizations([]);
-			}
-		} catch (error) {
-			console.error(
-				"Erreur lors du chargement des organisations:",
-				error
-			);
-			toast({
-				title: "Erreur",
-				description: "Impossible de charger les organisations",
-				variant: "destructive",
-			});
-		} finally {
-			setIsLoading(false);
-		}
-	};
-
-	const handleCreateOrganization = async (organizationData) => {
-		try {
-			const response = await axios.post(
-				"/api/organization",
-				organizationData
-			);
-
-			if (response.data.success) {
-				toast({
-					title: "Organisation créée",
-					description: "L'organisation a été créée avec succès",
-					variant: "success",
-				});
-
-				setShowCreateModal(false);
-				await fetchOrganizations(); // Rafraîchir la liste
-
-				// Rediriger vers la page de l'organisation nouvellement créée
-				if (response.data.organization?.id) {
-					router.push(
-						`/organization/${response.data.organization.id}`
-					);
+		const storedContext = localStorage.getItem('wisetwin-active-context');
+		if (storedContext) {
+			try {
+				const context = JSON.parse(storedContext);
+				if (context.type === 'organization' && context.id) {
+					// Sélectionner l'organisation sans navigation (navigate = false)
+					if (currentOrganizationId !== context.id) {
+						selectOrganization(context.id, false);
+					}
 				}
-			} else {
-				throw new Error(
-					response.data.error ||
-						"Échec de la création de l'organisation"
-				);
+			} catch (error) {
+				console.error('Erreur lors de la lecture du contexte:', error);
+			}
+		}
+	}, [currentOrganizationId, selectOrganization]);
+	
+	// Gérer la création d'organisation
+	const handleCreateOrganization = async (orgData) => {
+		try {
+			const newOrg = await createOrganization(orgData);
+			if (newOrg) {
+				// Mettre à jour le contexte dans localStorage
+				const newContext = {
+					type: 'organization',
+					id: newOrg.id,
+					name: newOrg.name,
+					logoUrl: newOrg.logoUrl,
+					azureContainer: newOrg.azureContainer
+				};
+				localStorage.setItem('wisetwin-active-context', JSON.stringify(newContext));
+				
+				// Notifier la sidebar du changement de contexte
+				window.dispatchEvent(new Event('wisetwin-context-changed'));
+				
+				setIsCreateModalOpen(false);
 			}
 		} catch (error) {
-			console.error(
-				"Erreur lors de la création de l'organisation:",
-				error
-			);
-			toast({
-				title: "Erreur",
-				description:
-					error.response?.data?.error ||
-					"Impossible de créer l'organisation",
-				variant: "destructive",
-			});
+			console.error('Erreur lors de la création de l\'organisation:', error);
+			throw error;
 		}
 	};
-
-	const handleManageOrganization = (organizationId) => {
-		router.push(`/organization/${organizationId}`);
-	};
-
-	return (
-		<div className="container mx-auto py-8">
-			<div className="flex justify-between items-center mb-6">
-				<div>
-					<h1 className="text-3xl font-bold text-wisetwin-darkblue dark:text-white mb-2">
-						Vos organisations
-					</h1>
-					<p className="text-gray-600 dark:text-gray-300">
-						Gérez les organisations auxquelles vous appartenez
-					</p>
+	
+	// État de chargement
+	if (isLoading) {
+		return (
+			<div className="container mx-auto py-8 space-y-6">
+				<div className="space-y-2">
+					<Skeleton className="h-8 w-64" />
+					<Skeleton className="h-4 w-96" />
 				</div>
-				<Button
-					onClick={() => setShowCreateModal(true)}
-					className="bg-wisetwin-blue hover:bg-wisetwin-blue-light text-white"
-				>
-					<Plus className="mr-2 h-4 w-4" />
-					Créer une organisation
-				</Button>
+				<Skeleton className="h-64 w-full" />
 			</div>
-
-			<Card>
-				<CardHeader>
-					<CardTitle>Liste des organisations</CardTitle>
-					<CardDescription>
-						Vous trouverez ci-dessous toutes les organisations
-						auxquelles vous êtes affilié
-					</CardDescription>
-				</CardHeader>
-				<CardContent>
-					<OrganizationsTable
-						organizations={organizations}
-						isLoading={isLoading}
-						onManage={handleManageOrganization}
+		);
+	}
+	
+	// Aucune organisation ou mode personnel actif
+	const storedContext = localStorage.getItem('wisetwin-active-context');
+	let isPersonalMode = true;
+	
+	if (storedContext) {
+		try {
+			const context = JSON.parse(storedContext);
+			isPersonalMode = context.type !== 'organization';
+		} catch {
+			isPersonalMode = true;
+		}
+	}
+	
+	if (isPersonalMode || !currentOrganization) {
+		return (
+			<div className="min-h-screen flex items-center justify-center">
+				<div className="max-w-md mx-auto px-4">
+					<CallToAction
+						title="Aucune organisation sélectionnée"
+						description="Vous devez sélectionner ou créer une organisation pour accéder à cette page. Les organisations vous permettent de gérer des équipes et des formations."
+						actionText="Créer une organisation"
+						onAction={() => setIsCreateModalOpen(true)}
+						icon={Building2}
+						size="lg"
 					/>
-				</CardContent>
-			</Card>
-
-			{/* Modal de création d'organisation */}
-			{showCreateModal && (
+				</div>
+				
+				{/* Modale de création d'organisation */}
 				<CreateOrganizationModal
-					isOpen={showCreateModal}
-					onClose={() => setShowCreateModal(false)}
+					isOpen={isCreateModalOpen}
+					onClose={() => setIsCreateModalOpen(false)}
 					onSubmit={handleCreateOrganization}
 				/>
-			)}
+			</div>
+		);
+	}
+	
+	// Affichage de la gestion de l'organisation
+	return (
+		<div className="container mx-auto py-8">
+			<div className="mb-6">
+				<div className="flex items-center gap-3 mb-2">
+					{currentOrganization.logoUrl ? (
+						<img
+							src={currentOrganization.logoUrl}
+							alt={currentOrganization.name}
+							className="w-10 h-10 rounded-lg object-cover"
+						/>
+					) : (
+						<div className="w-10 h-10 rounded-lg bg-wisetwin-darkblue flex items-center justify-center">
+							<Building2 className="w-5 h-5 text-white" />
+						</div>
+					)}
+					<div>
+						<h1 className="text-3xl font-bold text-wisetwin-darkblue dark:text-white">
+							{currentOrganization.name}
+						</h1>
+						<p className="text-gray-600 dark:text-gray-300">
+							Gestion de votre organisation
+						</p>
+					</div>
+				</div>
+				{currentOrganization.description && (
+					<p className="text-muted-foreground mt-2">
+						{currentOrganization.description}
+					</p>
+				)}
+			</div>
+			
+			{/* Onglets de gestion de l'organisation */}
+			<OrganizationTabs organization={currentOrganization} />
 		</div>
 	);
 }

@@ -49,13 +49,16 @@ export default function GuidePage() {
   const {
     organizationsData,
     organizations,
-    trainings: currentTrainings,
+    trainings: currentTrainings, // Formations en cours
+    allTrainings, // Toutes les formations catégorisées
+    trainingStats, // Statistiques globales
     isLoading,
     error,
     refreshData,
     lastRefresh,
     hasOrganizations,
-    hasAnyTraining
+    hasAnyTraining,
+    activeContext
   } = useGuideData();
   
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -81,10 +84,17 @@ export default function GuidePage() {
           <h1 className="text-3xl font-bold text-wisetwin-darkblue dark:text-white mb-2">
             Guide de démarrage
           </h1>
-          <p className="text-gray-600 dark:text-gray-300">
-            Bienvenue sur WiseTwin. Voici les prochaines étapes pour votre
-            parcours de formation.
+          <p className="text-gray-600 dark:text-gray-300 mb-2">
+            {activeContext?.type === 'organization' 
+              ? `Formations disponibles pour ${activeContext.name}`
+              : 'Vos formations personnelles'
+            }
           </p>
+          {activeContext?.type === 'organization' && (
+            <p className="text-sm text-muted-foreground">
+              Changez d'organisation via le sélecteur dans la barre latérale pour voir d'autres formations.
+            </p>
+          )}
         </div>
         <Button
           variant="outline"
@@ -102,10 +112,11 @@ export default function GuidePage() {
       {lastRefresh && (
         <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
           Dernière mise à jour: {formatDate(lastRefresh)}
-          {process.env.NODE_ENV === 'development' && (
+          {process.env.NODE_ENV === 'development' && trainingStats && (
             <span className="ml-2">
-              ({hasOrganizations ? `${organizations?.length || 0} orgs` : 'no orgs'}, 
-              {hasAnyTraining ? `${currentTrainings?.length || 0} trainings` : 'no trainings'})
+              (Contexte: {activeContext?.type || 'none'}, 
+              Total: {trainingStats.total}, En cours: {trainingStats.inProgress}, 
+              Validées: {trainingStats.completed}, Échecs: {trainingStats.failed})
             </span>
           )}
         </p>
@@ -132,14 +143,69 @@ export default function GuidePage() {
           isLoading={isLoading}
         />
 
-        {/* 2. Organisations avec leurs formations */}
-        <OrganizationsSection organizationsData={organizationsData} />
+        {/* 2. Formations validées et en échec */}
+        {allTrainings && (allTrainings.completed.length > 0 || allTrainings.failed.length > 0) && (
+          <div className="space-y-4">
+            {/* Formations validées */}
+            {allTrainings.completed.length > 0 && (
+              <div className="bg-white dark:bg-gray-800 rounded-lg border p-6">
+                <h3 className="text-lg font-semibold text-green-600 dark:text-green-400 mb-4">
+                  ✅ Formations validées ({allTrainings.completed.length})
+                </h3>
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  {allTrainings.completed.map(training => (
+                    <div key={training.compositeId} className="border rounded-lg p-4 bg-green-50 dark:bg-green-900/20">
+                      <h4 className="font-medium text-gray-900 dark:text-white">{training.name}</h4>
+                      <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">{training.description}</p>
+                      <div className="flex items-center justify-between mt-3">
+                        <span className="text-sm font-medium text-green-600">Score: {training.score}%</span>
+                        <span className="text-xs text-gray-500">
+                          Terminée le {formatDate(training.completedAt)}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
-        {/* Si pas d'organisation, afficher un guide spécifique */}
-        {!hasOrganizations && <NoOrganizationGuide />}
+            {/* Formations en échec */}
+            {allTrainings.failed.length > 0 && (
+              <div className="bg-white dark:bg-gray-800 rounded-lg border p-6">
+                <h3 className="text-lg font-semibold text-red-600 dark:text-red-400 mb-4">
+                  ❌ Formations en échec ({allTrainings.failed.length})
+                </h3>
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  {allTrainings.failed.map(training => (
+                    <div key={training.compositeId} className="border rounded-lg p-4 bg-red-50 dark:bg-red-900/20">
+                      <h4 className="font-medium text-gray-900 dark:text-white">{training.name}</h4>
+                      <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">{training.description}</p>
+                      <div className="flex items-center justify-between mt-3">
+                        <span className="text-sm font-medium text-red-600">Score: {training.score}%</span>
+                        {training.canRestart && (
+                          <button className="px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700">
+                            Recommencer
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* 3. Organisations avec leurs formations (seulement si on est en mode organisation) */}
+        {activeContext?.type === 'organization' && (
+          <OrganizationsSection organizationsData={organizationsData} />
+        )}
+
+        {/* Si pas d'organisation en mode personnel, afficher un guide spécifique */}
+        {activeContext?.type === 'personal' && !hasAnyTraining && <NoOrganizationGuide />}
 
         {/* Message si aucune formation n'est disponible */}
-        {!hasAnyTraining && <NoTrainingsMessage />}
+        {!hasAnyTraining && activeContext?.type === 'organization' && <NoTrainingsMessage />}
       </motion.div>
     </div>
   );

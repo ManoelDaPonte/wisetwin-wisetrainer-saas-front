@@ -36,13 +36,13 @@ export async function GET() {
 			},
 		});
 
+		// Initialiser le client Azure Blob Storage
+		const blobServiceClient = BlobServiceClient.fromConnectionString(
+			process.env.AZURE_STORAGE_CONNECTION_STRING
+		);
+
 		// Si l'utilisateur n'existe pas, créer un nouvel utilisateur
 		if (!user) {
-			// Créer un container Azure pour l'utilisateur
-			const blobServiceClient = BlobServiceClient.fromConnectionString(
-				process.env.AZURE_STORAGE_CONNECTION_STRING
-			);
-
 			// Générer un nom de container unique basé sur l'ID Auth0
 			const containerName = `user-${
 				name ? name.toLowerCase().replace(/[^a-z0-9]/g, "-") : "user"
@@ -71,6 +71,25 @@ export async function GET() {
 					},
 				},
 			});
+		} else {
+			// L'utilisateur existe déjà, vérifier que son container Azure existe aussi
+			if (user.azureContainer) {
+				const containerClient = blobServiceClient.getContainerClient(user.azureContainer);
+				
+				// Vérifier si le container existe
+				const containerExists = await containerClient.exists();
+				
+				if (!containerExists) {
+					console.log(`Container Azure manquant pour l'utilisateur ${user.email}: ${user.azureContainer}`);
+					
+					// Recréer le container
+					await containerClient.createIfNotExists({
+						access: "container",
+					});
+					
+					console.log(`Container Azure recréé: ${user.azureContainer}`);
+				}
+			}
 		}
 
 		// Transformer les données pour le client

@@ -357,6 +357,18 @@ export default function OrganizationTabs({ organization, onDataChange }) {
 					description: "L'organisation a été supprimée avec succès",
 					variant: "success",
 				});
+				
+				// Remettre le contexte en mode personnel
+				const personalContext = {
+					type: 'personal',
+					name: 'Mode Personnel'
+				};
+				localStorage.setItem('wisetwin-active-context', JSON.stringify(personalContext));
+				
+				// Notifier la sidebar du changement de contexte
+				window.dispatchEvent(new Event('wisetwin-context-changed'));
+				
+				// Rediriger vers la page organisation (qui affichera le CTA)
 				window.location.href = "/organization";
 			}
 		} catch (error) {
@@ -374,9 +386,49 @@ export default function OrganizationTabs({ organization, onDataChange }) {
 		}
 	};
 
+	// Gestionnaire pour la désinscription d'un membre (lui-même)
+	const handleLeaveOrganization = async () => {
+		try {
+			const response = await axios.delete(
+				`/api/organization/${organization.id}/members/${organization.currentUserId}`
+			);
+
+			if (response.data.success) {
+				toast({
+					title: "Désinscription réussie",
+					description: "Vous avez quitté l'organisation avec succès",
+					variant: "success",
+				});
+				// Revenir au mode personnel et recharger
+				const personalContext = {
+					type: 'personal',
+					name: 'Mode Personnel'
+				};
+				localStorage.setItem('wisetwin-active-context', JSON.stringify(personalContext));
+				
+				// Notifier la sidebar du changement de contexte
+				window.dispatchEvent(new Event('wisetwin-context-changed'));
+				
+				window.location.href = "/organization";
+			}
+		} catch (error) {
+			console.error(
+				"Erreur lors de la désinscription:",
+				error
+			);
+			toast({
+				title: "Erreur",
+				description:
+					error.response?.data?.error ||
+					"Impossible de quitter l'organisation",
+				variant: "destructive",
+			});
+		}
+	};
+
 	return (
 		<Tabs
-			defaultValue="dashboard"
+			defaultValue={organization.userRole === "MEMBER" ? "members" : "dashboard"}
 			className="w-full"
 			onValueChange={setActiveTab}
 			value={activeTab}
@@ -436,6 +488,7 @@ export default function OrganizationTabs({ organization, onDataChange }) {
 					onAddMember={handleAddMember}
 					onChangeRole={handleChangeRole}
 					onRemoveMember={handleRemoveMember}
+					onLeaveOrganization={handleLeaveOrganization}
 				/>
 			</TabsContent>
 

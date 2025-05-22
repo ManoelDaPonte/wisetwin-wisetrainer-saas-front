@@ -72,12 +72,9 @@ export function useOrganization({
    */
   const createNewOrganization = useCallback(async (data) => {
     const org = await createOrganization(data);
-    if (org) {
-      // Rediriger vers la page de l'organisation créée
-      router.push(`/organization/${org.id}`);
-    }
+    // Plus de redirection automatique - le contexte sera géré par la sidebar
     return org;
-  }, [createOrganization, router]);
+  }, [createOrganization]);
   
   /**
    * Change l'organisation active et charge ses détails

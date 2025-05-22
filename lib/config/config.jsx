@@ -78,6 +78,11 @@ export const HomePageCards = [
 
 export const navigationItems = {
 	topItems: [
+		{
+			id: "/",
+			label: "Accueil",
+			icon: Home,
+		},
 		{ id: "guide", label: "Guide", icon: Compass },
 		{
 			id: "mon-profil",
