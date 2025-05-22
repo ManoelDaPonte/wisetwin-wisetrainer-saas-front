@@ -1,15 +1,14 @@
-//app/(app)/layout.jsx
-// Inter font already imported in root layout
 import Image from "next/image";
 import TopNavBar from "@/components/layout/TopNavBar";
 import LeftNavBar from "@/components/layout/LeftNavBar";
 import TermsAcceptanceModal from "@/components/cookies/TermsAcceptanceModal";
-// ThemeProvider is already in root layout
 import { SettingsProvider } from "@/lib/contexts/SettingsContext";
-// Toaster is already in root layout
-// globals.css already imported in root layout
-
-// inter font already defined in root layout
+import {
+	SidebarProvider,
+	SidebarTrigger,
+	SidebarInset,
+} from "@/components/ui/sidebar";
+import { AppSidebar } from "@/components/layout/AppSidebar";
 
 export const metadata = {
 	title: "Wise Twin - Plateforme d'apprentissage et de simulation",
@@ -17,33 +16,17 @@ export const metadata = {
 		"Wise Twin - Solutions innovantes pour les jumeaux numériques et la formation en réalité augmentée",
 };
 
-/**
- * Layout pour les routes protégées de l'application
- * Note: Les providers globaux comme l'AppProvider, UserProvider, etc. sont déjà chargés
- * dans le layout racine (app/layout.jsx)
- */
 export default function AppLayout({ children, pathname }) {
 	return (
-		<>
-			<SettingsProvider>
-			<div className="flex h-screen w-screen overflow-hidden">
-				{/* Barre de navigation latérale */}
-				<LeftNavBar />
-
-				{/* Contenu principal */}
-				<div className="flex-1 flex flex-col overflow-hidden">
-					{/* Barre de navigation supérieure */}
-					<TopNavBar />
-
-					{/* Section de contenu principale avec défilement et fond cohérent */}
-					<main className="flex-1 overflow-y-auto bg-gray-50 dark:bg-wisetwin-darkblue/95 relative">
-						<div
-							className="fixed top-0 bottom-0 right-0 z-0 pointer-events-none flex items-center justify-center opacity-100 dark:opacity-5"
-							style={{
-								width: "calc(100% - 15rem)",
-								left: "15rem",
-							}}
-						>
+		<SidebarProvider>
+			<AppSidebar />
+			<SidebarInset>
+				<header className="flex h-16 shrink-0 items-center gap-2 px-4">
+					<SidebarTrigger className="-ml-1" />
+				</header>
+				<div className="flex flex-1 flex-col gap-4 p-4 pt-0">
+					<div className="min-h-[100vh] flex-1 rounded-xl bg-muted/50 md:min-h-min relative">
+						<div className="absolute inset-0 z-0 pointer-events-none flex items-center justify-center opacity-100 dark:opacity-5">
 							<div className="relative w-4/5 h-4/5">
 								<Image
 									src="/logos/logo_parrot_light.svg"
@@ -54,19 +37,12 @@ export default function AppLayout({ children, pathname }) {
 								/>
 							</div>
 						</div>
-						<div className="mx-auto w-4/5 max-w-7xl h-full">
-							<div className="page-transition h-full relative z-10 py-6">
-								{children}
-							</div>
+						<div className="relative z-10 p-6">
+							<div className="page-transition">{children}</div>
 						</div>
-					</main>
+					</div>
 				</div>
-			</div>
-			{/* Toaster removed as it's already in the root layout */}
-			</SettingsProvider>
-
-			{/* Modal d'acceptation des termes */}
-			<TermsAcceptanceModal />
-		</>
+			</SidebarInset>
+		</SidebarProvider>
 	);
 }

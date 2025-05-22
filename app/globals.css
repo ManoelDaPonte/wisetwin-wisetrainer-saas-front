@@ -40,6 +40,15 @@
 		--ring: var(--wisetwin-blue);
 
 		--radius: 0.5rem;
+
+		--sidebar-background: var(--background);
+		--sidebar-foreground: var(--foreground);
+		--sidebar-primary: 240 5.9% 10%;
+		--sidebar-primary-foreground: 0 0% 98%;
+		--sidebar-accent: 240 4.8% 95.9%;
+		--sidebar-accent-foreground: 240 5.9% 10%;
+		--sidebar-border: var(--border);
+		--sidebar-ring: var(--ring);
 	}
 
 	.dark {
@@ -70,9 +79,16 @@
 
 		--border: 217.2 32.6% 17.5%; /* Bordures sombres */
 		--input: 217.2 32.6% 17.5%; /* Inputs sombres */
-		--ring: var(
-			--wisetwin-blue-light
-		); /* Anneau avec le bleu clair WiseTwin */
+		--ring: var(--wisetwin-blue-light);
+
+		--sidebar-background: var(--background);
+		--sidebar-foreground: var(--foreground);
+		--sidebar-primary: 224.3 76.3% 48%;
+		--sidebar-primary-foreground: 0 0% 100%;
+		--sidebar-accent: 240 3.7% 15.9%;
+		--sidebar-accent-foreground: 240 4.8% 95.9%;
+		--sidebar-border: var(--border);
+		--sidebar-ring: var(--ring);
 	}
 }
 
