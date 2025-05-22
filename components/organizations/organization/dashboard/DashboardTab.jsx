@@ -1,7 +1,6 @@
 //components/organizations/organization/dashboard/DashboardTab.jsx
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { useDashboard } from "@/lib/contexts/DashboardContext";
 import axios from "axios";
 import { useToast } from "@/lib/hooks/useToast";
 
@@ -90,7 +89,7 @@ export default function DashboardTab({ organization }) {
 		};
 
 		loadData();
-	}, [organization.id, timeRange]);
+	}, [organization.id, timeRange, toast]);
 
 	const handleTimeRangeChange = (range) => {
 		setTimeRange(range);

@@ -3,25 +3,52 @@
 import { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import { useAzureContainer } from "@/lib/hooks/useAzureContainer";
+import { usePathname } from "next/navigation";
 import WISETRAINER_CONFIG from "@/lib/config/wisetrainer/wisetrainer";
+
+// Durée du cache en ms (5 minutes)
+const CACHE_DURATION = 5 * 60 * 1000;
+
+// Cache global pour partager les données entre les instances du hook
+let globalCache = {
+  trainings: [],
+  lastFetched: null
+};
 
 export function useCurrentTraining() {
 	const { containerName, isLoading: containerLoading } = useAzureContainer();
-	const [currentTrainings, setCurrentTrainings] = useState([]);
-	const [isLoading, setIsLoading] = useState(true);
+	const pathname = usePathname();
+	const [currentTrainings, setCurrentTrainings] = useState(globalCache.trainings);
+	const [isLoading, setIsLoading] = useState(globalCache.trainings.length === 0);
 	const [error, setError] = useState(null);
-	const [lastRefresh, setLastRefresh] = useState(Date.now());
+	const [isPending, setIsPending] = useState(false);
 
 	// Fonction de récupération des formations encapsulée avec useCallback
-	const fetchCurrentTrainings = useCallback(async () => {
-		if (!containerName) return;
+	const fetchCurrentTrainings = useCallback(async (force = false) => {
+		// Si aucun container, impossible de récupérer les données
+		if (!containerName) return [];
+		
+		// Vérifier si nous avons déjà des données récentes en cache global
+		if (
+			!force &&
+			globalCache.trainings.length > 0 &&
+			globalCache.lastFetched &&
+			Date.now() - globalCache.lastFetched < CACHE_DURATION
+		) {
+			setCurrentTrainings(globalCache.trainings);
+			setIsLoading(false);
+			return globalCache.trainings;
+		}
+
+		// Éviter les requêtes multiples simultanées
+		if (isPending) return globalCache.trainings;
 
 		try {
+			setIsPending(true);
 			setIsLoading(true);
 			setError(null);
 
 			// Récupérer les formations de l'utilisateur depuis la base de données
-			// Cette API ne récupère que les informations de progression, pas les fichiers
 			const dbResponse = await axios.get(
 				`${WISETRAINER_CONFIG.API_ROUTES.USER_TRAININGS}/${containerName}`
 			);
@@ -151,30 +178,65 @@ export function useCurrentTraining() {
 				})
 			);
 
+			// Mettre à jour le cache global et l'état local
+			globalCache = {
+				trainings: enrichedTrainings,
+				lastFetched: Date.now()
+			};
+			
 			setCurrentTrainings(enrichedTrainings);
-			setLastRefresh(Date.now());
+			return enrichedTrainings;
 		} catch (err) {
 			console.error(
 				"Erreur lors de la récupération des formations en cours:",
 				err
 			);
 			setError(err);
+			return [];
 		} finally {
 			setIsLoading(false);
+			setIsPending(false);
 		}
-	}, [containerName]);
+	}, [containerName, isPending]);
 
-	// Effet pour charger les formations au démarrage et quand le container change
+	// Détermine si les données doivent être chargées immédiatement
+	const shouldLoadImmediately = useCallback(() => {
+		// Pages qui nécessitent les données dès le chargement
+		const immediateLoadPages = [
+			'/wisetrainer',
+			'/guide',
+			'/mon-profil'
+		];
+		
+		// Vérifier si le chemin actuel commence par l'un des préfixes ci-dessus
+		return pathname && immediateLoadPages.some(page => pathname.startsWith(page));
+	}, [pathname]);
+
+	// Effet pour charger les formations uniquement lorsque nécessaire
 	useEffect(() => {
+		const needsLoading = shouldLoadImmediately();
+		
 		if (containerName && !containerLoading) {
-			fetchCurrentTrainings();
+			if (needsLoading) {
+				// Charger les données immédiatement si on est sur une page qui en a besoin
+				fetchCurrentTrainings();
+			} else {
+				// Sinon, utiliser le cache global s'il est disponible
+				if (globalCache.trainings.length > 0) {
+					setCurrentTrainings(globalCache.trainings);
+				}
+				setIsLoading(false);
+			}
+		} else if (!containerLoading) {
+			// Si le container n'est pas disponible, ne pas montrer de chargement
+			setIsLoading(false);
 		}
-	}, [containerName, containerLoading, fetchCurrentTrainings]);
+	}, [containerName, containerLoading, fetchCurrentTrainings, shouldLoadImmediately]);
 
 	// Fonction pour rafraîchir manuellement les données
 	const refresh = useCallback(() => {
 		if (containerName) {
-			fetchCurrentTrainings();
+			return fetchCurrentTrainings(true);
 		}
 	}, [containerName, fetchCurrentTrainings]);
 
@@ -186,12 +248,31 @@ export function useCurrentTraining() {
 			.join(" ");
 	};
 
+	// Fonction pour garantir que les données sont chargées avant utilisation
+	const ensureTrainings = useCallback(async () => {
+		// Si on a des données récentes dans le cache, les utiliser
+		if (
+			globalCache.trainings.length > 0 && 
+			globalCache.lastFetched && 
+			Date.now() - globalCache.lastFetched < CACHE_DURATION
+		) {
+			if (currentTrainings.length === 0) {
+				setCurrentTrainings(globalCache.trainings);
+			}
+			return globalCache.trainings;
+		}
+		
+		// Sinon, charger les données
+		return await fetchCurrentTrainings();
+	}, [currentTrainings.length, fetchCurrentTrainings]);
+
 	return {
 		currentTrainings,
 		isLoading: isLoading || containerLoading,
 		error,
 		refresh,
-		lastRefresh,
+		lastRefresh: globalCache.lastFetched,
+		ensureTrainings, // Fonction pour garantir que les données sont chargées
 	};
 }
 

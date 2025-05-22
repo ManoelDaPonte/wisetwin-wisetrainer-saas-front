@@ -62,15 +62,6 @@ export async function GET(request, { params }) {
 		// Transformer les données pour le client
 		const trainings = await Promise.all(
 			userCourses.map(async (userCourse) => {
-				// Informations pour débogage
-				console.log("INFO FORMATION - Détails du cours dans la BD:", {
-					id: userCourse.course.id,
-					courseId: userCourse.course.courseId,
-					sourceType: userCourse.course.sourceType,
-					sourceOrgId: userCourse.course.sourceOrganizationId,
-					name: userCourse.course.name,
-				});
-
 				// Vérifier si c'est une formation d'organisation
 				let source = {
 					type: userCourse.course.sourceType || "wisetwin",

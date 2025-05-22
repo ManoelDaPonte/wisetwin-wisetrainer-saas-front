@@ -19,12 +19,17 @@ export function useAzureContainer() {
 			try {
 				// Initialiser l'utilisateur dans la base de données
 				// Cette API va gérer la création du container si nécessaire
-				const initResponse = await axios.post("/api/auth/initialize-user", {});
-				
-				if (initResponse.data.success && initResponse.data.user.azureContainer) {
+				// app/api/auth/initialize-user/route.jsx
+
+				if (
+					initResponse.data.success &&
+					initResponse.data.user.azureContainer
+				) {
 					setContainerName(initResponse.data.user.azureContainer);
 				} else {
-					throw new Error("Échec de l'initialisation de l'utilisateur");
+					throw new Error(
+						"Échec de l'initialisation de l'utilisateur"
+					);
 				}
 
 				setIsLoading(false);

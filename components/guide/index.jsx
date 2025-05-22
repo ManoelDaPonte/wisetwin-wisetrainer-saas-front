@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useGuide } from "@/lib/contexts/GuideContext";
+import { useGuideData } from "@/lib/hooks/useGuideData";
 
 // Composants
 import CurrentTrainingsPanel from "./CurrentTrainingsPanel";
@@ -41,20 +41,21 @@ const formatDate = (dateString) => {
 
 /**
  * Composant principal de la page Guide
+ * Utilise le hook optimisé useGuideData au lieu du contexte GuideContext
  * @returns {JSX.Element} - Composant Guide
  */
 export default function Guide() {
   const {
     organizationsData,
-    hasOrganizations,
-    currentTrainings,
+    trainings: currentTrainings,
     isLoading,
     error,
-    lastRefresh,
-    refreshData
-  } = useGuide();
+    refreshData,
+    lastRefresh
+  } = useGuideData();
   
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const hasOrganizations = organizationsData.length > 0;
 
   /**
    * Déclenche un rafraîchissement manuel des données
@@ -73,9 +74,55 @@ export default function Guide() {
   // Vérifier si nous avons des formations à afficher
   const hasAnyTraining =
     organizationsData.some(
-      (org) => org.taggedTrainings.length > 0 || org.orgTrainings.length > 0
+      (org) => org.builds && org.builds.length > 0
     ) ||
     currentTrainings.length > 0;
+
+  // Transformer les données pour être compatibles avec le composant OrganizationsSection
+  const formattedOrganizationsData = organizationsData.map(org => {
+    // Extracting tagged trainings based on user's tags
+    let taggedTrainings = [];
+    if (org.buildsByTag) {
+      // Flatten all tagged trainings
+      taggedTrainings = Object.values(org.buildsByTag)
+        .flat()
+        .map(training => ({
+          ...training,
+          organizationId: org.id,
+          organizationName: org.name,
+          source: {
+            type: "organization",
+            name: org.name,
+            organizationId: org.id,
+          }
+        }));
+    }
+    
+    // Format organization trainings
+    const orgTrainings = (org.builds || []).map(build => ({
+      ...build,
+      organizationId: org.id,
+      organizationName: org.name,
+      source: {
+        type: "organization",
+        name: org.name,
+        organizationId: org.id,
+      }
+    }));
+    
+    return {
+      organization: {
+        id: org.id,
+        name: org.name,
+        description: org.description,
+        logoUrl: org.logoUrl
+      },
+      userTags: org.tags || [],
+      taggedTrainings,
+      orgTrainings,
+      hasCompletedTaggedTrainings: false // This would need more logic to determine
+    };
+  });
 
   return (
     <div className="container mx-auto py-8">
@@ -130,7 +177,7 @@ export default function Guide() {
         />
 
         {/* 2. Organisations avec leurs formations */}
-        <OrganizationsSection organizationsData={organizationsData} />
+        <OrganizationsSection organizationsData={formattedOrganizationsData} />
 
         {/* Si pas d'organisation, afficher un guide spécifique */}
         {!hasOrganizations && <NoOrganizationGuide />}

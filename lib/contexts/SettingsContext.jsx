@@ -1,7 +1,8 @@
 "use client";
 import React, { createContext, useContext, useState, useCallback, useEffect } from "react";
 import { useTheme } from "@/lib/hooks/useTheme";
-import { useUser } from "@/lib/hooks/useUser";
+// Utiliser useUser de la nouvelle architecture
+import { useUser } from "@/newlib/hooks/useUser";
 
 // Création du contexte
 const SettingsContext = createContext(undefined);
