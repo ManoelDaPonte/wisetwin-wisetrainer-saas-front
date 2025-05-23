@@ -27,7 +27,7 @@ export default function AppLayout({ children, pathname }) {
 				<div className="flex flex-1 flex-col gap-4 p-4 pt-0">
 					<div className="min-h-[100vh] flex-1 rounded-xl bg-muted/50 md:min-h-min relative">
 						<div className="absolute inset-0 z-0 pointer-events-none flex items-center justify-center opacity-100 dark:opacity-5">
-							<div className="relative w-4/5 h-4/5">
+							<div className="relative w-4/5 h-4/5 max-w-md max-h-md">
 								<Image
 									src="/logos/logo_parrot_light.svg"
 									fill
