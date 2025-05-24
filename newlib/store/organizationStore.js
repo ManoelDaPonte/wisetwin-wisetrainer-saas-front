@@ -551,6 +551,92 @@ export const useOrganizationStore = create((set, get) => ({
       return [];
     }
   },
+
+  /**
+   * Récupère les builds WiseTrainer d'une organisation
+   * @param {string} organizationId - ID de l'organisation
+   * @param {boolean} force - Force le rechargement même si le cache est valide
+   * @returns {Promise<Array>} - Liste des builds WiseTrainer
+   */
+  getWiseTrainerBuilds: async (organizationId, force = false) => {
+    // Si aucun ID n'est fourni, utiliser l'ID courant
+    const orgId = organizationId || get().currentOrganizationId;
+    if (!orgId) return [];
+    
+    // Vérifier le cache
+    const cacheKey = `organization_wisetrainer_builds_${orgId}`;
+    if (!force && cacheManager.has(cacheKey)) {
+      const cachedBuilds = cacheManager.get(cacheKey);
+      set({ builds: cachedBuilds });
+      return cachedBuilds;
+    }
+    
+    set({ buildsLoading: true, buildsError: null });
+    
+    try {
+      const builds = await organizationApi.getWiseTrainerBuilds(orgId);
+      
+      set({ 
+        builds, 
+        buildsLoading: false,
+        buildsError: null
+      });
+      
+      // Mettre à jour le cache
+      cacheManager.set(cacheKey, builds);
+      
+      return builds;
+    } catch (error) {
+      set({ 
+        buildsError: error.message || "Erreur lors de la récupération des builds WiseTrainer", 
+        buildsLoading: false 
+      });
+      return [];
+    }
+  },
+
+  /**
+   * Récupère les builds WiseTwin d'une organisation
+   * @param {string} organizationId - ID de l'organisation
+   * @param {boolean} force - Force le rechargement même si le cache est valide
+   * @returns {Promise<Array>} - Liste des builds WiseTwin
+   */
+  getWiseTwinBuilds: async (organizationId, force = false) => {
+    // Si aucun ID n'est fourni, utiliser l'ID courant
+    const orgId = organizationId || get().currentOrganizationId;
+    if (!orgId) return [];
+    
+    // Vérifier le cache
+    const cacheKey = `organization_wisetwin_builds_${orgId}`;
+    if (!force && cacheManager.has(cacheKey)) {
+      const cachedBuilds = cacheManager.get(cacheKey);
+      set({ builds: cachedBuilds });
+      return cachedBuilds;
+    }
+    
+    set({ buildsLoading: true, buildsError: null });
+    
+    try {
+      const builds = await organizationApi.getWiseTwinBuilds(orgId);
+      
+      set({ 
+        builds, 
+        buildsLoading: false,
+        buildsError: null
+      });
+      
+      // Mettre à jour le cache
+      cacheManager.set(cacheKey, builds);
+      
+      return builds;
+    } catch (error) {
+      set({ 
+        buildsError: error.message || "Erreur lors de la récupération des builds WiseTwin", 
+        buildsLoading: false 
+      });
+      return [];
+    }
+  },
   
   /**
    * Vérifie si l'utilisateur est membre d'une organisation

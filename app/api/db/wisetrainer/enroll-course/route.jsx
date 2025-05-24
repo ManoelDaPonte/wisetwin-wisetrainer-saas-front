@@ -35,10 +35,19 @@ export async function POST(request) {
 			);
 		}
 
-		// Récupérer l'utilisateur depuis la base de données
-		const user = await prisma.user.findFirst({
+		// Vérifier que l'userId est un UUID valide
+		const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+		if (!uuidRegex.test(userId)) {
+			return NextResponse.json(
+				{ error: "ID utilisateur invalide" },
+				{ status: 400 }
+			);
+		}
+
+		// Vérifier que l'utilisateur existe
+		const user = await prisma.user.findUnique({
 			where: {
-				azureContainer: userId,
+				id: userId,
 			},
 		});
 

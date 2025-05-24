@@ -1,14 +1,7 @@
-// components/wisetrainer/courses/CatalogOrganizationTab.jsx
+// components/wisetrainer/courses/CatalogOrganizationTab-new.jsx
 import React from "react";
 import { motion } from "framer-motion";
 import { Building } from "lucide-react";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
 import CatalogCourseCard from "@/components/wisetrainer/courses/CatalogCourseCard";
 import EmptyStateCard from "@/components/wisetrainer/courses/EmptyStateCard";
 import CoursesLoading from "@/components/wisetrainer/courses/CoursesLoading";
@@ -16,7 +9,6 @@ import CoursesLoading from "@/components/wisetrainer/courses/CoursesLoading";
 export default function CatalogOrganizationTab({
 	organizations = [],
 	selectedOrganizationId,
-	onSelectOrganization,
 	trainings = [],
 	isLoading = false,
 	onCourseSelect,
@@ -27,9 +19,9 @@ export default function CatalogOrganizationTab({
 	isImporting,
 	containerVariants,
 	itemVariants,
-	isUserEnrolled, // Accepter la fonction de vérification
+	isUserEnrolled,
 }) {
-	// Organisation sélectionnée
+	// Organisation sélectionnée (depuis le contexte global)
 	const selectedOrganization = organizations.find(
 		(org) => org.id === selectedOrganizationId
 	);
@@ -37,12 +29,6 @@ export default function CatalogOrganizationTab({
 	// États d'affichage
 	const isEmptyCatalog = trainings.length === 0;
 	const showNoOrganizations = organizations.length === 0;
-
-	// Sélection d'organisation
-	const handleOrganizationChange = (orgId) => {
-		// Changer l'organisation
-		onSelectOrganization(orgId);
-	};
 
 	// Rendu pour les différents états vides
 	const renderContent = () => {
@@ -101,19 +87,13 @@ export default function CatalogOrganizationTab({
 									null,
 							},
 						}}
-						onEnroll={onEnroll}
-						onToggleInfo={onToggleInfo}
-						flippedCardId={flippedCardId}
-						isImporting={isImporting === course.id}
-						isEnrolled={
-							isUserEnrolled
-								? isUserEnrolled(
-										course,
-										personalCourses
-								  )
-								: false
-						}
+						isFlipped={flippedCardId === course.id}
+						onToggleInfo={() => onToggleInfo(course.id)}
+						onSelect={() => onCourseSelect(course)}
+						onEnroll={() => onEnroll(course)}
 						itemVariants={itemVariants}
+						isEnrolled={isUserEnrolled(course, personalCourses)}
+						isImporting={isImporting}
 					/>
 				))}
 			</motion.div>
@@ -122,37 +102,19 @@ export default function CatalogOrganizationTab({
 
 	return (
 		<div className="space-y-6">
-			{/* En-tête avec titre et description */}
-			<div className="mb-6">
-				<h2 className="text-xl font-semibold text-wisetwin-darkblue dark:text-white">
-					Formations de vos organisations
-				</h2>
-			</div>
-
-			{/* Sélection d'organisation si plusieurs sont disponibles */}
-			{organizations.length > 1 && (
-				<div className="mb-6">
-					<Select
-						value={selectedOrganizationId}
-						onValueChange={handleOrganizationChange}
-					>
-						<SelectTrigger className="w-[300px]">
-							<SelectValue placeholder="Sélectionner une organisation" />
-						</SelectTrigger>
-						<SelectContent>
-							{organizations.map((org) => (
-								<SelectItem key={org.id} value={org.id}>
-									<div className="flex items-center gap-2">
-										<Building className="w-4 h-4" />
-										<span>{org.name}</span>
-									</div>
-								</SelectItem>
-							))}
-						</SelectContent>
-					</Select>
+			{/* Afficher le nom de l'organisation active ou du catalogue personnel */}
+			{selectedOrganization ? (
+				<div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+					<Building className="w-4 h-4" />
+					<span>Catalogue de formations de {selectedOrganization.name}</span>
 				</div>
-			)}
-
+			) : selectedOrganizationId === null && trainings.length > 0 ? (
+				<div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+					<Building className="w-4 h-4" />
+					<span>Catalogue de formations disponibles</span>
+				</div>
+			) : null}
+			
 			{renderContent()}
 		</div>
 	);

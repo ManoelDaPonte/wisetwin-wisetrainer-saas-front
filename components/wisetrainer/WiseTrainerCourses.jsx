@@ -1,14 +1,14 @@
-// components/wisetrainer/WiseTrainerCourses.jsx
+// components/wisetrainer/WiseTrainerCourses-new.jsx
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import axios from "axios";
-import { useAzureContainer } from "@/lib/hooks/useAzureContainer";
+import { useUser } from "@/newlib/hooks/useUser";
+import { useCourses } from "@/newlib/hooks/useCourses";
+import { useOrganization } from "@/newlib/hooks/useOrganization";
+import { useOrganizationBuilds } from "@/newlib/hooks/useOrganizationBuilds";
+import { useTrainingWiseTwin } from "@/lib/hooks/useTrainingWiseTwin";
 import { useToast } from "@/lib/hooks/useToast";
-
-// Import des hooks personnalisés
-import { useTrainingOrganization } from "@/lib/hooks/useTrainingOrganization";
-import { useCurrentTraining } from "@/lib/hooks/useCurrentTraining";
 
 // Import des composants d'onglets
 import PersonalCoursesTab from "@/components/wisetrainer/courses/PersonalCoursesTab";
@@ -19,28 +19,62 @@ import UnenrollModal from "@/components/wisetrainer/UnenrollModal";
 
 export default function WiseTrainerCourses() {
 	const router = useRouter();
-	const { containerName } = useAzureContainer();
+	const { user } = useUser();
 	const [activeTab, setActiveTab] = useState("personal");
 	const [flippedCardId, setFlippedCardId] = useState(null);
-	const [selectedOrgId, setSelectedOrgId] = useState(null);
 	const [showUnenrollModal, setShowUnenrollModal] = useState(false);
 	const [courseToUnenroll, setCourseToUnenroll] = useState(null);
 	const { toast } = useToast();
 
-	// Utiliser les hooks personnalisés pour récupérer les données
+	// Récupérer le contexte actif depuis localStorage
+	const getActiveContext = () => {
+		if (typeof window !== 'undefined') {
+			const contextStr = localStorage.getItem('wisetwin-active-context');
+			if (contextStr) {
+				try {
+					const context = JSON.parse(contextStr);
+					return context;
+				} catch (e) {
+					console.error('Erreur parsing contexte:', e);
+					return null;
+				}
+			}
+		}
+		return null;
+	};
+	
+	const activeContext = getActiveContext();
+
+	// Utiliser les hooks de newlib
 	const {
-		currentTrainings: personalCourses,
+		courses: personalCourses,
 		isLoading: isLoadingPersonal,
-		refresh: refreshPersonalCourses,
-	} = useCurrentTraining();
+		refreshCourses: refreshPersonalCourses,
+	} = useCourses({ autoLoad: true });
 
 	// Récupérer les organisations de l'utilisateur
-	const [userOrganizations, setUserOrganizations] = useState([]);
-	const [isLoadingOrgs, setIsLoadingOrgs] = useState(true);
+	const {
+		organizations: userOrganizations,
+		isLoading: isLoadingOrgs,
+		currentOrganizationId,
+	} = useOrganization({ autoLoad: true });
 
-	// Utiliser le hook pour les formations d'organisation
-	const { organizationTrainings, isLoading: isLoadingOrg } =
-		useTrainingOrganization(selectedOrgId, containerName);
+	// Utiliser le hook pour les formations d'organisation (contexte actif)
+	const { 
+		trainings: organizationTrainings, 
+		isLoading: isLoadingOrg 
+	} = useOrganizationBuilds({
+		organizationId: activeContext?.type === 'organization' ? (activeContext.id || currentOrganizationId) : null,
+		type: 'wisetrainer',
+		autoLoad: activeContext?.type === 'organization'
+	});
+
+	// Hook pour récupérer les formations du container personnel (depuis le container source WiseTwin)
+	const {
+		trainings: personalCatalogTrainings,
+		isLoading: isLoadingPersonalCatalog,
+		error: personalCatalogError
+	} = useTrainingWiseTwin(user?.id);
 
 	// Configuration pour les animations
 	const containerVariants = {
@@ -60,10 +94,6 @@ export default function WiseTrainerCourses() {
 		},
 	};
 
-	// Effet pour charger les organisations de l'utilisateur
-	useEffect(() => {
-		fetchUserOrganizations();
-	}, []);
 
 	// Fonction pour gérer la désinscription avec modale
 	const handleUnenroll = (course) => {
@@ -71,37 +101,10 @@ export default function WiseTrainerCourses() {
 		setShowUnenrollModal(true);
 	};
 
-	const fetchUserOrganizations = async () => {
-		try {
-			setIsLoadingOrgs(true);
-			const response = await axios.get("/api/organization");
-
-			if (response.data.organizations) {
-				setUserOrganizations(response.data.organizations);
-
-				// Sélectionner automatiquement la première organisation si elle existe
-				if (response.data.organizations.length > 0 && !selectedOrgId) {
-					setSelectedOrgId(response.data.organizations[0].id);
-				}
-			}
-		} catch (error) {
-			console.error(
-				"Erreur lors de la récupération des organisations:",
-				error
-			);
-			setUserOrganizations([]);
-		} finally {
-			setIsLoadingOrgs(false);
-		}
-	};
-
-	const handleSelectOrganization = (orgId) => {
-		setSelectedOrgId(orgId);
-	};
 
 	// Nouvelle logique pour démarrer directement une formation
 	const handleStartCourse = async (course) => {
-		if (!containerName) {
+		if (!user?.azureContainer) {
 			toast({
 				title: "Erreur d'accès",
 				description:
@@ -112,7 +115,6 @@ export default function WiseTrainerCourses() {
 		}
 
 		try {
-			// Log pour déboguer les informations de source
 			console.log("INFO INSCRIPTION - Démarrage de la formation:", {
 				courseId: course.id,
 				sourceType: course.source?.type || "organization",
@@ -125,7 +127,7 @@ export default function WiseTrainerCourses() {
 			const response = await axios.post(
 				`${WISETRAINER_CONFIG.API_ROUTES.ENROLL_COURSE}`,
 				{
-					userId: containerName,
+					userId: user.id,
 					courseId: course.id,
 					sourceType: course.source?.type || "organization",
 					sourceOrganizationId: course.source?.organizationId || null,
@@ -139,20 +141,12 @@ export default function WiseTrainerCourses() {
 			);
 
 			if (response.data.success) {
-				// Redirection basée sur la source de la formation
-				if (
-					course.source &&
-					course.source.type === "organization" &&
-					course.source.organizationId
-				) {
-					console.log("Redirection vers cours d'organisation:", {
-						courseId: course.id,
-						orgId: course.source.organizationId,
-					});
-					router.push(
-						`/wisetrainer/${course.source.organizationId}/${course.id}`
-					);
-				}
+				// Redirection vers la page du cours (sans organizationId dans l'URL)
+				console.log("Redirection vers le cours:", {
+					courseId: course.id,
+					context: activeContext,
+				});
+				router.push(`/wisetrainer/${course.id}`);
 
 				// Rafraîchir la liste des formations personnelles
 				await refreshPersonalCourses();
@@ -185,17 +179,8 @@ export default function WiseTrainerCourses() {
 
 	// Fonction pour gérer la sélection d'un cours
 	const handleCourseSelect = (course) => {
-		// Vérifier si le cours a des informations de source
-		if (
-			course.source &&
-			course.source.type === "organization" &&
-			course.source.organizationId
-		) {
-			// Rediriger vers la version organisation du cours
-			router.push(
-				`/wisetrainer/${course.source.organizationId}/${course.id}`
-			);
-		}
+		// Rediriger vers la page du cours (sans organizationId dans l'URL)
+		router.push(`/wisetrainer/${course.id}`);
 	};
 
 	// Fonction pour se désinscrire d'une formation
@@ -207,19 +192,14 @@ export default function WiseTrainerCourses() {
 			const dbResponse = await axios.delete(
 				`${
 					WISETRAINER_CONFIG.API_ROUTES.UNENROLL_COURSE
-				}/${containerName}/${courseToUnenroll.id}?sourceType=${
+				}/${user.id}/${courseToUnenroll.id}?sourceType=${
 					courseToUnenroll.source?.type || "organization"
 				}&sourceOrganizationId=${
 					courseToUnenroll.source?.organizationId || ""
 				}`
 			);
 
-			// 2. Appel API pour supprimer les fichiers dans Azure
-			const azureResponse = await axios.delete(
-				`${WISETRAINER_CONFIG.API_ROUTES.UNENROLL_AZURE}/${containerName}/${courseToUnenroll.id}`
-			);
-
-			console.log("Réponse suppression Azure:", azureResponse.data);
+			// Plus besoin de supprimer les fichiers Azure car on ne copie plus
 
 			if (dbResponse.data.success) {
 				// Rafraîchir la liste des formations personnelles
@@ -265,26 +245,6 @@ export default function WiseTrainerCourses() {
 			return false;
 		}
 
-		if (course.id === "WiseTrainer_01") {
-			// Ajoutez l'ID qui pose problème ici
-			console.log("INFO VÉRIFICATION - Détails du cours à vérifier:", {
-				id: course.id,
-				sourceType: course.source?.type || "organization",
-				sourceOrgId: course.source?.organizationId || null,
-				compositeId: course.compositeId || `${course.id}__unknown`,
-			});
-
-			// Afficher toutes les formations personnelles pour comparaison
-			personalCourses.forEach((pc) => {
-				console.log("INFO VÉRIFICATION - Formation personnelle:", {
-					id: pc.id,
-					sourceType: pc.source?.type || "organization",
-					sourceOrgId: pc.source?.organizationId || null,
-					compositeId: pc.compositeId || `${pc.id}__unknown`,
-				});
-			});
-		}
-
 		// Récupérer les informations de source du cours
 		const sourceType = course.source?.type || "organization";
 		const orgId = course.source?.organizationId || null;
@@ -304,13 +264,6 @@ export default function WiseTrainerCourses() {
 					personalOrgId === orgId)
 			);
 		});
-	};
-
-	// Fonction pour générer un ID composite pour un cours
-	const generateCompositeId = (course) => {
-		const sourceType = course.source?.type || "organization";
-		const orgId = course.source?.organizationId || "organization";
-		return `${course.id}__${sourceType}__${orgId}`;
 	};
 
 	return (
@@ -343,53 +296,104 @@ export default function WiseTrainerCourses() {
 				</TabsContent>
 
 				<TabsContent value="organization">
-					<CatalogOrganizationTab
-						organizations={userOrganizations}
-						selectedOrganizationId={selectedOrgId}
-						onSelectOrganization={handleSelectOrganization}
-						trainings={(organizationTrainings || []).map(
-							(training) => {
-								// S'assurer que chaque formation a les informations de source complètes
-								const selectedOrg = userOrganizations.find(
-									(org) => org.id === selectedOrgId
-								);
-								return {
-									...training,
-									// Préserver le nom de la formation
-									name:
-										training.name ||
-										training.id
-											.split("-")
-											.map(
-												(word) =>
-													word
-														.charAt(0)
-														.toUpperCase() +
-													word.slice(1)
-											)
-											.join(" "),
-									compositeId: `${training.id}__organization__${selectedOrgId}`,
-									source: {
-										type: "organization",
+					{activeContext?.type === 'personal' ? (
+						// Mode personnel : afficher les formations du catalogue WiseTwin
+						<CatalogOrganizationTab
+							organizations={[]}
+							selectedOrganizationId={null}
+							trainings={(personalCatalogTrainings || []).map(
+								(training) => {
+									return {
+										...training,
+										// Préserver le nom de la formation
 										name:
-											selectedOrg?.name || "Organisation",
-										organizationId: selectedOrgId,
-										containerName:
-											selectedOrg?.azureContainer || null,
-									},
-								};
-							}
-						)}
-						isLoading={isLoadingOrgs || isLoadingOrg}
-						onCourseSelect={handleCourseSelect}
-						onEnroll={handleStartCourse}
-						onToggleInfo={toggleCardFlip}
-						flippedCardId={flippedCardId}
-						personalCourses={personalCourses}
-						containerVariants={containerVariants}
-						itemVariants={itemVariants}
-						isUserEnrolled={isUserEnrolled} // Passer la fonction de vérification
-					/>
+											training.name ||
+											training.id
+												.split("-")
+												.map(
+													(word) =>
+														word
+															.charAt(0)
+															.toUpperCase() +
+														word.slice(1)
+												)
+												.join(" "),
+										compositeId: `${training.id}__personal__${user?.id}`,
+										source: {
+											type: "personal",
+											name: "Catalogue personnel",
+											organizationId: null,
+											containerName: user?.azureContainer || null,
+										},
+									};
+								}
+							)}
+							isLoading={isLoadingPersonalCatalog}
+							onCourseSelect={handleCourseSelect}
+							onEnroll={handleStartCourse}
+							onToggleInfo={toggleCardFlip}
+							flippedCardId={flippedCardId}
+							personalCourses={personalCourses}
+							containerVariants={containerVariants}
+							itemVariants={itemVariants}
+							isUserEnrolled={isUserEnrolled}
+						/>
+					) : activeContext?.type === 'organization' ? (
+						// Mode organisation : afficher les formations de l'organisation
+						<CatalogOrganizationTab
+							organizations={userOrganizations}
+							selectedOrganizationId={activeContext.id}
+							trainings={(organizationTrainings || []).map(
+								(training) => {
+									// S'assurer que chaque formation a les informations de source complètes
+									const selectedOrg = userOrganizations.find(
+										(org) => org.id === activeContext.id
+									);
+									return {
+										...training,
+										// Préserver le nom de la formation
+										name:
+											training.name ||
+											training.id
+												.split("-")
+												.map(
+													(word) =>
+														word
+															.charAt(0)
+															.toUpperCase() +
+														word.slice(1)
+												)
+												.join(" "),
+										compositeId: `${training.id}__organization__${activeContext.id}`,
+										source: {
+											type: "organization",
+											name:
+												selectedOrg?.name || activeContext.name || "Organisation",
+											organizationId: activeContext.id,
+											containerName:
+												selectedOrg?.azureContainer || activeContext.azureContainer || null,
+										},
+									};
+								}
+							)}
+							isLoading={isLoadingOrgs || isLoadingOrg}
+							onCourseSelect={handleCourseSelect}
+							onEnroll={handleStartCourse}
+							onToggleInfo={toggleCardFlip}
+							flippedCardId={flippedCardId}
+							personalCourses={personalCourses}
+							containerVariants={containerVariants}
+							itemVariants={itemVariants}
+							isUserEnrolled={isUserEnrolled} // Passer la fonction de vérification
+						/>
+					) : (
+						// Aucun contexte défini
+						<div className="text-center py-12">
+							<p className="text-gray-600 dark:text-gray-400 mb-4">
+								Veuillez sélectionner un contexte (personnel ou organisation) dans la barre latérale.
+							</p>
+						</div>
+					)}
 				</TabsContent>
 			</Tabs>
 

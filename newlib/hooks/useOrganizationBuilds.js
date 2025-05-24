@@ -26,33 +26,15 @@ export function useOrganizationBuilds({
   // ID de l'organisation à utiliser
   const orgId = organizationId || currentOrganizationId;
   
-  // Récupérer l'état et les actions du store
-  const {
-    builds,
-    buildsLoading,
-    buildsError,
-    fetchBuilds,
-    getWiseTwinBuilds,
-    getWiseTrainerBuilds
-  } = useOrganizationStore(state => ({
-    builds: state.builds,
-    buildsLoading: state.buildsLoading,
-    buildsError: state.buildsError,
-    fetchBuilds: state.fetchBuilds,
-    getWiseTwinBuilds: state.getWiseTwinBuilds,
-    getWiseTrainerBuilds: state.getWiseTrainerBuilds
-  }));
+  // Récupérer l'état et les actions du store (sélection individuelle pour éviter les re-rendus)
+  const builds = useOrganizationStore(state => state.builds);
+  const buildsLoading = useOrganizationStore(state => state.buildsLoading);
+  const buildsError = useOrganizationStore(state => state.buildsError);
+  const fetchBuilds = useOrganizationStore(state => state.fetchBuilds);
+  const getWiseTwinBuilds = useOrganizationStore(state => state.getWiseTwinBuilds);
+  const getWiseTrainerBuilds = useOrganizationStore(state => state.getWiseTrainerBuilds);
   
-  // Charger les builds au montage si nécessaire
-  useEffect(() => {
-    if (autoLoad && orgId) {
-      loadBuilds();
-    }
-  }, [autoLoad, orgId, type]);
-  
-  /**
-   * Charge les builds selon le type spécifié
-   */
+  // Fonction pour charger les builds
   const loadBuilds = useCallback(async (force = false) => {
     if (!orgId) return [];
     
@@ -71,6 +53,14 @@ export function useOrganizationBuilds({
       return [];
     }
   }, [orgId, type, fetchBuilds, getWiseTwinBuilds, getWiseTrainerBuilds]);
+
+  // Charger les builds au montage si nécessaire
+  useEffect(() => {
+    if (autoLoad && orgId) {
+      loadBuilds();
+    }
+  }, [autoLoad, orgId, loadBuilds]);
+  
   
   /**
    * Recharge les builds
@@ -112,6 +102,7 @@ export function useOrganizationBuilds({
   return {
     // État
     builds,
+    trainings: builds, // Alias pour compatibilité
     isLoading: buildsLoading,
     error: buildsError,
     

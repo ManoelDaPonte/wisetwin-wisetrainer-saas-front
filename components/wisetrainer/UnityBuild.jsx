@@ -1,4 +1,4 @@
-//components/wisetrainer/UnityBuild.jsx
+//components/wisetrainer/UnityBuild-new.jsx
 "use client";
 
 import React, {
@@ -14,13 +14,21 @@ import WISETRAINER_CONFIG from "@/lib/config/wisetrainer/wisetrainer";
 import axios from "axios";
 
 const UnityBuild = forwardRef(
-	({ courseId, onQuestionnaireRequest, onLoadingProgress }, ref) => {
+	({ courseId, containerName, activeContext, organization, onLoadingProgress }, ref) => {
 		const [loadingTimeout, setLoadingTimeout] = useState(false);
 		const [buildError, setBuildError] = useState(null);
 		const [buildStatus, setBuildStatus] = useState("checking");
 		const [manualLoadingProgress, setManualLoadingProgress] = useState(10);
 
-		// Initialiser Unity directement avec les chemins des fichiers
+		// Déterminer le container source selon le contexte
+		const sourceContainer = activeContext === 'personal' 
+			? containerName 
+			: (organization?.azureContainer || containerName);
+
+		// Utiliser les nouvelles URLs qui pointent vers l'API Azure
+		const baseUrl = `/api/azure/direct-download/${sourceContainer}/wisetrainer/${courseId}`;
+
+		// Initialiser Unity avec les chemins vers l'API Azure
 		const {
 			unityProvider,
 			loadingProgression,
@@ -31,10 +39,10 @@ const UnityBuild = forwardRef(
 			sendMessage,
 			requestFullscreen,
 		} = useUnityContext({
-			loaderUrl: `/build/${courseId}.loader.js`,
-			dataUrl: `/build/${courseId}.data.gz`,
-			frameworkUrl: `/build/${courseId}.framework.js.gz`,
-			codeUrl: `/build/${courseId}.wasm.gz`,
+			loaderUrl: `${baseUrl}.loader.js`,
+			dataUrl: `${baseUrl}.data.gz`,
+			frameworkUrl: `${baseUrl}.framework.js.gz`,
+			codeUrl: `${baseUrl}.wasm.gz`,
 			webGLContextAttributes: {
 				preserveDrawingBuffer: true,
 				powerPreference: "high-performance",
@@ -75,7 +83,9 @@ const UnityBuild = forwardRef(
 				onLoadingProgress(10);
 			}
 			setBuildStatus("ready");
-		}, [onLoadingProgress]);
+			console.log(`[Unity] Chargement depuis le container: ${sourceContainer}`);
+			console.log(`[Unity] Contexte actif: ${activeContext}`);
+		}, [onLoadingProgress, sourceContainer, activeContext]);
 
 		// Simuler une progression initiale avant le chargement réel
 		useEffect(() => {
@@ -150,319 +160,206 @@ const UnityBuild = forwardRef(
 			},
 			resetCamera: () => {
 				if (isLoaded) {
-					console.log("Resetting camera position");
-					sendMessage(
-						"MANAGERS/GameObjectCameraManager",
-						"ResetCamera",
-						""
-					);
+					console.log("Resetting camera position in Unity");
+					sendMessage("Player", "ResetCamera", "");
 				}
-			},
-			sendMessage: (objectName, methodName, parameter) => {
-				if (isLoaded) {
-					console.log(
-						`Sending message to Unity: ${objectName}.${methodName}("${parameter}")`
-					);
-					sendMessage(objectName, methodName, parameter);
-					return true;
-				} else {
-					console.warn("Unity is not loaded, cannot send message");
-					return false;
-				}
-			},
-			startTutorial: () => {
-				if (isLoaded) {
-					console.log("Starting tutorial via UnityBuild");
-					try {
-						sendMessage(
-							"MANAGERS/TutorialController",
-							"StartTutorial",
-							""
-						);
-						return true;
-					} catch (error) {
-						console.error(
-							"Erreur lors du démarrage du tutoriel Unity:",
-							error
-						);
-						return false;
-					}
-				}
-				console.warn("Unity not loaded, can't start tutorial");
-				return false;
-			},
-			sendValidationEvent: (buttonName) => {
-				// Fonction pour envoyer un événement de validation manuellement
-				if (isLoaded) {
-					console.log(
-						`Sending manual validation event for: ${buttonName}`
-					);
-					const event = new CustomEvent("GuideValidationEvent", {
-						detail: { name: buttonName, buttonName: buttonName },
-					});
-					window.dispatchEvent(event);
-					return true;
-				}
-				return false;
 			},
 			isReady: isLoaded,
-			requestFullscreen: () => {
-				if (isLoaded) {
-					requestFullscreen(true);
-					return true;
-				}
-				return false;
-			},
 		}));
 
-		// Gestionnaire pour les événements Unity
-		const handleGameObjectSelected = useCallback(
-			(event) => {
-				console.log("GameObject sélectionné:", event.detail);
+		// Gérer les événements Unity pour les questionnaires
+		useEffect(() => {
+			const handleQuestionnaireEvent = (scenarioData) => {
+				console.log("Questionnaire event received:", scenarioData);
 				try {
-					// Analyser les données si nécessaire
-					const data =
-						typeof event.detail === "string"
-							? JSON.parse(event.detail)
-							: event.detail;
-
-					// Vérifier si on a un scenarioId
-					if (data.scenarioId) {
-						console.log(`Scénario sélectionné: ${data.scenarioId}`);
-
-						// Récupérer le scénario depuis l'API
-						axios
-							.get(
-								`${WISETRAINER_CONFIG.API_ROUTES.FETCH_SCENARIO}/${data.scenarioId}`
-							)
-							.then((response) => {
-								if (onQuestionnaireRequest) {
-									onQuestionnaireRequest(response.data);
-								}
-							})
-							.catch((error) => {
-								console.error(
-									"Erreur lors de la récupération du scénario:",
-									error
-								);
-								// Fallback à un scénario de test
-								if (onQuestionnaireRequest) {
-									onQuestionnaireRequest({
-										id: data.scenarioId,
-										title: "Scénario de test",
-										description:
-											"Description du scénario de test",
-									});
-								}
-							});
+					const scenario = JSON.parse(scenarioData);
+					if (window.onUnityQuestionnaireRequest) {
+						window.onUnityQuestionnaireRequest(scenario);
 					}
 				} catch (error) {
 					console.error(
-						"Erreur lors du traitement de l'événement:",
+						"Erreur lors du parsing des données du questionnaire:",
 						error
 					);
 				}
-			},
-			[onQuestionnaireRequest]
-		);
+			};
 
-		// Gestionnaire pour les demandes explicites de questionnaire
-		const handleQuestionnaireRequest = useCallback(
-			(event) => {
-				console.log("Questionnaire demandé:", event.detail);
-				const scenarioId = event.detail;
-
-				// Récupérer le scénario depuis l'API
-				axios
-					.get(
-						`${WISETRAINER_CONFIG.API_ROUTES.FETCH_SCENARIO}/${scenarioId}`
-					)
-					.then((response) => {
-						if (onQuestionnaireRequest) {
-							onQuestionnaireRequest(response.data);
-						}
-					})
-					.catch((error) => {
-						console.error(
-							"Erreur lors de la récupération du scénario:",
-							error
-						);
-						// Fallback à un scénario de test
-						if (onQuestionnaireRequest) {
-							onQuestionnaireRequest({
-								id: scenarioId,
-								title: "Scénario de test",
-								description: "Description du scénario de test",
-							});
-						}
-					});
-			},
-			[onQuestionnaireRequest]
-		);
-
-		const handleUnityButtonClick = useCallback((event) => {
-			console.log("Bouton cliqué dans Unity:", event.detail);
-
-			// Créer un événement de validation pour le guide
-			const buttonName =
-				typeof event.detail === "string"
-					? event.detail
-					: event.detail.name || event.detail.buttonName;
-
-			if (buttonName) {
-				const validationEvent = new CustomEvent(
-					"GuideValidationEvent",
-					{
-						detail: {
-							name: buttonName,
-							buttonName: buttonName,
-							eventName: buttonName,
-						},
+			const handleGuideEvent = (guideData) => {
+				console.log("Guide event received:", guideData);
+				try {
+					const guide = JSON.parse(guideData);
+					if (window.onUnityGuideRequest) {
+						window.onUnityGuideRequest(guide);
 					}
-				);
-
-				// Dispatcher l'événement
-				window.dispatchEvent(validationEvent);
-				console.log(
-					`Événement de validation dispatché pour: ${buttonName}`
-				);
-			}
-		}, []);
-
-		// Ajouter les écouteurs d'événements lorsque Unity est chargé
-		useEffect(() => {
-			if (isLoaded) {
-				addEventListener(
-					"GameObjectSelected",
-					handleGameObjectSelected
-				);
-				addEventListener(
-					"QuestionnaireRequest",
-					handleQuestionnaireRequest
-				);
-				addEventListener("ButtonClicked", handleUnityButtonClick);
-			}
-
-			return () => {
-				if (isLoaded) {
-					removeEventListener(
-						"GameObjectSelected",
-						handleGameObjectSelected
-					);
-					removeEventListener(
-						"QuestionnaireRequest",
-						handleQuestionnaireRequest
-					);
-					removeEventListener(
-						"ButtonClicked",
-						handleUnityButtonClick
+				} catch (error) {
+					console.error(
+						"Erreur lors du parsing des données du guide:",
+						error
 					);
 				}
 			};
-		}, [
-			isLoaded,
-			addEventListener,
-			removeEventListener,
-			handleGameObjectSelected,
-			handleQuestionnaireRequest,
-			handleUnityButtonClick,
-		]);
 
-		// Détection de timeout de chargement
+			const handleInformationEvent = (informationData) => {
+				console.log("Information event received:", informationData);
+				try {
+					const information = JSON.parse(informationData);
+					if (window.onUnityInformationRequest) {
+						window.onUnityInformationRequest(information);
+					}
+				} catch (error) {
+					console.error(
+						"Erreur lors du parsing des données de l'information:",
+						error
+					);
+				}
+			};
+
+			const handleSceneLoaded = () => {
+				console.log("Unity scene loaded successfully");
+				setManualLoadingProgress(100);
+				if (onLoadingProgress) {
+					onLoadingProgress(100);
+				}
+			};
+
+			const handleUnityError = (errorMessage) => {
+				console.error("Unity error:", errorMessage);
+				setBuildError(`Erreur Unity: ${errorMessage}`);
+			};
+
+			addEventListener("OnQuestionnaireRequest", handleQuestionnaireEvent);
+			addEventListener("OnGuideRequest", handleGuideEvent);
+			addEventListener("OnInformationRequest", handleInformationEvent);
+			addEventListener("OnSceneLoaded", handleSceneLoaded);
+			addEventListener("OnUnityError", handleUnityError);
+
+			return () => {
+				removeEventListener(
+					"OnQuestionnaireRequest",
+					handleQuestionnaireEvent
+				);
+				removeEventListener("OnGuideRequest", handleGuideEvent);
+				removeEventListener(
+					"OnInformationRequest",
+					handleInformationEvent
+				);
+				removeEventListener("OnSceneLoaded", handleSceneLoaded);
+				removeEventListener("OnUnityError", handleUnityError);
+			};
+		}, [addEventListener, removeEventListener, onLoadingProgress]);
+
+		// Timeout de chargement
 		useEffect(() => {
-			if (!isLoaded && !loadingTimeout && buildStatus === "ready") {
-				const timer = setTimeout(() => {
+			const timer = setTimeout(() => {
+				if (!isLoaded && buildStatus === "ready") {
 					setLoadingTimeout(true);
-				}, 180000); // 3 minutes timeout
+					setBuildError(
+						"Le chargement prend plus de temps que prévu. Veuillez vérifier votre connexion."
+					);
+				}
+			}, 180000); // 3 minutes
 
-				return () => clearTimeout(timer);
+			return () => clearTimeout(timer);
+		}, [isLoaded, buildStatus]);
+
+		// Réessayer le chargement
+		const handleRetry = () => {
+			window.location.reload();
+		};
+
+		// Gestion du plein écran
+		const handleFullscreen = useCallback(() => {
+			if (requestFullscreen) {
+				requestFullscreen(true);
 			}
-		}, [isLoaded, loadingTimeout, buildStatus]);
+		}, [requestFullscreen]);
 
-		// Notifier le parent quand Unity est complètement chargé
-		useEffect(() => {
-			if (isLoaded && onLoadingProgress) {
-				onLoadingProgress(100);
-			}
-		}, [isLoaded, onLoadingProgress]);
-
-		// En cas d'erreur, afficher un message d'erreur
-		if (buildStatus === "error" || buildError) {
+		// Afficher les erreurs
+		if (buildError || buildStatus === "error") {
 			return (
-				<div className="overflow-hidden">
-					<div className="aspect-video w-full relative bg-gray-100 dark:bg-gray-800 rounded-lg flex flex-col items-center justify-center p-6">
-						<div className="text-center">
-							<div className="text-red-500 text-xl mb-4">
-								Erreur de chargement
-							</div>
-							<p className="text-gray-600 dark:text-gray-300 mb-4">
-								{buildError ||
-									"Une erreur s'est produite lors du chargement de l'environnement 3D."}
-							</p>
-							<Button onClick={() => window.location.reload()}>
-								Réessayer
-							</Button>
+				<div className="aspect-video w-full relative bg-gray-100 dark:bg-gray-800 rounded-lg flex flex-col items-center justify-center p-6">
+					<div className="text-center">
+						<div className="text-red-500 text-xl mb-4">
+							Erreur de chargement
 						</div>
+						<p className="text-gray-600 dark:text-gray-300 mb-4">
+							{buildError ||
+								"Une erreur est survenue lors du chargement de l'environnement 3D."}
+						</p>
+						<Button onClick={handleRetry}>Réessayer</Button>
 					</div>
 				</div>
 			);
 		}
 
+		// Affichage principal
 		return (
-			<div className="overflow-hidden">
-				<div className="aspect-video w-full relative bg-gray-900 rounded-lg">
-					{/* État de chargement */}
-					{!isLoaded && (
-						<div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-100 dark:bg-gray-800 rounded-lg">
-							{loadingTimeout ? (
-								<div className="text-center p-4">
-									<p className="text-red-500 mb-4">
-										Le module de formation prend trop de
-										temps à charger.
-									</p>
-									<Button
-										onClick={() => window.location.reload()}
-									>
-										Réessayer
-									</Button>
-									<p className="mt-4 text-sm text-gray-500">
-										Vous pouvez également retourner à la
-										liste des cours et sélectionner ce cours
-										à nouveau.
-									</p>
-								</div>
-							) : (
-								<>
-									<div className="mb-4">
-										{buildStatus === "checking"
-											? "Préparation des fichiers de formation..."
-											: "Chargement de l'environnement de formation..."}
-									</div>
-									<div className="w-64 bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
-										<div
-											className="bg-wisetwin-blue h-2.5 rounded-full transition-all duration-500"
-											style={{
-												width: `${Math.round(
-													manualLoadingProgress
-												)}%`,
-											}}
-										></div>
-									</div>
-									<div className="mt-2 text-sm text-gray-500">
-										{Math.round(manualLoadingProgress)}%
-									</div>
-								</>
-							)}
+			<div className="relative">
+				{/* Barre de progression pendant le chargement */}
+				{!isLoaded && (
+					<div className="absolute top-0 left-0 right-0 z-10 bg-white dark:bg-gray-800 p-4 rounded-t-lg">
+						<div className="flex items-center justify-between mb-2">
+							<span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+								Chargement de l'environnement 3D...
+							</span>
+							<span className="text-sm text-gray-500">
+								{Math.round(manualLoadingProgress)}%
+							</span>
 						</div>
-					)}
+						<div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+							<div
+								className="bg-blue-600 h-2 rounded-full transition-all duration-300 ease-out"
+								style={{ width: `${manualLoadingProgress}%` }}
+							/>
+						</div>
+						{loadingTimeout && (
+							<p className="text-xs text-orange-500 mt-2">
+								Le chargement est plus long que prévu...
+							</p>
+						)}
+					</div>
+				)}
 
-					{/* Le rendu du composant Unity */}
+				{/* Conteneur Unity avec overlay de chargement */}
+				<div
+					className={`aspect-video w-full relative rounded-lg overflow-hidden ${
+						!isLoaded ? "opacity-50" : ""
+					}`}
+				>
 					<Unity
 						unityProvider={unityProvider}
-						style={{ width: "100%", height: "100%" }}
-						className={isLoaded ? "block" : "hidden"}
+						style={{
+							width: "100%",
+							height: "100%",
+							visibility: isLoaded ? "visible" : "visible",
+						}}
+						tabIndex={1}
 					/>
+
+					{/* Overlay de chargement */}
+					{!isLoaded && (
+						<div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-20">
+							<div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-lg">
+								<div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 dark:border-white mx-auto"></div>
+								<p className="mt-4 text-sm text-gray-600 dark:text-gray-300">
+									Initialisation en cours...
+								</p>
+							</div>
+						</div>
+					)}
 				</div>
+
+				{/* Bouton plein écran (visible uniquement quand chargé) */}
+				{isLoaded && (
+					<Button
+						variant="outline"
+						size="sm"
+						className="absolute bottom-4 right-4"
+						onClick={handleFullscreen}
+					>
+						Plein écran
+					</Button>
+				)}
 			</div>
 		);
 	}

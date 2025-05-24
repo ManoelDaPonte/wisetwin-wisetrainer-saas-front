@@ -1,5 +1,5 @@
-//components/wisetrainer/course/CourseTrainingTab.jsx
-import React from "react";
+//components/wisetrainer/course/CourseTrainingTab-new.jsx
+import React, { forwardRef } from "react";
 import {
 	Card,
 	CardContent,
@@ -12,26 +12,28 @@ import { Info, RotateCcw } from "lucide-react";
 import UnityBuild from "@/components/wisetrainer/UnityBuild";
 import Spinner from "@/components/common/Spinner";
 
-export default function CourseTrainingTab({
-	unityBuildRef,
-	courseId,
+const CourseTrainingTab = forwardRef(({
+	course,
+	selectedModule,
 	containerName,
-	onQuestionnaireRequest,
-	onInformationRequest,
 	filesDownloaded,
 	isDownloading,
-	onUnityProgress
-}) {
+	downloadTrainingFiles,
+	updateProgress,
+	activeContext,
+	organization
+}, ref) => {
 	const handleResetCamera = () => {
 		console.log("Tentative de réinitialisation de la caméra...");
-		if (unityBuildRef.current && unityBuildRef.current.isReady) {
-			unityBuildRef.current.resetCamera();
+		if (ref?.current && ref.current.isReady) {
+			ref.current.resetCamera();
 		} else {
 			console.warn(
 				"Unity build n'est pas prêt ou la référence n'est pas disponible"
 			);
 		}
 	};
+
 	return (
 		<>
 			<Card className="mb-8">
@@ -65,18 +67,19 @@ export default function CourseTrainingTab({
 								<p className="text-gray-600 dark:text-gray-300 mb-4">
 									Les fichiers de formation doivent être téléchargés avant de pouvoir accéder à l'environnement 3D.
 								</p>
-								<p className="text-sm text-gray-500">
-									Veuillez réessayer ou contacter l'assistance si le problème persiste.
-								</p>
+								<Button onClick={downloadTrainingFiles}>
+									Télécharger les fichiers
+								</Button>
 							</div>
 						</div>
 					) : (
 						<UnityBuild
-							ref={unityBuildRef}
-							courseId={courseId}
+							ref={ref}
+							courseId={course.id}
 							containerName={containerName}
-							onQuestionnaireRequest={onQuestionnaireRequest}
-							onLoadingProgress={onUnityProgress}
+							activeContext={activeContext}
+							organization={organization}
+							onLoadingProgress={updateProgress}
 						/>
 					)}
 				</CardContent>
@@ -92,45 +95,35 @@ export default function CourseTrainingTab({
 			</Card>
 		</>
 	);
-}
+});
+
+CourseTrainingTab.displayName = 'CourseTrainingTab';
 
 function TrainingInstructions() {
 	return (
 		<>
 			<ul className="list-disc pl-5 space-y-2 text-gray-700 dark:text-gray-300">
-				<li>
-					Maintenez le <strong>clic droit</strong> et déplacez la
-					souris pour regarder autour de vous
-				</li>
-				<li>
-					Utilisez le <strong>clic gauche</strong> sur un travailleur
-					pour interagir et lancer un questionnaire
-				</li>
-				<li>
-					Cliquez sur le <strong>contrôleur</strong> pour démarrer un
-					guide interactif de la séquence d'utilisation
-				</li>
-				<li>
-					Utilisez le bouton <strong>Réinitialiser la caméra</strong>{" "}
-					pour revenir à la position de départ
-				</li>
+				<li>Utilisez les touches ZQSD ou WASD pour vous déplacer</li>
+				<li>Maintenez Shift pour courir</li>
+				<li>Utilisez la souris pour regarder autour de vous</li>
+				<li>Appuyez sur E pour interagir avec les objets</li>
+				<li>Appuyez sur Échap pour afficher le menu</li>
 			</ul>
-
-			<div className="bg-blue-50 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 p-4 rounded-lg mt-6 flex items-start">
-				<Info className="w-5 h-5 mr-3 mt-0.5 flex-shrink-0" />
-				<div>
-					<p className="font-semibold mb-1">
-						Objectifs de la formation :
-					</p>
-					<p className="text-sm">
-						Explorez l'environnement et interagissez avec les objets
-						pour découvrir les différents scénarios de formation.
-						Des questionnaires et guides interactifs apparaîtront
-						pour tester vos connaissances et vous guider. Complétez
-						tous les modules pour terminer la formation.
-					</p>
+			<div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+				<div className="flex items-start gap-2">
+					<Info className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5" />
+					<div className="text-sm text-blue-700 dark:text-blue-300">
+						<p className="font-medium mb-1">Conseils :</p>
+						<ul className="list-disc pl-5 space-y-1">
+							<li>Explorez l'environnement pour découvrir tous les éléments interactifs</li>
+							<li>Complétez les questionnaires pour valider vos acquis</li>
+							<li>Si vous êtes bloqué, utilisez le bouton de réinitialisation de la caméra</li>
+						</ul>
+					</div>
 				</div>
 			</div>
 		</>
 	);
 }
+
+export default CourseTrainingTab;

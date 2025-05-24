@@ -3,12 +3,12 @@
 import React from "react";
 import { motion } from "framer-motion";
 import WiseTrainerCourses from "@/components/wisetrainer/WiseTrainerCourses";
-import { useAzureContainer } from "@/lib/hooks/useAzureContainer";
+import { useUser } from "@/newlib/hooks/useUser";
 import { GraduationCap } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function WiseTrainerPage() {
-	const { isLoading } = useAzureContainer();
+	const { isLoading } = useUser();
 
 	const containerVariants = {
 		hidden: { opacity: 0 },

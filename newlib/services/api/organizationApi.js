@@ -378,7 +378,7 @@ export const organizationApi = {
     try {
       const response = await axios.get(`/api/organization/${organizationId}/builds`);
       if (response.data.success) {
-        return response.data.builds || [];
+        return response.data.courses || response.data.builds || [];
       }
       throw new Error(response.data.error || "Échec de récupération des builds");
     } catch (error) {
@@ -414,7 +414,7 @@ export const organizationApi = {
     try {
       const response = await axios.get(`/api/organization/${organizationId}/wisetrainer-builds`);
       if (response.data.success) {
-        return response.data.builds || [];
+        return response.data.courses || response.data.builds || [];
       }
       throw new Error(response.data.error || "Échec de récupération des builds WiseTrainer");
     } catch (error) {

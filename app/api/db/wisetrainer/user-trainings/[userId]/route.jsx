@@ -19,6 +19,10 @@ export async function GET(request, { params }) {
 
 		const resolvedParams = await params;
 		const { userId } = resolvedParams;
+		
+		// Récupérer le sourceContainer depuis les query params
+		const { searchParams } = new URL(request.url);
+		const sourceContainer = searchParams.get('sourceContainer');
 
 		if (!userId) {
 			return NextResponse.json(
@@ -27,12 +31,25 @@ export async function GET(request, { params }) {
 			);
 		}
 
-		// Récupérer l'utilisateur depuis la base de données
-		const user = await prisma.user.findFirst({
-			where: {
-				azureContainer: userId,
-			},
-		});
+		// Déterminer si c'est un UUID ou un container name
+		const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+		let user;
+
+		if (uuidRegex.test(userId)) {
+			// C'est un UUID, chercher par ID
+			user = await prisma.user.findUnique({
+				where: {
+					id: userId,
+				},
+			});
+		} else {
+			// C'est un container name (compatibilité)
+			user = await prisma.user.findFirst({
+				where: {
+					azureContainer: userId,
+				},
+			});
+		}
 
 		if (!user) {
 			return NextResponse.json(
@@ -160,34 +177,44 @@ export async function GET(request, { params }) {
 					completedModules: completedModules.length,
 					totalModules: modules.length,
 					source,
-					// URL pour accéder à la formation (basée sur la source)
-					trainingUrl:
-						source.type === "organization"
-							? `/wisetrainer/${source.organizationId}/${userCourse.course.courseId}`
-							: `/wisetrainer/${userCourse.course.courseId}`,
+					// URL pour accéder à la formation
+					trainingUrl: `/wisetrainer/${userCourse.course.courseId}`,
 				};
 			})
 		);
 
+		// Filtrer par sourceContainer si fourni
+		let filteredTrainings = trainings;
+		if (sourceContainer) {
+			filteredTrainings = trainings.filter(t => {
+				// Pour les formations personnelles, vérifier si le container correspond
+				if (t.source.type !== 'organization' && sourceContainer === user.azureContainer) {
+					return true;
+				}
+				// Pour les formations d'organisation, vérifier le container
+				return t.source.containerName === sourceContainer;
+			});
+		}
+
 		// Catégoriser les formations par statut pour faciliter l'utilisation côté client
 		const categorizedTrainings = {
-			inProgress: trainings.filter(t => t.status === 'in_progress'),
-			completed: trainings.filter(t => t.status === 'completed'),
-			failed: trainings.filter(t => t.status === 'failed'),
-			all: trainings
+			inProgress: filteredTrainings.filter(t => t.status === 'in_progress'),
+			completed: filteredTrainings.filter(t => t.status === 'completed'),
+			failed: filteredTrainings.filter(t => t.status === 'failed'),
+			all: filteredTrainings
 		};
 
 		// Statistiques globales
 		const stats = {
-			total: trainings.length,
+			total: filteredTrainings.length,
 			inProgress: categorizedTrainings.inProgress.length,
 			completed: categorizedTrainings.completed.length,
 			failed: categorizedTrainings.failed.length,
-			averageProgress: trainings.length > 0 
-				? Math.round(trainings.reduce((sum, t) => sum + t.progress, 0) / trainings.length)
+			averageProgress: filteredTrainings.length > 0 
+				? Math.round(filteredTrainings.reduce((sum, t) => sum + t.progress, 0) / filteredTrainings.length)
 				: 0,
-			averageScore: trainings.filter(t => t.score > 0).length > 0
-				? Math.round(trainings.filter(t => t.score > 0).reduce((sum, t) => sum + t.score, 0) / trainings.filter(t => t.score > 0).length)
+			averageScore: filteredTrainings.filter(t => t.score > 0).length > 0
+				? Math.round(filteredTrainings.filter(t => t.score > 0).reduce((sum, t) => sum + t.score, 0) / filteredTrainings.filter(t => t.score > 0).length)
 				: 0
 		};
 
