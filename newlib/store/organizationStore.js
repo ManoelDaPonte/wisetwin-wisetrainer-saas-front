@@ -138,6 +138,28 @@ export const useOrganizationStore = create((set, get) => ({
     const orgId = organizationId || get().currentOrganizationId;
     if (!orgId) return null;
     
+    // Vérifier d'abord si l'utilisateur est membre de l'organisation
+    try {
+      const membershipCheck = await organizationApi.checkMembership(orgId);
+      if (!membershipCheck.isMember) {
+        set({ 
+          organizationError: "Vous n'êtes pas membre de cette organisation",
+          organizationLoading: false,
+          currentOrganization: null,
+          currentOrganizationId: null
+        });
+        
+        // Retirer l'organisation de la liste si elle existe
+        const orgs = get().organizations.filter(org => org.id !== orgId);
+        set({ organizations: orgs });
+        
+        return null;
+      }
+    } catch (error) {
+      console.error("Erreur lors de la vérification du membership:", error);
+      // Continuer même si la vérification échoue (pour compatibilité)
+    }
+    
     // Vérifier le cache
     const cacheKey = `organization_${orgId}`;
     if (!force && cacheManager.has(cacheKey)) {

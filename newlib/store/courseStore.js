@@ -39,15 +39,18 @@ export const useCourseStore = create((set, get) => ({
   
   /**
    * Récupère toutes les formations de l'utilisateur
+   * @param {string} userId - ID de l'utilisateur
    * @param {string} containerName - Nom du container Azure
    * @param {boolean} force - Force le rechargement même si le cache est valide
    * @returns {Promise<Array>} - Liste des formations
    */
-  fetchUserCourses: async (containerName, force = false) => {
-    if (!containerName) return [];
+  fetchUserCourses: async (userId, containerName, force = false, contextOptions = {}) => {
+    if (!userId || !containerName) return [];
     
-    // Vérifier le cache
-    const cacheKey = `user_courses_${containerName}`;
+    // Inclure les options de contexte dans la clé de cache
+    const contextKey = contextOptions.contextType ? `_${contextOptions.contextType}` : '';
+    const cacheKey = `user_${userId}_courses_${containerName}${contextKey}`;
+    
     if (!force && cacheManager.has(cacheKey, COURSES_CACHE_DURATION)) {
       const cachedCourses = cacheManager.get(cacheKey);
       set({ 
@@ -60,8 +63,8 @@ export const useCourseStore = create((set, get) => ({
     set({ isLoading: true, error: null });
     
     try {
-      // Récupérer les formations de base
-      const courses = await courseApi.getUserCourses(containerName);
+      // Récupérer les formations de base avec les options de contexte
+      const courses = await courseApi.getUserCourses(containerName, contextOptions);
       
       // Enrichir chaque formation avec ses détails
       const enrichedCourses = await Promise.all(
@@ -117,13 +120,14 @@ export const useCourseStore = create((set, get) => ({
    * @param {boolean} options.force - Force le rechargement même si le cache est valide
    * @returns {Promise<Object>} - Détails du cours
    */
-  fetchCourseDetails: async (courseId, { organizationId = null, force = false } = {}) => {
+  fetchCourseDetails: async (courseId, { organizationId = null, userId = null, force = false } = {}) => {
     if (!courseId) return null;
     
-    // Créer une clé de cache qui prend en compte l'organisation
+    // Créer une clé de cache qui prend en compte l'organisation et l'utilisateur
+    const userPrefix = userId ? `user_${userId}_` : '';
     const cacheKey = organizationId 
-      ? `course_details_${organizationId}_${courseId}`
-      : `course_details_${courseId}`;
+      ? `${userPrefix}course_details_${organizationId}_${courseId}`
+      : `${userPrefix}course_details_${courseId}`;
     
     // Vérifier le cache
     if (!force && cacheManager.has(cacheKey)) {
@@ -171,9 +175,9 @@ export const useCourseStore = create((set, get) => ({
     try {
       const result = await courseApi.enrollCourse(data);
       
-      // Invalider le cache des formations utilisateur
-      if (result.success) {
-        cacheManager.invalidateByPrefix('user_courses_');
+      // Invalider le cache des formations utilisateur avec userId
+      if (result.success && data.userId) {
+        cacheManager.invalidateByPrefix(`user_${data.userId}_courses_`);
       }
       
       return result;
@@ -193,9 +197,9 @@ export const useCourseStore = create((set, get) => ({
     try {
       const result = await courseApi.unenrollCourse(userId, courseId);
       
-      // Invalider le cache des formations utilisateur
+      // Invalider le cache des formations utilisateur avec userId
       if (result.success) {
-        cacheManager.invalidateByPrefix('user_courses_');
+        cacheManager.invalidateByPrefix(`user_${userId}_courses_`);
         
         // Mettre à jour la liste des formations si elle existe déjà
         if (get().userCourses.length > 0) {

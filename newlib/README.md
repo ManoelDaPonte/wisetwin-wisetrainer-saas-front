@@ -1,12 +1,14 @@
-# Nouvelle Architecture pour WiseTwin/WiseTrainer
+# newlib - Architecture moderne avec Zustand et hooks contextuels
 
 Cette documentation présente la nouvelle architecture centralisée pour les hooks, les services et la gestion d'état de l'application WiseTwin/WiseTrainer.
 
 ## Objectifs
 
+- **Principe fondamental : "Le contexte détermine les données"**
+- Adapter automatiquement les données au mode actif (Personnel/Organisation)
 - Centraliser la gestion des données et réduire les requêtes redondantes
-- Mettre en place un système de cache cohérent et efficace
-- Partager facilement les données entre les composants
+- Mettre en place un système de cache cohérent et sécurisé (isolé par utilisateur)
+- Simplifier le code des composants en déplaçant la logique dans les hooks
 - Faciliter la maintenance et l'extension de l'application
 
 ## Structure des dossiers
@@ -24,26 +26,69 @@ newlib/
   │   └── cache.js       # Système de cache unifié
   │
   ├── store/             # Gestion d'état centralisée (Zustand)
+  │   ├── contextStore.js        # Store pour le contexte actif (Personnel/Organisation)
   │   ├── userStore.js           # Store pour les utilisateurs
   │   ├── organizationStore.js   # Store pour les organisations
   │   └── courseStore.js         # Store pour les cours et formations
   │
   ├── hooks/             # Hooks composables réutilisables
-  │   ├── useUser.js               # Hook pour l'utilisateur
-  │   ├── useUserStats.js          # Hook pour les statistiques
-  │   ├── useAuth.js               # Hook pour l'authentification
-  │   ├── useOrganization.js       # Hook pour les organisations
-  │   ├── useOrganizationMembers.js # Hook pour les membres
-  │   ├── useOrganizationTags.js   # Hook pour les tags
-  │   ├── useOrganizationBuilds.js # Hook pour les builds/formations
-  │   ├── useCourses.js            # Hook pour les formations utilisateur
-  │   ├── useCourse.js             # Hook pour un cours spécifique
-  │   ├── useScenario.js           # Hook pour un scénario de cours
-  │   └── useGuideData.js          # Hook pour la page guide
+  │   ├── core/                    # Hooks fondamentaux
+  │   │   ├── useContext.js        # Hook d'initialisation du contexte
+  │   │   ├── useActiveContext.js  # Hook principal pour le contexte actif
+  │   │   ├── useUser.js           # Hook pour l'utilisateur
+  │   │   └── useAuth.js           # Hook pour l'authentification
+  │   │
+  │   ├── context/                 # Hooks contextuels (nouveau système)
+  │   │   ├── useContextCourses.js # Formations adaptées au contexte
+  │   │   ├── useContextStats.js   # Statistiques contextuelles
+  │   │   ├── useContextMembers.js # Membres selon le contexte
+  │   │   └── usePermissions.js    # Gestion des permissions
+  │   │
+  │   └── domain/                  # Hooks métier
+  │       ├── useOrganization.js       # Hook pour les organisations
+  │       ├── useOrganizationMembers.js # Hook pour les membres
+  │       ├── useOrganizationTags.js   # Hook pour les tags
+  │       ├── useOrganizationBuilds.js # Hook pour les builds/formations
+  │       ├── useCourses.js            # Hook pour les formations utilisateur
+  │       ├── useCourse.js             # Hook pour un cours spécifique
+  │       ├── useScenario.js           # Hook pour un scénario de cours
+  │       └── useGuideData.js          # Hook pour la page guide
   │
   └── components/        # Composants utilitaires pour l'architecture
       └── ZustandInitializer.jsx   # Initialisation des stores Zustand
 ```
+
+## 🎯 Quick Start - Hooks contextuels
+
+La nouvelle architecture introduit des **hooks contextuels** qui s'adaptent automatiquement au mode actif (Personnel ou Organisation) :
+
+```javascript
+import { useActiveContext, useContextCourses } from '@/newlib/hooks';
+
+function MyComponent() {
+  // Le contexte détermine automatiquement les données
+  const { isPersonalMode, activeContext } = useActiveContext();
+  const { courses, enrollCourse } = useContextCourses();
+  
+  // Les formations sont automatiquement filtrées selon le contexte
+  // Personnel : formations personnelles
+  // Organisation : formations de l'organisation + filtrage par tags
+  
+  return (
+    <div>
+      <h1>Mode : {activeContext.name}</h1>
+      <CourseList courses={courses} />
+    </div>
+  );
+}
+```
+
+**Avantages :**
+- ✅ Plus besoin de gérer manuellement le contexte
+- ✅ Données automatiquement filtrées
+- ✅ Cache isolé par utilisateur
+- ✅ Permissions intégrées
+- ✅ Code simplifié dans les composants
 
 ## Couches de l'architecture
 
@@ -167,6 +212,71 @@ export default function RootLayout({ children }) {
 ```
 
 ## Hooks disponibles
+
+### 🆕 Hooks contextuels (Nouveau système recommandé)
+
+Ces hooks s'adaptent automatiquement au contexte actif (Personnel/Organisation) :
+
+#### useActiveContext
+Le hook principal pour gérer le contexte actif :
+```javascript
+const {
+  activeContext,          // { type, name, id }
+  isPersonalMode,        // boolean
+  isOrganizationMode,    // boolean
+  user,                  // Utilisateur connecté
+  currentOrganization,   // Organisation active
+  switchToPersonal,      // Basculer en personnel
+  switchToOrganization   // Basculer vers une org
+} = useActiveContext();
+```
+
+#### useContextCourses
+Formations qui s'adaptent au contexte :
+```javascript
+const {
+  courses,         // Formations filtrées selon contexte
+  stats,           // Statistiques
+  enrollCourse,    // S'inscrire (gère le contexte)
+  refreshCourses   // Rafraîchir
+} = useContextCourses();
+```
+
+#### useContextStats
+Statistiques contextuelles :
+```javascript
+const {
+  stats,           // Stats adaptées au contexte
+  insights,        // Insights personnalisés
+  refreshStats     // Rafraîchir
+} = useContextStats();
+```
+
+#### useContextMembers
+Membres selon le contexte :
+```javascript
+const {
+  members,         // Personnel: [user], Org: membres
+  inviteMember,    // null si mode personnel
+  searchMembers,   // Recherche
+  stats           // Statistiques membres
+} = useContextMembers();
+```
+
+#### usePermissions
+Gestion centralisée des permissions :
+```javascript
+const {
+  can,             // Vérifier une permission
+  userRole,        // OWNER, ADMIN, MEMBER
+  withPermission   // Wrapper pour actions
+} = usePermissions();
+
+// Utilisation
+if (can('canInviteMembers')) {
+  // Action autorisée
+}
+```
 
 ### Utilisateur
 
@@ -454,3 +564,15 @@ Lors de l'utilisation des hooks Zustand, il est important de suivre ces bonnes p
 
 2. Utiliser useRef pour suivre les états précédents sans provoquer de re-rendus
 3. Limiter les dépendances dans les useEffect qui modifient l'état
+
+## 📚 Documentation complète
+
+Pour une documentation détaillée incluant :
+- Architecture complète et flux de données
+- Guide d'utilisation approfondi des hooks contextuels
+- Patterns et bonnes pratiques
+- Guide de migration depuis l'ancienne architecture
+- Exemples de code avancés
+- Dépannage et résolution de problèmes
+
+**Consultez [CLAUDE.md](./CLAUDE.md)**

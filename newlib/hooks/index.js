@@ -20,4 +20,10 @@ export { useScenario } from './useScenario';
 // Hook guide
 export { useGuideData } from './useGuideData';
 
-// Les autres hooks seront exportés ici au fur et à mesure de leur création
+// Hooks contextuels (nouveau système)
+export { useContext } from './useContext';
+export { useActiveContext } from './useActiveContext';
+export { useContextCourses } from './useContextCourses';
+export { useContextStats } from './useContextStats';
+export { useContextMembers } from './useContextMembers';
+export { usePermissions } from './usePermissions';

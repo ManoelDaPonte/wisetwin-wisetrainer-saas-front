@@ -54,39 +54,52 @@ export function useCourses({
     return pathname && immediateLoadPages.some(page => pathname.startsWith(page));
   }, [pathname]);
   
-  // Charger les données si nécessaire
+  // Charger les données si nécessaire avec le contexte personnel par défaut
   useEffect(() => {
-    if (autoLoad && effectiveContainer && shouldLoadImmediately()) {
-      fetchUserCourses(effectiveContainer);
+    if (autoLoad && effectiveContainer && user?.id && shouldLoadImmediately()) {
+      // En mode personnel par défaut pour le hook useCourses legacy
+      const contextOptions = {
+        contextType: 'personal',
+        sourceContainer: effectiveContainer
+      };
+      fetchUserCourses(user.id, effectiveContainer, false, contextOptions);
     }
-  }, [autoLoad, effectiveContainer, shouldLoadImmediately, fetchUserCourses]);
+  }, [autoLoad, effectiveContainer, user?.id, shouldLoadImmediately, fetchUserCourses]);
   
   /**
    * Garantit que les données sont chargées avant utilisation
    * @returns {Promise<Array>} Formations de l'utilisateur
    */
   const ensureCourses = useCallback(async () => {
-    if (!effectiveContainer) return [];
+    if (!effectiveContainer || !user?.id) return [];
     
     // Si on a déjà les données et qu'elles sont récentes, les retourner
     if (userCourses.length > 0 && lastFetched) {
       return userCourses;
     }
     
-    // Sinon, charger les données
-    return await fetchUserCourses(effectiveContainer);
-  }, [effectiveContainer, userCourses, lastFetched, fetchUserCourses]);
+    // Sinon, charger les données avec contexte personnel
+    const contextOptions = {
+      contextType: 'personal',
+      sourceContainer: effectiveContainer
+    };
+    return await fetchUserCourses(user.id, effectiveContainer, false, contextOptions);
+  }, [effectiveContainer, user?.id, userCourses, lastFetched, fetchUserCourses]);
   
   /**
    * Rafraîchit les données des formations
    * @returns {Promise<Array>} Formations mises à jour
    */
   const refreshCourses = useCallback(() => {
-    if (effectiveContainer) {
-      return fetchUserCourses(effectiveContainer, true);
+    if (effectiveContainer && user?.id) {
+      const contextOptions = {
+        contextType: 'personal',
+        sourceContainer: effectiveContainer
+      };
+      return fetchUserCourses(user.id, effectiveContainer, true, contextOptions);
     }
     return [];
-  }, [effectiveContainer, fetchUserCourses]);
+  }, [effectiveContainer, user?.id, fetchUserCourses]);
   
   return {
     // Données

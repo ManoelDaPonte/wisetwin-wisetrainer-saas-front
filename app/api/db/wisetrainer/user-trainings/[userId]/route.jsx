@@ -20,9 +20,10 @@ export async function GET(request, { params }) {
 		const resolvedParams = await params;
 		const { userId } = resolvedParams;
 		
-		// Récupérer le sourceContainer depuis les query params
+		// Récupérer les paramètres de contexte depuis les query params
 		const { searchParams } = new URL(request.url);
 		const sourceContainer = searchParams.get('sourceContainer');
+		const contextType = searchParams.get('contextType');
 
 		if (!userId) {
 			return NextResponse.json(
@@ -183,9 +184,23 @@ export async function GET(request, { params }) {
 			})
 		);
 
-		// Filtrer par sourceContainer si fourni
+		// Filtrer selon le contexte
 		let filteredTrainings = trainings;
-		if (sourceContainer) {
+		
+		if (contextType === 'personal') {
+			// Mode personnel : seulement les formations inscrites à titre personnel
+			// (pas d'organisationId dans la source)
+			filteredTrainings = trainings.filter(t => 
+				t.source.type !== 'organization'
+			);
+		} else if (contextType === 'organization' && sourceContainer) {
+			// Mode organisation : seulement les formations de cette organisation
+			filteredTrainings = trainings.filter(t => 
+				t.source.type === 'organization' && 
+				t.source.containerName === sourceContainer
+			);
+		} else if (sourceContainer) {
+			// Filtrage legacy par sourceContainer seulement
 			filteredTrainings = trainings.filter(t => {
 				// Pour les formations personnelles, vérifier si le container correspond
 				if (t.source.type !== 'organization' && sourceContainer === user.azureContainer) {

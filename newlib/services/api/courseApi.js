@@ -9,17 +9,33 @@ export const courseApi = {
   /**
    * Récupère toutes les formations de l'utilisateur
    * @param {string} containerName - Nom du container Azure de l'utilisateur
+   * @param {Object} options - Options de filtrage
+   * @param {string} options.contextType - Type de contexte ('personal' ou 'organization')
+   * @param {string} options.sourceContainer - Container source pour filtrage
    * @returns {Promise<Array>} Liste des formations
    */
-  getUserCourses: async (containerName) => {
+  getUserCourses: async (containerName, options = {}) => {
     if (!containerName) {
       return [];
     }
     
     try {
-      const response = await axios.get(
-        `${WISETRAINER_CONFIG.API_ROUTES.USER_TRAININGS}/${containerName}`
-      );
+      let url = `${WISETRAINER_CONFIG.API_ROUTES.USER_TRAININGS}/${containerName}`;
+      
+      // Ajouter les paramètres de contexte si fournis
+      const params = new URLSearchParams();
+      if (options.contextType) {
+        params.append('contextType', options.contextType);
+      }
+      if (options.sourceContainer) {
+        params.append('sourceContainer', options.sourceContainer);
+      }
+      
+      if (params.toString()) {
+        url += `?${params.toString()}`;
+      }
+      
+      const response = await axios.get(url);
       
       if (response.data.trainings) {
         return response.data.trainings || [];

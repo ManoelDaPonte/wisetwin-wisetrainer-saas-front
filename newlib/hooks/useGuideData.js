@@ -88,7 +88,18 @@ export function useGuideData({ autoLoad = true } = {}) {
     setTrainingsError(null);
 
     try {
-      const response = await fetch(`/api/db/wisetrainer/user-trainings/${user.azureContainer}`);
+      // Construire l'URL avec le paramètre de contexte
+      let apiUrl = `/api/db/wisetrainer/user-trainings/${user.azureContainer}`;
+      
+      // En mode personnel, filtrer seulement les formations personnelles
+      if (activeContext?.type === 'personal') {
+        apiUrl += `?sourceContainer=${user.azureContainer}&contextType=personal`;
+      } else if (activeContext?.type === 'organization' && activeContext.azureContainer) {
+        // En mode organisation, filtrer les formations de cette organisation
+        apiUrl += `?sourceContainer=${activeContext.azureContainer}&contextType=organization`;
+      }
+      
+      const response = await fetch(apiUrl);
       const data = await response.json();
 
       if (data.success) {
@@ -105,7 +116,7 @@ export function useGuideData({ autoLoad = true } = {}) {
     } finally {
       setTrainingsLoading(false);
     }
-  }, [user?.azureContainer]);
+  }, [user?.azureContainer, activeContext?.type, activeContext?.azureContainer]);
   
   /**
    * Fonction pour charger les données de l'organisation sélectionnée
