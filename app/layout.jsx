@@ -5,7 +5,7 @@ import { ThemeProvider } from "@/lib/contexts/ThemeContext";
 import { Toaster } from "@/components/ui/toaster";
 
 // Nouvelle architecture avec Zustand
-import { ZustandInitializer } from "@/lib/components/ZustandInitializer";
+import { ZustandInitializer } from "@/components/ZustandInitializer";
 
 const inter = Inter({ subsets: ["latin"] });
 
