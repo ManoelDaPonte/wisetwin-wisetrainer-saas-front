@@ -5,8 +5,8 @@ import CourseDetail from "@/components/wisetrainer/CourseDetail";
 import Spinner from "@/components/common/Spinner";
 import { useToast } from "@/lib/hooks/useToast";
 import { Button } from "@/components/ui/button";
-import { useOrganization } from "@/newlib/hooks/useOrganization";
-import { useUser } from "@/newlib/hooks/useUser";
+import { useOrganization } from "@/lib/hooks/useOrganization";
+import { useUser } from "@/lib/hooks/useUser";
 
 export default function CourseDetailPage() {
 	const params = useParams();
@@ -18,30 +18,30 @@ export default function CourseDetailPage() {
 
 	// Récupérer le contexte actif depuis localStorage
 	const getActiveContext = () => {
-		if (typeof window !== 'undefined') {
-			const contextStr = localStorage.getItem('wisetwin-active-context');
+		if (typeof window !== "undefined") {
+			const contextStr = localStorage.getItem("wisetwin-active-context");
 			if (contextStr) {
 				try {
 					const context = JSON.parse(contextStr);
 					return context;
 				} catch (e) {
-					console.error('Erreur parsing contexte:', e);
+					console.error("Erreur parsing contexte:", e);
 					return null;
 				}
 			}
 		}
 		return null;
 	};
-	
+
 	const activeContext = getActiveContext();
 
 	// Utiliser les hooks appropriés selon le contexte
 	const { user } = useUser();
-	const { 
+	const {
 		currentOrganization,
 		verifyMembership,
-		isLoading: isLoadingOrg
-	} = useOrganization({ autoLoad: activeContext?.type === 'organization' });
+		isLoading: isLoadingOrg,
+	} = useOrganization({ autoLoad: activeContext?.type === "organization" });
 
 	useEffect(() => {
 		async function checkAccess() {
@@ -49,7 +49,7 @@ export default function CourseDetailPage() {
 				setIsCheckingAccess(true);
 
 				// Si on est en contexte personnel, autoriser directement
-				if (activeContext?.type !== 'organization') {
+				if (activeContext?.type !== "organization") {
 					setIsAuthorized(true);
 					return;
 				}
@@ -57,14 +57,17 @@ export default function CourseDetailPage() {
 				// Si on est en contexte organisation, vérifier l'appartenance
 				if (currentOrganization) {
 					const { isMember } = await verifyMembership();
-					
+
 					if (isMember) {
 						setIsAuthorized(true);
 					} else {
-						setLoadingError("Vous n'êtes pas autorisé à accéder à cette formation.");
+						setLoadingError(
+							"Vous n'êtes pas autorisé à accéder à cette formation."
+						);
 						toast({
 							title: "Accès refusé",
-							description: "Vous n'êtes pas membre de cette organisation.",
+							description:
+								"Vous n'êtes pas membre de cette organisation.",
 							variant: "destructive",
 						});
 						router.push("/wisetrainer");
@@ -97,15 +100,23 @@ export default function CourseDetailPage() {
 		if (!isLoadingOrg && user) {
 			checkAccess();
 		}
-	}, [activeContext, currentOrganization, router, toast, verifyMembership, isLoadingOrg, user]);
+	}, [
+		activeContext,
+		currentOrganization,
+		router,
+		toast,
+		verifyMembership,
+		isLoadingOrg,
+		user,
+	]);
 
 	// Si en cours de chargement, afficher le spinner
 	if (isLoadingOrg || isCheckingAccess || !user) {
 		return (
 			<div className="container mx-auto py-8 h-[70vh]">
-				<Spinner 
-					text="Vérification des droits d'accès..." 
-					size="md" 
+				<Spinner
+					text="Vérification des droits d'accès..."
+					size="md"
 					centered={true}
 				/>
 			</div>
@@ -140,10 +151,14 @@ export default function CourseDetailPage() {
 
 	// Passer le contexte et l'organisation (si applicable) au CourseDetail
 	return (
-		<CourseDetail 
-			params={params} 
+		<CourseDetail
+			params={params}
 			activeContext={activeContext}
-			organization={activeContext?.type === 'organization' ? currentOrganization : null}
+			organization={
+				activeContext?.type === "organization"
+					? currentOrganization
+					: null
+			}
 		/>
 	);
 }

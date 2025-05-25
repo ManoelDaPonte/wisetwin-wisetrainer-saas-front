@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import axios from "axios";
-import { useUser } from "@/newlib/hooks/useUser";
+import { useUser } from "@/lib/hooks/useUser";
 import CourseDetailHeader from "@/components/wisetrainer/course/CourseDetailHeader";
 import CourseDetailsTab from "@/components/wisetrainer/course/CourseDetailsTab";
 import CourseTrainingTab from "@/components/wisetrainer/course/CourseTrainingTab";
@@ -31,11 +31,12 @@ export default function CourseDetail({ params, activeContext, organization }) {
 	const [activeTab, setActiveTab] = useState("details");
 	const [selectedModule, setSelectedModule] = useState(null);
 	const { toast } = useToast();
-	
+
 	// Déterminer le container à utiliser selon le contexte
-	const containerName = activeContext?.type !== 'organization' 
-		? user?.azureContainer 
-		: organization?.azureContainer;
+	const containerName =
+		activeContext?.type !== "organization"
+			? user?.azureContainer
+			: organization?.azureContainer;
 
 	// Fonction pour fermer la modale d'information
 	const closeInformation = () => {
@@ -78,8 +79,10 @@ export default function CourseDetail({ params, activeContext, organization }) {
 		try {
 			if (!courseId || !containerName) return false;
 
-			console.log("Vérification de l'existence des fichiers de formation");
-			
+			console.log(
+				"Vérification de l'existence des fichiers de formation"
+			);
+
 			// Dans le nouveau système, on vérifie toujours dans le container source
 			// En mode organisation, les fichiers sont dans le container de l'organisation
 			// En mode personnel, pour l'instant on vérifie dans le container personnel
@@ -95,11 +98,18 @@ export default function CourseDetail({ params, activeContext, organization }) {
 			);
 
 			const filesExist = checkResponse.data.exists;
-			console.log(`Fichiers ${filesExist ? "trouvés" : "non trouvés"} dans le container`);
+			console.log(
+				`Fichiers ${
+					filesExist ? "trouvés" : "non trouvés"
+				} dans le container`
+			);
 			setFilesDownloaded(filesExist);
 			return filesExist;
 		} catch (error) {
-			console.error("Erreur lors de la vérification des fichiers:", error);
+			console.error(
+				"Erreur lors de la vérification des fichiers:",
+				error
+			);
 			return false;
 		}
 	};
@@ -122,7 +132,7 @@ export default function CourseDetail({ params, activeContext, organization }) {
 
 				// Déterminer l'URL selon le contexte
 				let detailsUrl;
-				if (activeContext?.type !== 'organization') {
+				if (activeContext?.type !== "organization") {
 					detailsUrl = `${WISETRAINER_CONFIG.API_ROUTES.COURSE_DETAILS}/${courseId}`;
 				} else {
 					detailsUrl = `${WISETRAINER_CONFIG.API_ROUTES.COURSE_DETAILS}/organization/${organization.id}/${courseId}`;
@@ -130,7 +140,9 @@ export default function CourseDetail({ params, activeContext, organization }) {
 
 				const [courseResponse, progressResponse] = await Promise.all([
 					axios.get(detailsUrl),
-					axios.get(`${WISETRAINER_CONFIG.API_ROUTES.USER_TRAININGS}/${user?.id}?sourceContainer=${containerName}`),
+					axios.get(
+						`${WISETRAINER_CONFIG.API_ROUTES.USER_TRAININGS}/${user?.id}?sourceContainer=${containerName}`
+					),
 				]);
 
 				setCourse(courseResponse.data);
@@ -141,7 +153,10 @@ export default function CourseDetail({ params, activeContext, organization }) {
 						(c) => c.courseId === courseId
 					);
 					setUserProgress(courseProgress || null);
-					console.log("Progression utilisateur trouvée:", courseProgress);
+					console.log(
+						"Progression utilisateur trouvée:",
+						courseProgress
+					);
 				}
 
 				// Vérifier l'existence des fichiers
@@ -177,15 +192,21 @@ export default function CourseDetail({ params, activeContext, organization }) {
 
 			try {
 				setIsInitializingProgress(true);
-				console.log("Initialisation de la progression pour le cours:", courseId);
+				console.log(
+					"Initialisation de la progression pour le cours:",
+					courseId
+				);
 
 				const response = await axios.post(
 					`${WISETRAINER_CONFIG.API_ROUTES.INITIALIZE_PROGRESS}`,
 					{
 						userId: user.id,
 						courseId: courseId,
-						organizationId: activeContext?.type === 'organization' ? organization?.id : null,
-						sourceContainer: containerName
+						organizationId:
+							activeContext?.type === "organization"
+								? organization?.id
+								: null,
+						sourceContainer: containerName,
 					}
 				);
 
@@ -194,14 +215,26 @@ export default function CourseDetail({ params, activeContext, organization }) {
 					setHasInitializedProgress(true);
 				}
 			} catch (error) {
-				console.error("Erreur lors de l'initialisation de la progression:", error);
+				console.error(
+					"Erreur lors de l'initialisation de la progression:",
+					error
+				);
 			} finally {
 				setIsInitializingProgress(false);
 			}
 		};
 
 		initializeProgress();
-	}, [courseId, user, course, userProgress, isInitializingProgress, hasInitializedProgress, activeContext, organization]);
+	}, [
+		courseId,
+		user,
+		course,
+		userProgress,
+		isInitializingProgress,
+		hasInitializedProgress,
+		activeContext,
+		organization,
+	]);
 
 	const handleModuleSelect = async (module) => {
 		setSelectedModule(module);
@@ -235,7 +268,7 @@ export default function CourseDetail({ params, activeContext, organization }) {
 					scenarioId: currentScenario?.id,
 					responses: responses,
 					timestamp: new Date().toISOString(),
-					sourceContainer: containerName
+					sourceContainer: containerName,
 				}
 			);
 
@@ -243,12 +276,16 @@ export default function CourseDetail({ params, activeContext, organization }) {
 				console.log("Réponses du questionnaire sauvegardées");
 				toast({
 					title: "Questionnaire complété",
-					description: "Vos réponses ont été enregistrées avec succès.",
+					description:
+						"Vos réponses ont été enregistrées avec succès.",
 					variant: "success",
 				});
 			}
 		} catch (error) {
-			console.error("Erreur lors de la sauvegarde du questionnaire:", error);
+			console.error(
+				"Erreur lors de la sauvegarde du questionnaire:",
+				error
+			);
 			toast({
 				title: "Erreur",
 				description: "Impossible d'enregistrer vos réponses.",
@@ -267,8 +304,9 @@ export default function CourseDetail({ params, activeContext, organization }) {
 					userId: user?.id,
 					courseId: courseId,
 					progress: newProgress,
-					completedAt: newProgress === 100 ? new Date().toISOString() : null,
-					sourceContainer: containerName
+					completedAt:
+						newProgress === 100 ? new Date().toISOString() : null,
+					sourceContainer: containerName,
 				}
 			);
 
@@ -276,20 +314,26 @@ export default function CourseDetail({ params, activeContext, organization }) {
 				setUserProgress((prev) => ({
 					...prev,
 					progress: newProgress,
-					completedAt: newProgress === 100 ? new Date().toISOString() : prev?.completedAt,
+					completedAt:
+						newProgress === 100
+							? new Date().toISOString()
+							: prev?.completedAt,
 				}));
 			}
 		} catch (error) {
-			console.error("Erreur lors de la mise à jour de la progression:", error);
+			console.error(
+				"Erreur lors de la mise à jour de la progression:",
+				error
+			);
 		}
 	};
 
 	if (isLoading || !user) {
 		return (
 			<div className="container mx-auto py-8 h-[70vh]">
-				<Spinner 
-					text="Chargement du cours..." 
-					size="md" 
+				<Spinner
+					text="Chargement du cours..."
+					size="md"
 					centered={true}
 				/>
 			</div>
@@ -300,8 +344,13 @@ export default function CourseDetail({ params, activeContext, organization }) {
 		return (
 			<div className="container mx-auto py-8">
 				<div className="text-center">
-					<p className="text-gray-600 dark:text-gray-300">Cours introuvable</p>
-					<Button onClick={() => router.push("/wisetrainer")} className="mt-4">
+					<p className="text-gray-600 dark:text-gray-300">
+						Cours introuvable
+					</p>
+					<Button
+						onClick={() => router.push("/wisetrainer")}
+						className="mt-4"
+					>
 						Retour aux formations
 					</Button>
 				</div>
@@ -322,10 +371,18 @@ export default function CourseDetail({ params, activeContext, organization }) {
 			<CourseDetailHeader
 				course={course}
 				userProgress={userProgress}
-				organizationName={activeContext?.type === 'organization' ? organization?.name : null}
+				organizationName={
+					activeContext?.type === "organization"
+						? organization?.name
+						: null
+				}
 			/>
 
-			<Tabs value={activeTab} onValueChange={setActiveTab} className="mt-8">
+			<Tabs
+				value={activeTab}
+				onValueChange={setActiveTab}
+				className="mt-8"
+			>
 				<TabsList className="grid w-full grid-cols-2">
 					<TabsTrigger value="details">Détails</TabsTrigger>
 					<TabsTrigger value="training">Entraînement</TabsTrigger>

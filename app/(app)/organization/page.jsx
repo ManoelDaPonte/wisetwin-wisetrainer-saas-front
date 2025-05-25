@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Building2, Settings, Users, Tag, Mail } from "lucide-react";
-import { useOrganization } from "@/newlib/hooks/useOrganization";
+import { useOrganization } from "@/lib/hooks/useOrganization";
 import CallToAction from "@/components/common/CallToAction";
 import CreateOrganizationModal from "@/components/organizations/CreateOrganizationModal";
 import OrganizationTabs from "@/components/organizations/organization/OrganizationTabs";
@@ -11,36 +11,36 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export default function OrganizationPage() {
 	const router = useRouter();
-	const { 
-		currentOrganization, 
+	const {
+		currentOrganization,
 		currentOrganizationId,
 		organizations,
 		hasOrganizations,
 		isLoading,
 		createOrganization,
-		selectOrganization 
+		selectOrganization,
 	} = useOrganization();
-	
+
 	const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-	
+
 	// Récupérer l'organisation active depuis le localStorage
 	useEffect(() => {
-		const storedContext = localStorage.getItem('wisetwin-active-context');
+		const storedContext = localStorage.getItem("wisetwin-active-context");
 		if (storedContext) {
 			try {
 				const context = JSON.parse(storedContext);
-				if (context.type === 'organization' && context.id) {
+				if (context.type === "organization" && context.id) {
 					// Sélectionner l'organisation sans navigation (navigate = false)
 					if (currentOrganizationId !== context.id) {
 						selectOrganization(context.id, false);
 					}
 				}
 			} catch (error) {
-				console.error('Erreur lors de la lecture du contexte:', error);
+				console.error("Erreur lors de la lecture du contexte:", error);
 			}
 		}
 	}, [currentOrganizationId, selectOrganization]);
-	
+
 	// Gérer la création d'organisation
 	const handleCreateOrganization = async (orgData) => {
 		try {
@@ -48,25 +48,31 @@ export default function OrganizationPage() {
 			if (newOrg) {
 				// Mettre à jour le contexte dans localStorage
 				const newContext = {
-					type: 'organization',
+					type: "organization",
 					id: newOrg.id,
 					name: newOrg.name,
 					logoUrl: newOrg.logoUrl,
-					azureContainer: newOrg.azureContainer
+					azureContainer: newOrg.azureContainer,
 				};
-				localStorage.setItem('wisetwin-active-context', JSON.stringify(newContext));
-				
+				localStorage.setItem(
+					"wisetwin-active-context",
+					JSON.stringify(newContext)
+				);
+
 				// Notifier la sidebar du changement de contexte
-				window.dispatchEvent(new Event('wisetwin-context-changed'));
-				
+				window.dispatchEvent(new Event("wisetwin-context-changed"));
+
 				setIsCreateModalOpen(false);
 			}
 		} catch (error) {
-			console.error('Erreur lors de la création de l\'organisation:', error);
+			console.error(
+				"Erreur lors de la création de l'organisation:",
+				error
+			);
 			throw error;
 		}
 	};
-	
+
 	// État de chargement
 	if (isLoading) {
 		return (
@@ -79,20 +85,20 @@ export default function OrganizationPage() {
 			</div>
 		);
 	}
-	
+
 	// Aucune organisation ou mode personnel actif
-	const storedContext = localStorage.getItem('wisetwin-active-context');
+	const storedContext = localStorage.getItem("wisetwin-active-context");
 	let isPersonalMode = true;
-	
+
 	if (storedContext) {
 		try {
 			const context = JSON.parse(storedContext);
-			isPersonalMode = context.type !== 'organization';
+			isPersonalMode = context.type !== "organization";
 		} catch {
 			isPersonalMode = true;
 		}
 	}
-	
+
 	if (isPersonalMode || !currentOrganization) {
 		return (
 			<div className="min-h-screen flex items-center justify-center">
@@ -106,7 +112,7 @@ export default function OrganizationPage() {
 						size="lg"
 					/>
 				</div>
-				
+
 				{/* Modale de création d'organisation */}
 				<CreateOrganizationModal
 					isOpen={isCreateModalOpen}
@@ -116,7 +122,7 @@ export default function OrganizationPage() {
 			</div>
 		);
 	}
-	
+
 	// Affichage de la gestion de l'organisation
 	return (
 		<div className="container mx-auto py-8">
@@ -148,7 +154,7 @@ export default function OrganizationPage() {
 					</p>
 				)}
 			</div>
-			
+
 			{/* Onglets de gestion de l'organisation */}
 			<OrganizationTabs organization={currentOrganization} />
 		</div>

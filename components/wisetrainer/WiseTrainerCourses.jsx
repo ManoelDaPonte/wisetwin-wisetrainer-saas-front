@@ -3,10 +3,10 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import axios from "axios";
-import { useUser } from "@/newlib/hooks/useUser";
-import { useCourses } from "@/newlib/hooks/useCourses";
-import { useOrganization } from "@/newlib/hooks/useOrganization";
-import { useOrganizationBuilds } from "@/newlib/hooks/useOrganizationBuilds";
+import { useUser } from "@/lib/hooks/useUser";
+import { useCourses } from "@/lib/hooks/useCourses";
+import { useOrganization } from "@/lib/hooks/useOrganization";
+import { useOrganizationBuilds } from "@/lib/hooks/useOrganizationBuilds";
 import { useTrainingWiseTwin } from "@/lib/hooks/useTrainingWiseTwin";
 import { useToast } from "@/lib/hooks/useToast";
 
@@ -28,24 +28,24 @@ export default function WiseTrainerCourses() {
 
 	// Récupérer le contexte actif depuis localStorage
 	const getActiveContext = () => {
-		if (typeof window !== 'undefined') {
-			const contextStr = localStorage.getItem('wisetwin-active-context');
+		if (typeof window !== "undefined") {
+			const contextStr = localStorage.getItem("wisetwin-active-context");
 			if (contextStr) {
 				try {
 					const context = JSON.parse(contextStr);
 					return context;
 				} catch (e) {
-					console.error('Erreur parsing contexte:', e);
+					console.error("Erreur parsing contexte:", e);
 					return null;
 				}
 			}
 		}
 		return null;
 	};
-	
+
 	const activeContext = getActiveContext();
 
-	// Utiliser les hooks de newlib
+	// Utiliser les hooks de lib
 	const {
 		courses: personalCourses,
 		isLoading: isLoadingPersonal,
@@ -60,20 +60,21 @@ export default function WiseTrainerCourses() {
 	} = useOrganization({ autoLoad: true });
 
 	// Utiliser le hook pour les formations d'organisation (contexte actif)
-	const { 
-		trainings: organizationTrainings, 
-		isLoading: isLoadingOrg 
-	} = useOrganizationBuilds({
-		organizationId: activeContext?.type === 'organization' ? (activeContext.id || currentOrganizationId) : null,
-		type: 'wisetrainer',
-		autoLoad: activeContext?.type === 'organization'
-	});
+	const { trainings: organizationTrainings, isLoading: isLoadingOrg } =
+		useOrganizationBuilds({
+			organizationId:
+				activeContext?.type === "organization"
+					? activeContext.id || currentOrganizationId
+					: null,
+			type: "wisetrainer",
+			autoLoad: activeContext?.type === "organization",
+		});
 
 	// Hook pour récupérer les formations du container personnel (depuis le container source WiseTwin)
 	const {
 		trainings: personalCatalogTrainings,
 		isLoading: isLoadingPersonalCatalog,
-		error: personalCatalogError
+		error: personalCatalogError,
 	} = useTrainingWiseTwin(user?.id);
 
 	// Configuration pour les animations
@@ -94,13 +95,11 @@ export default function WiseTrainerCourses() {
 		},
 	};
 
-
 	// Fonction pour gérer la désinscription avec modale
 	const handleUnenroll = (course) => {
 		setCourseToUnenroll(course);
 		setShowUnenrollModal(true);
 	};
-
 
 	// Nouvelle logique pour démarrer directement une formation
 	const handleStartCourse = async (course) => {
@@ -190,9 +189,9 @@ export default function WiseTrainerCourses() {
 		try {
 			// 1. Appel API pour supprimer l'inscription de la base de données
 			const dbResponse = await axios.delete(
-				`${
-					WISETRAINER_CONFIG.API_ROUTES.UNENROLL_COURSE
-				}/${user.id}/${courseToUnenroll.id}?sourceType=${
+				`${WISETRAINER_CONFIG.API_ROUTES.UNENROLL_COURSE}/${user.id}/${
+					courseToUnenroll.id
+				}?sourceType=${
 					courseToUnenroll.source?.type || "organization"
 				}&sourceOrganizationId=${
 					courseToUnenroll.source?.organizationId || ""
@@ -296,7 +295,7 @@ export default function WiseTrainerCourses() {
 				</TabsContent>
 
 				<TabsContent value="organization">
-					{activeContext?.type === 'personal' ? (
+					{activeContext?.type === "personal" ? (
 						// Mode personnel : afficher les formations du catalogue WiseTwin
 						<CatalogOrganizationTab
 							organizations={[]}
@@ -323,7 +322,8 @@ export default function WiseTrainerCourses() {
 											type: "personal",
 											name: "Catalogue personnel",
 											organizationId: null,
-											containerName: user?.azureContainer || null,
+											containerName:
+												user?.azureContainer || null,
 										},
 									};
 								}
@@ -338,7 +338,7 @@ export default function WiseTrainerCourses() {
 							itemVariants={itemVariants}
 							isUserEnrolled={isUserEnrolled}
 						/>
-					) : activeContext?.type === 'organization' ? (
+					) : activeContext?.type === "organization" ? (
 						// Mode organisation : afficher les formations de l'organisation
 						<CatalogOrganizationTab
 							organizations={userOrganizations}
@@ -368,10 +368,14 @@ export default function WiseTrainerCourses() {
 										source: {
 											type: "organization",
 											name:
-												selectedOrg?.name || activeContext.name || "Organisation",
+												selectedOrg?.name ||
+												activeContext.name ||
+												"Organisation",
 											organizationId: activeContext.id,
 											containerName:
-												selectedOrg?.azureContainer || activeContext.azureContainer || null,
+												selectedOrg?.azureContainer ||
+												activeContext.azureContainer ||
+												null,
 										},
 									};
 								}
@@ -390,7 +394,8 @@ export default function WiseTrainerCourses() {
 						// Aucun contexte défini
 						<div className="text-center py-12">
 							<p className="text-gray-600 dark:text-gray-400 mb-4">
-								Veuillez sélectionner un contexte (personnel ou organisation) dans la barre latérale.
+								Veuillez sélectionner un contexte (personnel ou
+								organisation) dans la barre latérale.
 							</p>
 						</div>
 					)}

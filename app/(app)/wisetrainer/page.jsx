@@ -3,7 +3,7 @@
 import React from "react";
 import { motion } from "framer-motion";
 import WiseTrainerCourses from "@/components/wisetrainer/WiseTrainerCourses";
-import { useUser } from "@/newlib/hooks/useUser";
+import { useUser } from "@/lib/hooks/useUser";
 import { GraduationCap } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 

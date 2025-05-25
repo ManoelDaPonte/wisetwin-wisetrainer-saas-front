@@ -11,12 +11,8 @@ export const metadata = {
 
 export default function AuthLayout({ children }) {
 	return (
-		<html lang="fr">
-			<body className={inter.className}>
-				<main className="h-screen w-screen overflow-hidden">
-					{children}
-				</main>
-			</body>
-		</html>
+		<main className="h-screen w-screen overflow-hidden">
+			{children}
+		</main>
 	);
 }
