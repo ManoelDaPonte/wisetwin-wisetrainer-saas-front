@@ -1,0 +1,121 @@
+{
+    "id": "LOTO_Maintenance",
+    "name": "Accès à la zone robotisée pour maintenance",
+    "description": "Accès a la zone robotisée pour maintenance du bras robot",
+    "imageUrl": "/images/png/consignation.png",
+    "category": "Sécurité",
+    "difficulty": "Intermédiaire",
+    "duration": "45 min",
+    "objectMapping": {
+      "ArguingWorker": "risque-psycho",
+      "Kuka": "kuka",
+      "Phone-worker": "phone-worker_XX",
+      "Controller_circleIcon": "controller-guide"
+    },
+    "modules": [
+        {
+        "id": "controller-guide",
+        "order": 1,
+        "title": "Procédure d'accès à la zone robot",
+        "description": "Minimiser les énergies pour réaliser la maintenance du bras robot",
+        "type": "guide",
+        "educational": {
+          "title": "Comprendre les procédures de consignation / déconsignation",
+          "content": {
+            "intro": "",
+            "sections": [
+              {
+                "title": "Définition et Objectif",
+                "text": "La consignation / déconsignation est une procédure qui permet d'isoler une machine ou un équipement de ses sources d'énergie afin d'empêcher tout démarrage accidentel ou libération d'énergie dangereuse. L'objectif est de protéger les travailleurs contre les risques électriques, mécaniques, hydrauliques, pneumatiques, thermiques, etc."
+              },
+              {
+                "title": "Nature de l'intervention",
+                "items": [
+                  "Réglage trajectoire robot",
+                  "Synchronisation des axes du robot"
+                ]
+              },
+              {
+                "title": "Personne Habilitée",
+                "items": [
+                  "Maintenance",
+                  "Process"
+                ]
+              },
+              {
+                "title": "Arrêt d'urgence à disposition",
+                "items": [
+                  "1 arrêt d'urgence (AU)  sur l'écran du HMI (interface homme-machine)",
+                  "1 arrêt d'urgence (AU) près de la porte d'accès à la zone"
+                ]
+              }
+            ]
+          },
+          "imageUrl": "/images/wisetrainer/loto-procedure.png"
+        },
+        "sequenceButtons": ["demande-d-acces", "operateur-cle-acces-1", "cle-1", "regleur-cle-acces", "rearmement", "poignee", "Lock", "porte"],
+        "steps": [
+          {
+            "id": "step-1",
+            "title": "Demande d'accès",
+            "instruction": "Je fais une demande d'accès",
+            "validationEvent": "demande-d-acces",
+            "validationType": "3d",
+            "hint": "Touner le button en haut a gauche du panneau de contrôle"
+          },
+          {
+            "id": "step-2",
+            "title": "Tourner la clé opérateur",
+            "instruction": "Je tourne la clé opérateur et la mets en position 0",
+            "validationEvent": "operateur-cle-acces-1",
+            "validationType": "3d",
+            "hint": "Recherchez un grand bouton vert sur le panneau de contrôle"
+          },
+          {
+            "id": "step-3",
+            "title": "Retirer la clé et la garder sur soi",
+            "instruction": "J'enlève la clé et la garde avec moi",
+            "validationEvent": "cle-1",
+            "validationType": "3d",
+            "hint": "Le robot ne peut être manipulé qu'en mode manuel, s'il est laissé en auto il ne fonctionnera pas"
+          },
+          {
+            "id": "step-4",
+            "title": "Je tourne la clé de dérogation du régleur d'accès",
+            "instruction": "Je tourne la clé de dérogation 458A sur le régleur d'accès en position 1",
+            "validationEvent": "regleur-cle-acces",
+            "validationType": "3d",
+            "hint": "Le trousseau de clés est accroché sur le côté de la baie robot, Le commutateur 'mode réglage' se trouve sur le panneau à droite"
+          },
+          {
+            "id": "step-5",
+            "title": "Réarmement accès",
+            "instruction": "J'appuie sur le bouton bleu (réarmement accès). L'énergie est de nouveau disponible pour les réglages",
+            "validationEvent": "rearmement",
+            "validationType": "3d"
+          },
+          {
+            "id": "step-6",
+            "title": "Glisser la poignée de la porte",
+            "instruction": "Je fais glisser la poignée de porte et la bloque mécaniquement avec un cadenas pour indiquer l'intervention",
+            "validationEvent": "poignee",
+            "validationType": "3d"
+          },
+          {
+            "id": "step-7",
+            "title": "Consignation",
+            "instruction": "J'identifie que j'entre dans la zone avec mon badge",
+            "validationEvent": "Lock",
+            "validationType": "3d"
+          },
+          {
+            "id": "step-8",
+            "title": "Entrer dans la zone",
+            "instruction": "J'ouvre la porte et j'entre dans la zone",
+            "validationEvent": "porte",
+            "validationType": "3d"
+          }
+        ]
+      }
+    ]
+}

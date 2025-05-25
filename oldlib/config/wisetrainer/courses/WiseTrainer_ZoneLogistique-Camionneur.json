@@ -1,0 +1,227 @@
+{
+  "id": "WiseTrainer_ZoneLogistique-Camionneur",
+  "name": "Zone Logistique - Chauffeur",
+  "description": "Sécurité et procédures pour les camionneurs en zone de chargement",
+  "imageUrl": "/images/png/camion.png",
+  "category": "Sécurité",
+  "difficulty": "Intermédiaire",
+  "duration": "45 min",
+  "objectMapping": {
+    "question-1": "truck-safety",
+    "question-2": "equipement",
+    "question-3": "marche",
+    "question-4": "zone-securise",
+    "question-5": "emergency-response"
+  },
+  "modules": [
+    {
+      "id": "truck-safety",
+      "order": 1,
+      "title": "Sécurité du camionneur en zone logistique",
+      "description": "Apprenez les bonnes pratiques de sécurité pour les camionneurs en zone logistique",
+      "questions": [
+        {
+          "id": "truck-safety-q1",
+          "image": "/images/png/camion.png",
+          "text": "Quelle est la première action à effectuer en arrivant dans la zone dechargement ?",
+          "type": "SINGLE",
+          "options": [
+            {
+              "id": "ts-q1-o1",
+              "text": "J’identifie et je me gare dans la zone délimitée.",
+              "isCorrect": true
+            },
+            {
+              "id": "ts-q1-o2",
+              "text": "Je descends immédiatement du camion.",
+              "isCorrect": false
+            },
+            {
+              "id": "ts-q1-o3",
+              "text": "Je klaxonne pour signaler ma présence.",
+              "isCorrect": false
+            },
+            {
+              "id": "ts-q1-o4",
+              "text": "J’appelle le cariste",
+              "isCorrect": false
+            }
+          ]
+        },
+        {
+          "id": "truck-safety-q2",
+          "image": "/images/wisetrainer/camion-parking.png",
+          "text": "J’entre dans la zone logistique avec mon véhicule et doit stationner dans la zone de parking dédiée. Quelle est la manœuvre correcte à effectuer ?",
+          "type": "SINGLE",
+          "options": [
+            {
+              "id": "ts-q2-o1",
+              "text": "Je m’aligne perpendiculairement à la place et recule en épi dans la zone de stationnement, en respectant les lignes.",
+              "isCorrect": true
+            },
+            {
+              "id": "ts-q2-o2",
+              "text": "Je me gare en marche avant dès que possible, peu importe l’angle.",
+              "isCorrect": false
+            },
+            {
+              "id": "ts-q2-o3",
+              "text": "Je laisse mon camion dans l’axe de circulation avec les warnings, le temps du déchargement.",
+              "isCorrect": false
+            },
+            {
+              "id": "ts-q2-o4",
+              "text": "Je me gare en travers sur plusieurs places pour éviter d’abîmer le chargement à l’arrière.",
+              "isCorrect": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "equipement",
+      "order": 2,
+      "title": "Procédures en zone de chargement",
+      "description": "Suivez les procédures correctes lors des opérations de chargement et déchargement",
+      "questions": [
+        {
+          "id": "loading-procedure-q1",
+          "image": "/images/wisetrainer/epi.jpg",
+          "text": "Quel équipement est obligatoire pour circuler dans l’entrepôt ?",
+          "type": "SINGLE",
+          "options": [
+            {
+              "id": "lp-q1-o1",
+              "text": "Un gilet haute visibilité et des chaussures de sécurité.",
+              "isCorrect": true
+            },
+            {
+              "id": "lp-q1-o2",
+              "text": "Une veste normale et des baskets.",
+              "isCorrect": false
+            },
+            {
+              "id": "lp-q1-o3",
+              "text": "Une casquette de sécurité uniquement.",
+              "isCorrect": false
+            },
+            {
+              "id": "lp-q1-o4",
+              "text": "Un badge, rien d’autre.",
+              "isCorrect": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "marche",
+      "order": 3,
+      "title": "Procédures en zone de chargement",
+      "description": "Suivez les procédures correctes lors des opérations de chargement et déchargement",
+      "questions": [
+        {
+          "id": "loading-procedure-q1",
+          "image": "/images/wisetrainer/pieton.jpg",
+          "text": "Lors des déplacements à pied dans une zone de chargement, quelle est la conduite à adopter ?",
+          "type": "SINGLE",
+          "options": [
+            {
+              "id": "lp-q1-o1",
+              "text": "Je me déplace uniquement dans les zones piétonnes balisées, même si cela rallonge mon trajet.",
+              "isCorrect": true
+            },
+            {
+              "id": "lp-q1-o2",
+              "text": "Je marche vite pour ne pas gêner les caristes.",
+              "isCorrect": false
+            },
+            {
+              "id": "lp-q1-o3",
+              "text": "Je coupe à travers les zones de manœuvre pour aller plus vite.",
+              "isCorrect": false
+            },
+            {
+              "id": "lp-q1-o4",
+              "text": "Je passe derrière les chariots élévateurs dès que je vois un espace libre.",
+              "isCorrect": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "zone-securise",
+      "image": "/images/wisetrainer/camion-parking.png",
+      "order": 4,
+      "title": "Identification et préparation",
+      "description": "Apprenez à réagir correctement face aux situations d'urgence en zone logistique",
+      "questions": [
+        {
+          "id": "emergency-response-q1",
+          "text": "Une fois arrivé dans une zone sécurisée d’un site logistique, quelle est la bonne action à effectuer en priorité ?",
+          "image": "/images/wisetrainer/talking-camion.png",
+          "type": "SINGLE",
+          "options": [
+            {
+              "id": "er-q1-o1",
+              "text": "Je badge pour signaler ma présence conformément aux consignes de sécurité.",
+              "isCorrect": true
+            },
+            {
+              "id": "er-q1-o2",
+              "text": "Je frappe à la porte pour qu'on m’ouvre.",
+              "isCorrect": false
+            },
+            {
+              "id": "er-q1-o3",
+              "text": "Je reste à attendre sans prévenir personne.",
+              "isCorrect": false
+            },
+            {
+              "id": "er-q1-o4",
+              "text": "J'appelle un numéro que je crois avoir noté.",
+              "isCorrect": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "emergency-response",
+      "order": 5,
+      "title": "Identification et préparation",
+      "description": "Apprenez à réagir correctement face aux situations d'urgence en zone logistique",
+      "questions": [
+        {
+          "id": "emergency-response-q1",
+          "image": "/images/wisetrainer/attente-camionneur.png",
+          "text": "Où dois-je me positionner lors des opérations de chargement et déchargement ?",
+          "type": "MULTIPLE",
+          "options": [
+            {
+              "id": "er-q1-o1",
+              "text": "Dans la zone de sécurité délimitée.",
+              "isCorrect": true
+            },
+            {
+              "id": "er-q1-o2",
+              "text": "Dans la cabine du camion",
+              "isCorrect": true
+            },
+            {
+              "id": "er-q1-o3",
+              "text": "À proximité du chariot élévateur.",
+              "isCorrect": false
+            },
+            {
+              "id": "er-q1-o4",
+              "text": "Près des bâches.",
+              "isCorrect": false
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

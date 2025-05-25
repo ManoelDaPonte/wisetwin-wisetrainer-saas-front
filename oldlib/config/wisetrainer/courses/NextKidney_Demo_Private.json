@@ -1,0 +1,39 @@
+{
+    "id": "NextKidney_Demo_Private",
+    "name": "Installation et amorçage du système Nextkidney",
+    "description": "Guide d'installation et d'amorçage du système Nextkidney Renaux-HD pour investigations cliniques",
+    "imageUrl": "/images/wisetrainer/nextkidney.jpg",
+    "category": "Médical",
+    "difficulty": "Intermédiaire",
+    "duration": "30 min",
+    "objectMapping": {
+      "sprite-1": "dialysate-set-installation",
+      "sprite-2": "dialysate-cartridge-insertion"
+    },
+    "modules": [
+      {
+        "id": "dialysate-set-installation",
+        "order": 1,
+        "title": "Dialysate Set Installation",
+        "description": "Installation du set de dialysat",
+        "type": "information",
+        "modalData": {
+          "imageUrl": "/images/wisetrainer/nextkidney_lv1.png",
+          "keyToPress": "1",
+          "animationToPlay": "dialysate-set-installation-animation"
+        }
+      },
+      {
+        "id": "dialysate-cartridge-insertion",
+        "order": 2,
+        "title": "Weighing Bag Installation",
+        "description": "Installation du bag de pesée",
+        "type": "information",
+        "modalData": {
+          "imageUrl": "/images/wisetrainer/nextkidney_lv2.png",
+          "keyToPress": "2",
+          "animationToPlay": "dialysate-cartridge-insertion-animation"
+        }
+      }
+    ]
+  }

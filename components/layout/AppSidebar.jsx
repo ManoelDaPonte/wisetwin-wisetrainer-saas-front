@@ -6,8 +6,8 @@ import { useUser as useAuth0User } from "@auth0/nextjs-auth0";
 import Link from "next/link";
 import Image from "next/image";
 import { useTheme } from "@/lib/hooks/useTheme";
-import { useUser } from "@/newlib/hooks/useUser";
-import { useOrganization } from "@/newlib/hooks/useOrganization";
+import { useUser } from "@/lib/hooks/useUser";
+import { useOrganization } from "@/lib/hooks/useOrganization";
 import CreateOrganizationModal from "@/components/organizations/CreateOrganizationModal";
 
 import {
@@ -52,7 +52,7 @@ export function AppSidebar({ ...props }) {
 	const { user: auth0User } = useAuth0User();
 	const { theme } = useTheme();
 
-	// Hooks newlib
+	// Hooks lib
 	const { user, azureContainer } = useUser();
 	const {
 		organizations,

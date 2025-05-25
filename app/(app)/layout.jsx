@@ -2,7 +2,6 @@ import Image from "next/image";
 import TopNavBar from "@/components/layout/TopNavBar";
 import LeftNavBar from "@/components/layout/LeftNavBar";
 import TermsAcceptanceModal from "@/components/cookies/TermsAcceptanceModal";
-import { SettingsProvider } from "@/lib/contexts/SettingsContext";
 import {
 	SidebarProvider,
 	SidebarTrigger,

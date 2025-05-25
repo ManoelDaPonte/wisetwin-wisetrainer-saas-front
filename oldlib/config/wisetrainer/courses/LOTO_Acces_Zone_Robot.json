@@ -1,0 +1,109 @@
+{
+    "id": "LOTO_Acces_Zone_Robot",
+    "name": "Accès à la zone robotisée sans énergie",
+    "description": "Avec les machines, le risque est toujours là",
+    "imageUrl": "/images/png/consignation.png",
+    "category": "Sécurité",
+    "difficulty": "Intermédiaire",
+    "duration": "45 min",
+    "objectMapping": {
+      "ArguingWorker": "risque-psycho",
+      "Kuka": "kuka",
+      "Phone-worker": "phone-worker_XX",
+      "Controller_circleIcon": "controller-guide"
+    },
+    "modules": [
+        {
+        "id": "controller-guide",
+        "order": 1,
+        "title": "Procédure d'accès à la zone robot sans énergie",
+        "description": "Suivez la procédure de sécurité pour accéder à la zone robot en toute sécurité",
+        "type": "guide",
+        "educational": {
+          "title": "Comprendre les procédures de consignation / déconsignation",
+          "content": {
+            "intro": "Les procédures de consignation / déconsignation (Lockout/Tagout), ou Consignation/Déconsignation, sont des mesures de sécurité utilisées pour prévenir les accidents liés aux énergies dangereuses lors d'opérations de maintenance ou de réparation sur des équipements industriels.",
+            "sections": [
+              {
+                "title": "Définition et Objectif",
+                "text": "La consignation / déconsignation est une procédure qui permet d'isoler une machine ou un équipement de ses sources d'énergie afin d'empêcher tout démarrage accidentel ou libération d'énergie dangereuse. L'objectif est de protéger les travailleurs contre les risques électriques, mécaniques, hydrauliques, pneumatiques, thermiques, etc."
+              },
+              {
+                "title": "Risques en cas de non-respect",
+                "items": [
+                  "Des accidents graves (électrocution, écrasement, brûlure…)",
+                  "Une mise en danger des autres travailleurs"
+                ]
+              },
+              {
+                "title": "Bonnes Pratiques",
+                "items": [
+                  "Toujours utiliser un cadenas personnel",
+                  "Ne jamais retirer le cadenas d'un collègue sans autorisation",
+                  "Former tous les travailleurs aux procédures de consignation / déconsignation"
+                ]
+              }
+            ]
+          },
+          "imageUrl": "/images/wisetrainer/loto-procedure.png"
+        },
+        "sequenceButtons": ["commutateur", "demande-d-acces", "operateur-cle-acces-1", "cle-1", "poignee", "Lock", "porte"],
+        "steps": [
+          {
+            "id": "step-1",
+            "title": "Commutateur en manuel",
+            "instruction": "Je mets le commutateur en manuel",
+            "validationEvent": "commutateur",
+            "validationType": "3d",
+            "hint": "Touner le button en haut a gauche du panneau de contrôle"
+          },
+          {
+            "id": "step-2",
+            "title": "Demande d'accès",
+            "instruction": "Je fais une demande d'accès et j'active le mode réglage",
+            "validationEvent": "demande-d-acces",
+            "validationType": "3d",
+            "hint": "Recherchez un grand bouton vert sur le panneau de contrôle"
+          },
+          {
+            "id": "step-3",
+            "title": "Tourner la clé opérateur",
+            "instruction": "Je tourne la clé opérateur et la mettre en position 0",
+            "validationEvent": "operateur-cle-acces-1",
+            "validationType": "3d",
+            "hint": "La clé se trouve sur le côté gauche du panneau principal"
+          },
+          {
+            "id": "step-4",
+            "title": "Retirer la clé et la garder sur soi",
+            "instruction": "J'enlève la clé et la garde avec moi",
+            "validationEvent": "cle-1",
+            "validationType": "3d",
+            "hint": "Le robot ne peut être manipulé qu'en mode manuel, s'il est laissé en auto il ne fonctionnera pas"
+          },
+          {
+            "id": "step-5",
+            "title": "Ouvrir la porte et la bloquer mecaniquement",
+            "instruction": "Je fais glisser la poignée de la porte pour l'ouvrir et la bloquer",
+            "validationEvent": "poignee",
+            "validationType": "3d",
+            "hint": "Le trousseau de clés est accroché sur le côté de la baie robot, Le commutateur 'mode réglage' se trouve sur le panneau à droite"
+          },
+          {
+            "id": "step-6",
+            "title": "Consignation",
+            "instruction": "J'identifie que j'entre dans la zone avec mon badge",
+            "validationEvent": "Lock",
+            "validationType": "3d"
+          },
+          {
+            "id": "step-7",
+            "title": "Entrer dans la zone",
+            "instruction": "J'ouvre la porte et j'entre dans la zone",
+            "validationEvent": "porte",
+            "validationType": "3d"
+          }
+        ]
+      }
+    ]
+}

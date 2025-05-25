@@ -1,0 +1,156 @@
+{
+    "id": "WiseTrainer_ZoneLogistique-Cariste",
+    "name": "Zone Logistique - Cariste",
+    "description": "Formation sur les règles de sécurité et les bonnes pratiques lors des opérations de chargement et déchargement",
+    "imageUrl": "/images/png/camion.png",
+    "category": "Sécurité",
+    "difficulty": "Intermédiaire",
+    "duration": "45 min",
+    "objectMapping": {
+      "InfoSprite": "loading-zone-safety",
+      "InfoSprite (1)": "forklift-safety",
+      "InfoSprite (2)": "general-safety-rules"
+    },
+    "modules": [
+      {
+        "id": "loading-zone-safety",
+        "order": 1,
+        "title": "Sécurité en zone de chargement",
+        "description": "Règles de sécurité pour les chauffeurs et personnels en zone de chargement",
+        "questions": [
+          {
+            "id": "loading-zone-q1",
+            "image": "/images/wisetrainer/attente-camionneur.png",
+            "text": "Où le chauffeur du camion doit-il se positionner pendant les opérations de chargement (2 Réponses possibles)?",
+            "type": "MULTIPLE",
+            "options": [
+              {
+                "id": "lz-q1-o1",
+                "text": "Dans la zone de sécurité délimitée",
+                "isCorrect": true
+              },
+              {
+                "id": "lz-q1-o2",
+                "text": "Dans la cabine du camion",
+                "isCorrect": true
+              },
+              {
+                "id": "lz-q1-o3",
+                "text": "À proximité du chariot élévateur",
+                "isCorrect": false
+              },
+              {
+                "id": "lz-q1-o4",
+                "text": "Près des bâches",
+                "isCorrect": false
+              }
+            ],
+            "explanation": "Pour des raisons de sécurité, le chauffeur doit toujours se tenir soit dans la zone de sécurité clairement délimitée, soit dans la cabine de son camion pendant les opérations de chargement."
+          }
+        ]
+      },
+      {
+        "id": "forklift-safety",
+        "order": 2,
+        "title": "Sécurité des chariots élévateurs",
+        "description": "Règles de sécurité pour l'utilisation des chariots élévateurs en zone de chargement",
+        "questions": [
+          {
+            "id": "loading-zone-q2",
+            "image": "/images/wisetrainer/talking-camion.png",
+            "text": "Quel équipement doit porter le personnel pour être détecté par le système de sécurité du chariot élévateur ?",
+            "type": "SINGLE",
+            "options": [
+              {
+                "id": "lz-q2-o1",
+                "text": "Un badge spécifique",
+                "isCorrect": true
+              },
+              {
+                "id": "lz-q2-o2",
+                "text": "Un gilet réfléchissant",
+                "isCorrect": false
+              },
+              {
+                "id": "lz-q2-o3",
+                "text": "Un casque de sécurité",
+                "isCorrect": false
+              },
+              {
+                "id": "lz-q2-o4",
+                "text": "Une combinaison de travail",
+                "isCorrect": false
+              }
+            ],
+            "explanation": "Le gilet réfléchissant est l'équipement essentiel permettant aux systèmes de détection des chariots élévateurs d'identifier la présence de personnel. Il augmente également la visibilité pour les opérateurs de chariot."
+          },
+
+          {
+            "id": "forklift-q1",
+            "text": "Quelle est la vitesse maximale autorisée pour un chariot élévateur (Fenwick) en présence de piétons ?",
+            "type": "SINGLE",
+            "options": [
+              {
+                "id": "fk-q1-o1",
+                "text": "1 km/h",
+                "isCorrect": true
+              },
+              {
+                "id": "fk-q1-o2",
+                "text": "5 km/h",
+                "isCorrect": false
+              },
+              {
+                "id": "fk-q1-o3",
+                "text": "3 km/h",
+                "isCorrect": false
+              },
+              {
+                "id": "fk-q1-o4",
+                "text": "10 km/h",
+                "isCorrect": false
+              }
+            ],
+            "explanation": "La vitesse maximale autorisée pour un chariot élévateur en présence de piétons est de 3 km/h, ce qui correspond à une vitesse de marche normale. Cette limitation permet au cariste de maintenir un contrôle optimal et de s'arrêter rapidement en cas de danger."
+          }
+        ]
+      },
+      {
+        "id": "general-safety-rules",
+        "order": 3,
+        "title": "Règles générales de sécurité",
+        "description": "Principes fondamentaux de sécurité applicables à tous les intervenants",
+        "questions": [
+          {
+            "id": "forklift-q2",
+            "text": "Lors du chargement dans un conteneur, à quoi faut-il être particulièrement attentif concernant la hauteur de levée du chariot élévateur (2 Réponses possibles)?",
+            "image": "/images/wisetrainer/forklift-issue.png",
+            "type": "MULTIPLE",
+            "options": [
+              {
+                "id": "fk-q2-o1",
+                "text": "S'assurer que la hauteur de levée ne dépasse pas la bordure supérieure du conteneur pour éviter que la charge ne heurte celle-ci et ne retombe sur le chariot",
+                "isCorrect": true
+              },
+              {
+                "id": "fk-q2-o2",
+                "text": "La charge à lever en fonction du chariot élevateur",
+                "isCorrect": true
+              },
+              {
+                "id": "fk-q2-o3",
+                "text": "Lever les palettes au maximum pour gagner du temps",
+                "isCorrect": false
+              },
+              {
+                "id": "fk-q2-o4",
+                "text": "Approcher la charge rapidement sans tenir compte de l'espace en hauteur",
+                "isCorrect": false
+              }
+            ],
+            "explanation": "La hauteur de levée est un facteur critique lors du chargement dans un conteneur. Un opérateur doit toujours s'assurer que la charge ne risque pas de heurter la partie supérieure du conteneur, ce qui pourrait provoquer la chute de la charge et mettre en danger l'opérateur du chariot."
+          }
+        ]
+      }
+    ]
+  }

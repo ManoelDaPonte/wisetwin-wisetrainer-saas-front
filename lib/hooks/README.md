@@ -8,9 +8,9 @@ Si vous rencontrez cette erreur avec Zustand, c'est généralement à cause de l
 
 ```jsx
 // Problématique - crée une référence différente à chaque rendu
-const { user, isLoading } = useUserStore(state => ({
-  user: state.user,
-  isLoading: state.isLoading
+const { user, isLoading } = useUserStore((state) => ({
+	user: state.user,
+	isLoading: state.isLoading,
 }));
 ```
 
@@ -20,8 +20,8 @@ Utilisez des sélecteurs individuels pour chaque propriété :
 
 ```jsx
 // Solution correcte
-const user = useUserStore(state => state.user);
-const isLoading = useUserStore(state => state.isLoading);
+const user = useUserStore((state) => state.user);
+const isLoading = useUserStore((state) => state.isLoading);
 ```
 
 ## Appels API dupliqués
@@ -37,27 +37,29 @@ Si vous constatez des appels API dupliqués, comme plusieurs appels à `/api/use
 ### Solutions
 
 1. **Désactiver l'autoLoad dans les hooks imbriqués** :
-   ```jsx
-   // Hook parent avec autoLoad
-   const { user } = useUser({ autoLoad: true });
-   
-   // Hook enfant avec autoLoad désactivé
-   const { courses } = useCourses({ autoLoad: false });
-   ```
+
+    ```jsx
+    // Hook parent avec autoLoad
+    const { user } = useUser({ autoLoad: true });
+
+    // Hook enfant avec autoLoad désactivé
+    const { courses } = useCourses({ autoLoad: false });
+    ```
 
 2. **Utiliser le cache** - Assurez-vous que le mécanisme de cache fonctionne correctement pour éviter les requêtes répétées
 
 3. **Ajouter des drapeaux pour éviter les requêtes multiples** :
-   ```jsx
-   const [hasFetched, setHasFetched] = useState(false);
-   
-   useEffect(() => {
-     if (!hasFetched) {
-       fetchData();
-       setHasFetched(true);
-     }
-   }, [hasFetched, fetchData]);
-   ```
+
+    ```jsx
+    const [hasFetched, setHasFetched] = useState(false);
+
+    useEffect(() => {
+    	if (!hasFetched) {
+    		fetchData();
+    		setHasFetched(true);
+    	}
+    }, [hasFetched, fetchData]);
+    ```
 
 ## Provider global vs Utilisation directe des hooks
 
@@ -67,31 +69,29 @@ L'architecture supporte deux façons d'accéder aux données :
 
 ```jsx
 // Dans app/layout.jsx
-import { AppProvider } from '@/newlib/contexts/AppProvider';
+import { AppProvider } from "@/lib/contexts/AppProvider";
 
 export default function RootLayout({ children }) {
-  return (
-    <html>
-      <body>
-        <AppProvider>
-          {children}
-        </AppProvider>
-      </body>
-    </html>
-  );
+	return (
+		<html>
+			<body>
+				<AppProvider>{children}</AppProvider>
+			</body>
+		</html>
+	);
 }
 ```
 
 ### Utilisation directe des hooks (pour les migrations progressives)
 
 ```jsx
-import { useUser, useOrganization } from '@/newlib/hooks';
+import { useUser, useOrganization } from "@/lib/hooks";
 
 function MyComponent() {
-  const { user } = useUser();
-  const { organizations } = useOrganization();
-  
-  // Utiliser ces données...
+	const { user } = useUser();
+	const { organizations } = useOrganization();
+
+	// Utiliser ces données...
 }
 ```
 
