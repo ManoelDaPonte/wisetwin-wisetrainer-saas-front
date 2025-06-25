@@ -1,0 +1,91 @@
+{
+  "environments": {
+    "dk-port": {
+      "id": "dk-port",
+      "name": "DK Port",
+      "displayName": "Port de Dunkerque",
+      "category": "Environnement industriel",
+      "provider": "WiseTwin",
+      "imageUrl": "/images/wisetwin/port-dk/port-dunkerque.png",
+      "description": "Découvrez le port de Dunkerque et ses installations industrielles dans un environnement 3D immersif. Explorez les zones de décarbonation, les infrastructures portuaires et les paysages caractéristiques de cette région stratégique du nord de la France.",
+      "features": [
+        "Visualisation de la décarbonation industrielle",
+        "Exploration du paysage de Dunkerque",
+        "Carte interactive du port",
+        "Navigation dans les installations portuaires",
+        "Découverte des zones d'aménagement futur"
+      ],
+      "tags": ["Port", "Industrie", "Décarbonation", "Dunkerque"],
+      "highlights": [
+        "Zones de décarbonation industrielle",
+        "Terminaux portuaires modernes",
+        "Infrastructures logistiques"
+      ]
+    },
+    "ecosystemd": {
+      "id": "ecosystemd",
+      "name": "EcosystemD",
+      "displayName": "Écosystème Industriel Durable",
+      "category": "Environnement écologique",
+      "provider": "WiseTwin",
+      "imageUrl": "/images/wisetwin/ecosystemd/ecosystemd-preview.jpg",
+      "description": "Plongez dans un écosystème industriel pensé pour la durabilité. Explorez les solutions innovantes de décarbonation, les énergies renouvelables et les infrastructures respectueuses de l'environnement.",
+      "features": [
+        "Énergies renouvelables intégrées",
+        "Circuits de décarbonation",
+        "Gestion intelligente des ressources",
+        "Zones de biodiversité préservées",
+        "Technologies vertes innovantes"
+      ],
+      "tags": ["Écologie", "Durabilité", "Innovation", "Environnement"],
+      "highlights": [
+        "Panneaux solaires et éoliennes",
+        "Systèmes de recyclage avancés",
+        "Espaces verts intégrés"
+      ]
+    },
+    "port-autonome": {
+      "id": "port-autonome",
+      "name": "Port Autonome",
+      "displayName": "Port Autonome Intelligent",
+      "category": "Infrastructure portuaire",
+      "provider": "WiseTwin",
+      "imageUrl": "/images/wisetwin/port-autonome/port-autonome-preview.jpg",
+      "description": "Découvrez un port du futur avec des technologies autonomes et intelligentes. Explorez les systèmes automatisés, la gestion numérique des flux et les innovations logistiques de demain.",
+      "features": [
+        "Grues automatisées intelligentes",
+        "Gestion numérique des flux",
+        "Systèmes de navigation autonome",
+        "Optimisation logistique temps réel",
+        "Interface de contrôle centralisée"
+      ],
+      "tags": ["Automatisation", "Intelligence", "Logistique", "Innovation"],
+      "highlights": [
+        "Robots portuaires autonomes",
+        "Centre de contrôle intelligent",
+        "Flux optimisés en temps réel"
+      ]
+    }
+  },
+  "defaultEnvironment": {
+    "name": "Environnement 3D",
+    "displayName": "Environnement 3D",
+    "category": "Environnement industriel",
+    "provider": "WiseTwin",
+    "imageUrl": "/images/png/placeholder.png",
+    "description": "Explorez cet environnement 3D interactif pour vous familiariser avec les installations et équipements industriels.",
+    "features": [
+      "Visite virtuelle interactive",
+      "Navigation intuitive",
+      "Familiarisation avec les équipements",
+      "Exploration détaillée",
+      "Interface utilisateur moderne"
+    ],
+    "tags": ["3D", "Interactif", "Formation"],
+    "highlights": [
+      "Interface intuitive",
+      "Environnement réaliste",
+      "Expérience immersive"
+    ]
+  }
+}

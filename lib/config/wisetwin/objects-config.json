@@ -1,0 +1,16 @@
+{
+  "objects": {
+    "Aluminium Dunkerque": {
+      "displayName": "Aluminium Dunkerque",
+      "description": "Installation industrielle du port de Dunkerque",
+      "images": [
+        "/images/wisetwin/port-dk/ad/AD-s1.png",
+        "/images/wisetwin/port-dk/ad/AD-s2.png",
+        "/images/wisetwin/port-dk/ad/AD-s3.png",
+        "/images/wisetwin/port-dk/ad/AD-s4.png",
+        "/images/wisetwin/port-dk/ad/AD-s5.png",
+        "/images/wisetwin/port-dk/ad/AD-s6.png"
+      ]
+    }
+  }
+}
