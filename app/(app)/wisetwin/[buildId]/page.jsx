@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, RotateCcw, Maximize } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import axios from "axios";
 import { useAzureContainer } from "@/lib/hooks/useAzureContainer";
 import { useToast } from "@/lib/hooks/useToast";
@@ -20,7 +20,6 @@ export default function BuildViewerPage({ params: paramsPromise }) {
   const [build, setBuild] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [isFullscreen, setIsFullscreen] = useState(false);
   const viewerRef = useRef(null);
   const { toast } = useToast();
 
@@ -164,70 +163,6 @@ export default function BuildViewerPage({ params: paramsPromise }) {
     router.push("/wisetwin");
   };
 
-  const handleFullscreen = () => {
-    const element = document.documentElement;
-
-    if (!document.fullscreenElement) {
-      // Entrer en plein écran
-      if (element.requestFullscreen) {
-        element.requestFullscreen();
-      } else if (element.mozRequestFullScreen) {
-        element.mozRequestFullScreen();
-      } else if (element.webkitRequestFullscreen) {
-        element.webkitRequestFullscreen();
-      } else if (element.msRequestFullscreen) {
-        element.msRequestFullscreen();
-      }
-    } else {
-      // Sortir du plein écran
-      if (document.exitFullscreen) {
-        document.exitFullscreen();
-      } else if (document.mozCancelFullScreen) {
-        document.mozCancelFullScreen();
-      } else if (document.webkitExitFullscreen) {
-        document.webkitExitFullscreen();
-      } else if (document.msExitFullscreen) {
-        document.msExitFullscreen();
-      }
-    }
-  };
-
-  // Écouter les changements de plein écran
-  useEffect(() => {
-    const handleFullscreenChange = () => {
-      setIsFullscreen(!!document.fullscreenElement);
-    };
-
-    const handleKeyDown = (event) => {
-      if (event.key === "Escape" && document.fullscreenElement) {
-        handleFullscreen();
-      }
-    };
-
-    document.addEventListener("fullscreenchange", handleFullscreenChange);
-    document.addEventListener("webkitfullscreenchange", handleFullscreenChange);
-    document.addEventListener("mozfullscreenchange", handleFullscreenChange);
-    document.addEventListener("msfullscreenchange", handleFullscreenChange);
-    document.addEventListener("keydown", handleKeyDown);
-
-    return () => {
-      document.removeEventListener("fullscreenchange", handleFullscreenChange);
-      document.removeEventListener(
-        "webkitfullscreenchange",
-        handleFullscreenChange
-      );
-      document.removeEventListener(
-        "mozfullscreenchange",
-        handleFullscreenChange
-      );
-      document.removeEventListener(
-        "msfullscreenchange",
-        handleFullscreenChange
-      );
-      document.removeEventListener("keydown", handleKeyDown);
-    };
-  }, []);
-
   // Gérer la sélection d'objets depuis le BuildViewer
   const handleObjectSelected = (objectName) => {
     console.log("🎯 Page: objet sélectionné:", objectName);
@@ -310,23 +245,14 @@ export default function BuildViewerPage({ params: paramsPromise }) {
 
   return (
     <div className="">
-      <div className="mb-6 flex justify-between items-center">
+      <div className="mb-6">
         <Button variant="outline" onClick={handleBack} className="mb-4">
           <ArrowLeft className="w-4 h-4 mr-2" />
           Retour aux environnements
         </Button>
-
-        <Button
-          variant="outline"
-          className="flex items-center gap-2"
-          onClick={handleFullscreen}
-        >
-          <Maximize className="w-4 h-4" />
-          {isFullscreen ? "Quitter le plein écran" : "Plein écran"}
-        </Button>
       </div>
 
-      {/* Viewer 3D - Prend maintenant plus de place */}
+      {/* Viewer 3D */}
       <div className="rounded-lg overflow-hidden bg-gray-800">
         <BuildViewer
           ref={viewerRef}
