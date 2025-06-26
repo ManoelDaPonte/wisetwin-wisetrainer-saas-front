@@ -23,6 +23,7 @@ const BuildViewer = forwardRef(
     // États pour la gestion de la vidéo d'introduction
     const [showIntroVideo, setShowIntroVideo] = useState(false);
     const [introVideoTriggered, setIntroVideoTriggered] = useState(false);
+    const [videoPlaying, setVideoPlaying] = useState(false);
 
     // État pour afficher/masquer les contrôles de visibilité
     const [showVisibilityControls, setShowVisibilityControls] = useState(false);
@@ -71,10 +72,48 @@ const BuildViewer = forwardRef(
       },
     });
 
-    // Déclencher la vidéo d'introduction SEULEMENT quand Unity est chargé et stable
+    // Système de progression fluide de 10% à 90% sur 10 secondes (encore plus rapide)
+    useEffect(() => {
+      if (!isLoaded && buildStatus === "ready") {
+        const startTime = Date.now();
+        const startProgress = 10;
+        const endProgress = 90;
+        const duration = 10000; // 10 secondes en millisecondes (encore plus rapide)
+
+        const interval = setInterval(() => {
+          const elapsed = Date.now() - startTime;
+          const progress = Math.min(elapsed / duration, 1); // Entre 0 et 1
+
+          // Interpolation fluide de 10% à 90%
+          const currentProgress =
+            startProgress + (endProgress - startProgress) * progress;
+
+          setManualLoadingProgress(currentProgress);
+
+          // Arrêter l'animation quand on atteint 90% ou si Unity est chargé
+          if (progress >= 1 || isLoaded) {
+            clearInterval(interval);
+          }
+        }, 100); // Mise à jour toutes les 100ms pour une animation fluide
+
+        return () => clearInterval(interval);
+      }
+    }, [buildStatus, isLoaded]);
+
+    // Quand Unity est vraiment chargé, passer à 100%
+    useEffect(() => {
+      if (isLoaded) {
+        setManualLoadingProgress(100);
+        setBuildStatus("ready");
+      }
+    }, [isLoaded]);
+
+    // Afficher la vidéo d'introduction quand Unity est chargé (mais ne pas la lancer automatiquement)
     useEffect(() => {
       if (isLoaded && !introVideoTriggered) {
-        console.log("Unity chargé, lancement de la vidéo d'introduction");
+        console.log(
+          "Unity chargé, affichage de la vidéo d'introduction (clic requis)"
+        );
         // Petit délai pour s'assurer que Unity est vraiment stable
         const timer = setTimeout(() => {
           setShowIntroVideo(true);
@@ -84,13 +123,6 @@ const BuildViewer = forwardRef(
         return () => clearTimeout(timer);
       }
     }, [isLoaded, introVideoTriggered]);
-
-    // Mettre à jour la progression du chargement
-    useEffect(() => {
-      if (buildStatus === "ready" && !isLoaded) {
-        setManualLoadingProgress(70 + loadingProgression * 30);
-      }
-    }, [loadingProgression, buildStatus, isLoaded]);
 
     // Gérer les erreurs Unity
     useEffect(() => {
@@ -105,9 +137,24 @@ const BuildViewer = forwardRef(
       }
     }, [unityError]);
 
+    // Démarrer le chargement après un court délai
+    useEffect(() => {
+      const timer = setTimeout(() => {
+        setBuildStatus("ready");
+      }, 500);
+
+      return () => clearTimeout(timer);
+    }, []);
+
     // Fonction pour fermer la vidéo d'introduction
     const closeIntroVideo = () => {
       setShowIntroVideo(false);
+      setVideoPlaying(false);
+    };
+
+    // Fonction pour démarrer la vidéo manuellement
+    const startIntroVideo = () => {
+      setVideoPlaying(true);
     };
 
     // Fonction pour gérer la fin de la vidéo
@@ -439,10 +486,32 @@ const BuildViewer = forwardRef(
           {showIntroVideo && (
             <div className="absolute inset-0 bg-black flex items-center justify-center z-50 rounded-lg">
               <div className="relative w-full h-full">
-                {/* Lecteur vidéo automatique sans contrôles */}
+                {/* Bouton play au centre si la vidéo n'est pas en cours */}
+                {!videoPlaying && (
+                  <div className="absolute inset-0 flex items-center justify-center z-10">
+                    <button
+                      onClick={startIntroVideo}
+                      className="bg-wisetwin-blue hover:bg-wisetwin-blue-light text-white rounded-full p-6 transition-all duration-300 hover:scale-110 shadow-lg"
+                    >
+                      <svg
+                        className="w-12 h-12 ml-1"
+                        fill="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path d="M8 5v14l11-7z" />
+                      </svg>
+                    </button>
+                  </div>
+                )}
+
+                {/* Lecteur vidéo */}
                 <video
+                  ref={(video) => {
+                    if (video && videoPlaying && !video.currentTime) {
+                      video.play().catch(console.error);
+                    }
+                  }}
                   className="w-full h-full object-contain rounded-lg"
-                  autoPlay
                   muted
                   playsInline
                   onEnded={handleVideoEnd}
