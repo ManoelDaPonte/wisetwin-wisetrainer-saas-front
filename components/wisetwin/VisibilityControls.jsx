@@ -24,7 +24,7 @@ import {
 import VISIBILITY_CONFIG from "@/lib/config/wisetwin/visibility-config";
 
 const VisibilityControls = ({ sendMessage, isUnityLoaded = false }) => {
-  // État de visibilité pour tous les objets
+  // État de visibilité pour tous les objets (par défaut : tout désactivé)
   const [visibilityState, setVisibilityState] = useState(
     VISIBILITY_CONFIG.getDefaultState()
   );
@@ -40,13 +40,13 @@ const VisibilityControls = ({ sendMessage, isUnityLoaded = false }) => {
   useEffect(() => {
     if (isUnityLoaded) {
       console.log(
-        "🎮 Unity chargé, initialisation des états de visibilité par défaut"
+        "🎮 Unity chargé, initialisation avec tous les objets désactivés"
       );
       initializeDefaultVisibility();
     }
   }, [isUnityLoaded]);
 
-  // Fonction pour initialiser tous les objets comme visibles dans Unity
+  // Fonction pour initialiser tous les objets comme désactivés dans Unity
   const initializeDefaultVisibility = () => {
     const { unityConfig } = VISIBILITY_CONFIG;
 
@@ -56,9 +56,9 @@ const VisibilityControls = ({ sendMessage, isUnityLoaded = false }) => {
 
       category.objects.forEach((obj) => {
         if (sendMessage) {
-          const message = unityConfig.formatMessage(obj.name, true);
+          const message = unityConfig.formatMessage(obj.name, false); // false = désactivé
           console.log(
-            `🔧 Initialisation Unity: ${managerName}.${unityConfig.methodName}("${message}")`
+            `🔧 Initialisation Unity (désactivé): ${managerName}.${unityConfig.methodName}("${message}")`
           );
           sendMessage(managerName, unityConfig.methodName, message);
         }
@@ -90,8 +90,14 @@ const VisibilityControls = ({ sendMessage, isUnityLoaded = false }) => {
     }
   };
 
-  // Fonction pour afficher/masquer toute une catégorie
-  const toggleCategoryVisibility = (categoryKey, visible) => {
+  // Fonction pour afficher/masquer toute une catégorie (garde le dropdown ouvert)
+  const toggleCategoryVisibility = (categoryKey, visible, event) => {
+    // Empêcher la fermeture du dropdown
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+
     const newState = { ...visibilityState };
     const category = VISIBILITY_CONFIG.categories[categoryKey];
     const { unityConfig } = VISIBILITY_CONFIG;
@@ -115,7 +121,7 @@ const VisibilityControls = ({ sendMessage, isUnityLoaded = false }) => {
     );
   };
 
-  // Fonction pour réinitialiser tous les objets à l'état visible
+  // Fonction pour réinitialiser tous les objets à l'état désactivé
   const resetAllVisibility = () => {
     const defaultState = VISIBILITY_CONFIG.getDefaultState();
     setVisibilityState(defaultState);
@@ -125,7 +131,7 @@ const VisibilityControls = ({ sendMessage, isUnityLoaded = false }) => {
       initializeDefaultVisibility();
     }
 
-    console.log("🔄 Réinitialisation de tous les objets à l'état visible");
+    console.log("🔄 Réinitialisation de tous les objets à l'état désactivé");
   };
 
   // Fonction pour obtenir l'icône de chaque catégorie
@@ -183,7 +189,13 @@ const VisibilityControls = ({ sendMessage, isUnityLoaded = false }) => {
           const noneVisible = visibleCount === 0;
 
           return (
-            <DropdownMenu key={categoryKey}>
+            <DropdownMenu
+              key={categoryKey}
+              open={openDropdowns[categoryKey]}
+              onOpenChange={(open) =>
+                setOpenDropdowns((prev) => ({ ...prev, [categoryKey]: open }))
+              }
+            >
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="outline"
@@ -208,8 +220,8 @@ const VisibilityControls = ({ sendMessage, isUnityLoaded = false }) => {
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() =>
-                        toggleCategoryVisibility(categoryKey, true)
+                      onClick={(e) =>
+                        toggleCategoryVisibility(categoryKey, true, e)
                       }
                       disabled={allVisible}
                       className="h-6 px-2 text-xs"
@@ -220,8 +232,8 @@ const VisibilityControls = ({ sendMessage, isUnityLoaded = false }) => {
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() =>
-                        toggleCategoryVisibility(categoryKey, false)
+                      onClick={(e) =>
+                        toggleCategoryVisibility(categoryKey, false, e)
                       }
                       disabled={noneVisible}
                       className="h-6 px-2 text-xs"
@@ -235,7 +247,7 @@ const VisibilityControls = ({ sendMessage, isUnityLoaded = false }) => {
 
                 {category.objects.map((obj) => {
                   const isVisible =
-                    visibilityState[categoryKey]?.[obj.name] ?? true;
+                    visibilityState[categoryKey]?.[obj.name] ?? false; // Par défaut false maintenant
 
                   return (
                     <DropdownMenuCheckboxItem

@@ -466,9 +466,12 @@ const BuildViewer = forwardRef(
                     console.log("Vidéo d'introduction prête à être lue");
                   }}
                 >
-                  <source src="/video/ecosystemd-intro.mp4" type="video/mp4" />
                   <source
-                    src="/video/ecosystemd-intro.mkv"
+                    src="/video/ecosystemd-intro-v2.mp4"
+                    type="video/mp4"
+                  />
+                  <source
+                    src="/video/ecosystemd-intro-v2.mkv"
                     type="video/x-matroska"
                   />
                   Votre navigateur ne supporte pas la lecture vidéo.
