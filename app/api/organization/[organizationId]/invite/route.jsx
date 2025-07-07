@@ -87,10 +87,13 @@ export async function POST(request, { params }) {
 			);
 		}
 
+		// Normaliser l'email en minuscules
+		const normalizedEmail = email.toLowerCase().trim();
+
 		// Rechercher l'utilisateur à inviter par son email
 		let userToInvite = await prisma.user.findUnique({
 			where: {
-				email: email,
+				email: normalizedEmail,
 			},
 		});
 
@@ -119,7 +122,7 @@ export async function POST(request, { params }) {
 		const existingInvitation =
 			await prisma.organizationInvitation.findFirst({
 				where: {
-					email: email,
+					email: normalizedEmail,
 					organizationId: organizationId,
 				},
 			});
@@ -154,7 +157,7 @@ export async function POST(request, { params }) {
 
 			// Envoyer un nouvel email d'invitation
 			await sendInvitationEmail(
-				email,
+				normalizedEmail,
 				organization.name,
 				existingInvitation.inviteCode
 			);
@@ -179,7 +182,7 @@ export async function POST(request, { params }) {
 
 		const invitation = await prisma.organizationInvitation.create({
 			data: {
-				email,
+				email: normalizedEmail,
 				organizationId,
 				inviteCode,
 				role: role || "MEMBER",
@@ -189,7 +192,7 @@ export async function POST(request, { params }) {
 		});
 
 		// Envoyer l'email d'invitation
-		await sendInvitationEmail(email, organization.name, inviteCode);
+		await sendInvitationEmail(normalizedEmail, organization.name, inviteCode);
 
 		return NextResponse.json({
 			success: true,
