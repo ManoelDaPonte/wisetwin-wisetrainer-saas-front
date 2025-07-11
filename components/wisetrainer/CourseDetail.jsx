@@ -12,6 +12,7 @@ import CourseDetailsTab from "@/components/wisetrainer/course/CourseDetailsTab";
 import CourseTrainingTab from "@/components/wisetrainer/course/CourseTrainingTab";
 import QuestionnaireModal from "@/components/wisetrainer/QuestionnaireModal";
 import InteractiveGuideModal from "@/components/wisetrainer/InteractiveGuideModal";
+import AIInsideNotice from "@/components/wisetrainer/AIInsideNotice";
 import InformationModal from "@/components/wisetrainer/InformationModal";
 import { useUnityEvents } from "@/lib/hooks/useUnityEvents";
 import WISETRAINER_CONFIG from "@/lib/config/wisetrainer/wisetrainer";
@@ -77,6 +78,9 @@ export default function CourseDetail({ params }) {
   // État pour suivre si les fichiers ont été téléchargés
   const [filesDownloaded, setFilesDownloaded] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
+
+  // État pour la notice AI Inside
+  const [showAIInsideNotice, setShowAIInsideNotice] = useState(false);
 
   // Fonction dédiée pour vérifier l'existence des fichiers
   const checkFilesExistence = async () => {
@@ -836,6 +840,8 @@ export default function CourseDetail({ params }) {
             onGuideComplete={handleGuideComplete}
             filesDownloaded={filesDownloaded}
             isDownloading={isDownloading}
+            showAIInsideNotice={showAIInsideNotice}
+            setShowAIInsideNotice={setShowAIInsideNotice}
           />
         </TabsContent>
       </Tabs>
@@ -859,6 +865,12 @@ export default function CourseDetail({ params }) {
           onStartTutorial={handleStartTutorial} // Passer la fonction au lieu de la référence
         />
       )}
+
+      {/* Notice AI Inside */}
+      <AIInsideNotice
+        isOpen={showAIInsideNotice}
+        onClose={() => setShowAIInsideNotice(false)}
+      />
 
       {/* Modal d'information */}
       {showInformation && currentInformation && (

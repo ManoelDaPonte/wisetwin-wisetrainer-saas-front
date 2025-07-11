@@ -1,0 +1,68 @@
+{
+  "id": "AI-Inside",
+  "name": "Formation AI Inside",
+  "description": "Formation interactive POC pour le projet AI Inside",
+  "imageUrl": "/images/png/placeholder.png",
+  "category": "Formation",
+  "difficulty": "Intermédiaire",
+  "duration": "30 min",
+  "objectMapping": {
+    "inspector-controller": "unity-inspector",
+    "gabarit-support": "unity-inspector"
+  },
+  "modules": [
+    {
+      "id": "unity-inspector",
+      "order": 1,
+      "title": "Module Unity avec Inspecteur",
+      "description": "Formation interactive utilisant Unity avec un inspecteur affiché sur la droite",
+      "type": "inspector",
+      "unity": {
+        "title": "Formation Unity Interactive",
+        "description": "Cette formation utilise Unity avec un inspecteur qui affiche des informations contextuelles",
+        "steps": [
+          {
+            "id": "step-1",
+            "title": "Démarrage du tutoriel",
+            "message": "GAME_STARTED_TUTORIAL_STEP_1",
+            "inspector": {
+              "title": "Étape 1 - Démarrage",
+              "image": "/images/unity-inspector/step-1.png",
+              "text": "Bienvenue dans cette formation interactive. Vous allez apprendre à utiliser l'interface Unity avec cet inspecteur qui vous guidera à travers les différentes étapes."
+            }
+          },
+          {
+            "id": "step-2",
+            "title": "Première tâche complétée",
+            "message": "STEP_1_COMPLETED",
+            "inspector": {
+              "title": "Étape 2 - Progression",
+              "image": "/images/unity-inspector/step-2.png",
+              "text": "Excellente progression ! Vous avez terminé la première étape. Continuons avec la deuxième partie de la formation où nous allons explorer des fonctionnalités plus avancées."
+            }
+          },
+          {
+            "id": "step-3",
+            "title": "Deuxième tâche complétée",
+            "message": "STEP_2_COMPLETED",
+            "inspector": {
+              "title": "Étape 3 - Avancé",
+              "image": "/images/unity-inspector/step-3.png",
+              "text": "Très bien ! Vous maîtrisez maintenant les bases. Dans cette étape, nous allons voir comment utiliser les outils avancés et optimiser votre workflow."
+            }
+          },
+          {
+            "id": "step-4",
+            "title": "Formation terminée",
+            "message": "STEP_3_COMPLETED",
+            "inspector": {
+              "title": "Étape 4 - Félicitations",
+              "image": "/images/unity-inspector/step-4.png",
+              "text": "Félicitations ! Vous avez terminé avec succès cette formation Unity. Vous maîtrisez maintenant les concepts essentiels pour utiliser efficacement cet environnement."
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

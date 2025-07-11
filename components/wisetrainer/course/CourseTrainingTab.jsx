@@ -8,7 +8,7 @@ import {
 	CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Info, RotateCcw } from "lucide-react";
+import { Info, RotateCcw, HelpCircle } from "lucide-react";
 import UnityBuild from "@/components/wisetrainer/UnityBuild";
 import Spinner from "@/components/common/Spinner";
 
@@ -20,7 +20,9 @@ export default function CourseTrainingTab({
 	onInformationRequest,
 	filesDownloaded,
 	isDownloading,
-	onUnityProgress
+	onUnityProgress,
+	showAIInsideNotice,
+	setShowAIInsideNotice
 }) {
 	const handleResetCamera = () => {
 		console.log("Tentative de réinitialisation de la caméra...");
@@ -36,7 +38,18 @@ export default function CourseTrainingTab({
 		<>
 			<Card className="mb-8">
 				<CardContent>
-					<div className="flex justify-end mb-4">
+					<div className="flex justify-end mb-4 gap-2">
+						{courseId === "AI-Inside" && (
+							<Button
+								variant="outline"
+								className="flex items-center gap-2"
+								onClick={() => setShowAIInsideNotice(!showAIInsideNotice)}
+								disabled={!filesDownloaded}
+							>
+								<HelpCircle className="w-4 h-4" />
+								{showAIInsideNotice ? "Masquer" : "Afficher"} la notice
+							</Button>
+						)}
 						<Button
 							variant="outline"
 							className="flex items-center gap-2"
